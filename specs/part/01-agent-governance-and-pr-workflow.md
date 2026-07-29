@@ -45,11 +45,12 @@ the branch history.
 
 ## Story 3 — GitHub `main` ruleset
 
-**Status:** Blocked — repository-admin authorization required
+**Status:** Blocked — current GitHub plan does not support private-repository rulesets
 
 ### Tasks
 
-- [ ] Confirm the repository owner authorizes a GitHub ruleset for `main`.
+- [x] Confirm the repository owner authorizes a GitHub ruleset for `main`.
+- [x] Inspect the repository ruleset API with the authenticated owner token.
 - [ ] Require pull requests before merging to `main`.
 - [ ] Require the `verify` GitHub Actions status check.
 - [ ] Decide whether one approval and stale-review dismissal are appropriate
@@ -58,6 +59,11 @@ the branch history.
 
 Acceptance: GitHub rejects direct updates to `main` and permits a PR only when
 the required verification completes.
+
+Evidence (2026-07-29): GitHub rejected `GET /repos/mortenbroesby/agent-distro/rulesets`
+with HTTP 403: this private repository needs GitHub Pro or must be made public
+to use rulesets. Revisit after a plan change; the current branch/worktree and
+pull-request instructions remain the available local workflow guardrails.
 
 ## Story 4 — Optional local guardrail
 
