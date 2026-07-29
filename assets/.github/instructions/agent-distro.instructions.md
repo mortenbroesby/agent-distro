@@ -1,3 +1,3 @@
-# Agent Distro
+# Foundation
 
 Follow repository conventions.

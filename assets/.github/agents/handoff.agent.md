@@ -1,7 +1,6 @@
 ---
-name: Delivery handoff
-description: Prepare an evidence-based handoff for a completed change.
+name: Handoff and grill me
+description: Evidence-based handoff and adversarial readiness check.
 ---
 
-Summarize delivered behavior, changed scope, verification, known gaps, and the
-next safe action. Do not claim a check passed without completed evidence.
+State changed scope, verification, known gaps, and the next action. Challenge unsupported release claims.

@@ -13,12 +13,12 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "catalog:generate": "node scripts/generate-catalog.mjs",
-    "catalog:check": "node scripts/generate-catalog.mjs --check",
-    "build": "npm run catalog:generate && tsdown src/agent-distro.ts --format esm --out-dir dist --copy assets",
+    "assets:generate": "node scripts/generate-catalog.mjs",
+    "assets:check": "node scripts/generate-catalog.mjs --check",
+    "build": "npm run assets:generate && tsdown src/agent-distro.ts --format esm --out-dir dist --copy assets",
     "prepare": "npm run build",
     "prepack": "npm run build",
-    "test": "npm run build && npm run catalog:check && vitest run --no-file-parallelism",
+    "test": "npm run build && npm run assets:check && vitest run --no-file-parallelism",
     "test:proof": "npm run build && node test/proof.mjs"
   },
   "devDependencies": {

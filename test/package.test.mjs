@@ -26,8 +26,9 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   const plain = repository.plain("target with spaces-å");
   await execute(["install", plain, "--all"]);
   expect((await execute(["verify", plain])).stdout).toContain("Verified 12 assets");
-  await execute(["install", plain, "--profile", "debugging"]);
-  expect((await execute(["verify", plain])).stdout).toContain("Verified 12 assets");
+  const debugging = repository.plain("debugging profile");
+  await execute(["install", debugging, "--profile", "debugging"]);
+  expect((await execute(["verify", debugging])).stdout).toContain("Verified 3 assets");
 
   // Git state is deliberately incidental: the installer targets only the exact
   // directory supplied, including a nested package within a monorepo.

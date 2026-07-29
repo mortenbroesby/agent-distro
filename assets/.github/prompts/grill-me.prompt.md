@@ -1,7 +1,5 @@
 ---
-description: Challenge a proposed handoff before review or release.
+description: Evidence-based handoff and adversarial readiness check.
 ---
 
-Grill this handoff: identify unsupported claims, missing acceptance evidence,
-unsafe assumptions, and the one question that could change the release
-decision.
+State changed scope, verification, known gaps, and the next action. Challenge unsupported release claims.

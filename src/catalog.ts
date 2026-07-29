@@ -4,13 +4,13 @@ import { fileURLToPath } from "node:url";
 import { manifestParts } from "./managed-path.js";
 
 export type Profile = { id: string; label: string; description: string; assets: string[] };
-type Catalog = { version: number; assets: { path: string; label: string }[]; profiles: Profile[] };
+type Catalog = { schemaVersion: number; version: string; assets: { path: string; label: string }[]; profiles: Profile[] };
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 
 function loadCatalog(): Catalog {
   const catalog = JSON.parse(fs.readFileSync(path.join(assets, "catalog.json"), "utf8"));
-  if (catalog.version !== 1 || !Array.isArray(catalog.assets) || !Array.isArray(catalog.profiles)) throw new Error("invalid asset catalog");
+  if (catalog.schemaVersion !== 1 || typeof catalog.version !== "string" || !Array.isArray(catalog.assets) || !Array.isArray(catalog.profiles)) throw new Error("invalid asset catalog");
   const paths = new Set<string>();
   for (const asset of catalog.assets) {
     if (typeof asset?.path !== "string" || typeof asset?.label !== "string" || paths.has(asset.path)) throw new Error("invalid asset catalog");

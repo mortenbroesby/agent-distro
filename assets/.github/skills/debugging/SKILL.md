@@ -1,7 +1,6 @@
 ---
 name: debugging
-description: Use when diagnosing a failing test, runtime error, or unexpected behavior.
+description: Reproduction-first debugging specialist and workflow.
 ---
 
-Reproduce before changing code. Separate symptom from root cause, inspect every
-caller of the shared boundary, and leave one focused verification behind.
+Reproduce first, trace all callers of the shared boundary, isolate the root cause, and leave focused verification.

@@ -1,6 +1,5 @@
 ---
-description: Investigate a bug from reproduction through verification.
+description: Reproduction-first debugging specialist and workflow.
 ---
 
-Reproduce the reported behavior, identify the root cause, implement the
-smallest safe fix, and state the verification evidence.
+Reproduce first, trace all callers of the shared boundary, isolate the root cause, and leave focused verification.

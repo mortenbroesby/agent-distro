@@ -1,5 +1,6 @@
 {
-  "version": 1,
+  "schemaVersion": 1,
+  "version": "sha256-377253b23a495851",
   "assets": [
     {
       "path": ".github/instructions/agent-distro.instructions.md",

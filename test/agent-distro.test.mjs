@@ -151,7 +151,7 @@ describe("agent-distro install", () => {
     expect(fs.existsSync(path.join(destination, ".github/prompts/grill-me.prompt.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".github/skills/debugging/SKILL.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"))).toMatchObject({ catalogVersion: 1, files: expect.any(Array) });
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"))).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/), files: expect.any(Array) });
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toHaveLength(12);
   });
 
@@ -173,7 +173,7 @@ describe("agent-distro install", () => {
     expect(JSON.parse(command("profiles"))).toEqual(expect.arrayContaining([expect.objectContaining({ id: "debugging" })]));
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
-    expect(manifest).toMatchObject({ catalogVersion: 1 });
+    expect(manifest).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/) });
     expect(manifest.files).toEqual([
       ".mcp.json",
       ".github/agents/debugging.agent.md",

@@ -1,8 +1,6 @@
 ---
 name: pull-request-review
-description: Use for a focused review of a pull request or change set.
+description: Review specialist, workflow, and reusable prompt.
 ---
 
-Trace changed behavior through callers, inputs, error paths, and tests. Prefer
-one concrete finding over speculative style feedback. State when no actionable
-finding remains.
+Inspect the diff and relevant callers. Report only actionable correctness, security, regression, and test-gap findings.

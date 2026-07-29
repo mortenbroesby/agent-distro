@@ -1,6 +1,5 @@
 ---
-description: Review the current change for defects and regressions.
+description: Review specialist, workflow, and reusable prompt.
 ---
 
-Review the current diff. Prioritize correctness, security, compatibility, and
-test gaps. Return actionable findings only.
+Inspect the diff and relevant callers. Report only actionable correctness, security, regression, and test-gap findings.
