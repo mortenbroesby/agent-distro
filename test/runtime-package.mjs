@@ -14,9 +14,11 @@ const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-runtime-")
 const consumer = path.join(workspace, "consumer");
 const target = path.join(workspace, "target with spaces-å");
 
-/** Runs npm without shell parsing so Windows and POSIX launchers share one proof. */
+/** Runs npm through the native launcher for the active platform. */
 function runNpm(args) {
-  return execFileSync(npm, args, { encoding: "utf8", stdio: "pipe" });
+  // Node 22+ rejects direct `.cmd` execution. All arguments here are generated
+  // by this disposable test fixture, so Windows shell dispatch is safe.
+  return execFileSync(npm, args, { encoding: "utf8", shell: process.platform === "win32", stdio: "pipe" });
 }
 
 try {
