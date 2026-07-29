@@ -15,6 +15,15 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:proof
+      - name: Copilot marketplace smoke
+        run: |
+          copilot_home="$(mktemp -d)"
+          export COPILOT_HOME="$copilot_home"
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace add .
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace browse agent-distro-marketplace
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin install agent-distro@agent-distro-marketplace
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin list
+          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-foundation/SKILL.md"
 
   windows:
     runs-on: windows-latest
@@ -30,3 +39,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:proof
+      - name: Copilot marketplace smoke
+        run: |
+          copilot_home="$(mktemp -d)"
+          export COPILOT_HOME="$copilot_home"
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace add .
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace browse agent-distro-marketplace
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin install agent-distro@agent-distro-marketplace
+          npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin list
+          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-foundation/SKILL.md"

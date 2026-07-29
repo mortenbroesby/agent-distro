@@ -1,0 +1,19 @@
+{
+  "name": "agent-distro-marketplace",
+  "owner": {
+    "name": "Morten Broesby"
+  },
+  "metadata": {
+    "description": "Curated GitHub Copilot workflow plugins from Agent Distro.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "agent-distro",
+      "source": "./plugins/agent-distro",
+      "description": "Curated agents, skills, and optional MCP and hook templates for evidence-driven engineering workflows.",
+      "version": "0.1.0",
+      "strict": true
+    }
+  ]
+}

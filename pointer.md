@@ -6,10 +6,8 @@ work.
 
 ## Current focus
 
-- [Cross-platform core and compatibility contract](./specs/active/04-cross-platform-core-and-compatibility.md)
-  — establish explicit target semantics, a true no-op, and Windows Git Bash proof.
-- [Interactive TUI and real-repository smoke](./specs/active/05-interactive-tui-and-repository-smoke.md)
-  — refactor the interactive journey and prove it in disposable real repositories.
+- [Copilot plugin marketplace offering](./specs/active/07-copilot-plugin-marketplace.md)
+  — provide a generated same-repository plugin and prove its marketplace flow.
 
 Npm publication remains deferred.
 
