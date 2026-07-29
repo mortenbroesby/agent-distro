@@ -233,6 +233,8 @@ export function install(target: string, { force = false, dryRun = false, selecte
   console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun) return 0;
   let staging = "";
+  const replacements: { relative: string; output: string; backup?: string }[] = [];
+  const committed: typeof replacements = [];
   try {
     fs.mkdirSync(path.join(destination, ".asdlc"), { recursive: true });
     staging = fs.mkdtempSync(path.join(destination, ".asdlc", ".asdlc-stage-"));
@@ -243,10 +245,28 @@ export function install(target: string, { force = false, dryRun = false, selecte
     }
     for (const relative of changed) {
       const output = path.join(destination, relative);
+      const backup = path.join(staging, ".backup", relative);
+      if (fs.existsSync(output)) {
+        fs.mkdirSync(path.dirname(backup), { recursive: true });
+        fs.copyFileSync(output, backup);
+      }
+      replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
+    }
+    for (const replacement of replacements) {
+      const { relative, output } = replacement;
       fs.mkdirSync(path.dirname(output), { recursive: true });
       fs.renameSync(path.join(staging, relative), output);
+      committed.push(replacement);
     }
   } catch (error) {
+    for (const { output, backup } of committed.reverse()) {
+      if (backup && fs.existsSync(backup)) {
+        fs.rmSync(output, { force: true });
+        fs.renameSync(backup, output);
+      } else {
+        fs.rmSync(output, { force: true });
+      }
+    }
     if (staging) fs.rmSync(staging, { recursive: true, force: true });
     return fail("ASDLC_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }

@@ -42,20 +42,25 @@ Windows.
 
 ## Story 2 — Commit and rollback
 
-**Status:** Ready
+**Status:** Done
 
 ### Tasks
 
-- [ ] Record whether each destination existed and preserve its old bytes before
+- [x] Record whether each destination existed and preserve its old bytes before
       replacement.
-- [ ] Replace staged files, then remove staging state only after success.
-- [ ] Roll back newly created files and restore replaced files after a rename
+- [x] Replace staged files, then remove staging state only after success.
+- [x] Roll back newly created files and restore replaced files after a rename
       or permission failure.
-- [ ] Add a focused injected-failure test that verifies `verify` still reports
+- [x] Add a focused injected-failure test that verifies `verify` still reports
       the previous complete installation.
 
 Acceptance: an ordinary filesystem failure leaves either the old complete
 installation or the new complete installation, never a mix.
+
+Evidence (2026-07-29): focused Vitest coverage injects a failure into the
+second staged rename after the first replacement succeeds. It then verifies
+the original one-asset installation and confirms that the newly staged asset
+and staging directory are absent. `npm run test:proof` passed locally.
 
 ## Story 3 — Explicit recovery command
 

@@ -86,9 +86,9 @@ Implementation detail and task evidence live in the child
 Acceptance criteria:
 
 - [x] Stage all changed files before replacing any managed destination file.
-- [ ] On failure, retain the previous complete state or remove only newly
+- [x] On failure, retain the previous complete state or remove only newly
       created staged files.
-- [ ] Tests simulate write/rename failures and verify `verify` remains honest.
+- [x] Tests simulate write/rename failures and verify `verify` remains honest.
 
 ## Story 4 — Cross-platform hostile-path proof
 

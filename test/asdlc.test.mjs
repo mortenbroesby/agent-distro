@@ -148,6 +148,27 @@ describe("asdlc install", () => {
     expect(fs.readdirSync(path.join(destination, ".asdlc"))).toEqual(["manifest.json"]);
   });
 
+  it("rolls back completed renames when a later rename fails", () => {
+    const destination = target();
+    expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    const originalRename = fs.renameSync;
+    let replacements = 0;
+    fs.renameSync = (source, output) => {
+      if (String(source).includes(".asdlc-stage-") && !String(source).includes(".backup") && ++replacements === 2) {
+        throw new Error("simulated rename failure");
+      }
+      return originalRename(source, output);
+    };
+    try {
+      expect(install(destination, { force: true, selected: [".mcp.json", ".github/prompts/asdlc.prompt.md"] })).toBe(1);
+    } finally {
+      fs.renameSync = originalRename;
+    }
+    expect(verify(destination)).toContain("Verified 1 assets");
+    expect(fs.existsSync(path.join(destination, ".github/prompts/asdlc.prompt.md"))).toBe(false);
+    expect(fs.readdirSync(path.join(destination, ".asdlc"))).toEqual(["manifest.json"]);
+  });
+
   it("plans without creating the target", () => {
     const destination = path.join(os.tmpdir(), `asdlc-dry-run-${process.pid}-${Date.now()}`);
     expect(fs.existsSync(destination)).toBe(false);
