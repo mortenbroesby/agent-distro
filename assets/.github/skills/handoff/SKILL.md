@@ -1,5 +1,5 @@
 ---
-name: handoff
+name: agent-distro-handoff
 description: Evidence-based handoff and adversarial readiness check.
 ---
 

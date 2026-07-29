@@ -17,6 +17,7 @@
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "postinstall": "node scripts/setup-git-hooks.mjs",
     "prepare": "npm run build",
     "prepack": "npm run build",
     "test": "npm run build && npm run assets:check && vitest run --no-file-parallelism --exclude .agents/**",

@@ -25,7 +25,7 @@ jobs:
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace browse agent-distro-marketplace
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin install agent-distro@agent-distro-marketplace
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin list
-          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-foundation/SKILL.md"
+          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-debugging/SKILL.md"
 
   windows:
     runs-on: windows-latest
@@ -51,4 +51,4 @@ jobs:
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin marketplace browse agent-distro-marketplace
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin install agent-distro@agent-distro-marketplace
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin list
-          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-foundation/SKILL.md"
+          test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-debugging/SKILL.md"

@@ -33,7 +33,13 @@ for (const profile of source.profiles) {
     else if (asset.endsWith("/SKILL.md"))
       files.set(
         asset,
-        "---\nname: " + profile.id + "\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n",
+        "---\nname: agent-distro-" +
+          profile.id +
+          "\ndescription: " +
+          profile.description +
+          "\n---\n\n" +
+          profile.guidance +
+          "\n",
       );
     else if (asset.endsWith(".prompt.md"))
       files.set(asset, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
@@ -84,18 +90,9 @@ const catalog =
   ) + "\n";
 const expected = new Map([...files, ["catalog.json", catalog]]);
 
-/** Creates a unique plugin component from a profile without sharing generic IDs. */
-function pluginProfile(profile, kind) {
-  const frontMatter =
-    kind === "agent"
-      ? "---\nname: " + profile.label + "\ndescription: " + profile.description + "\n---\n\n"
-      : "---\nname: agent-distro-" + profile.id + "\ndescription: " + profile.description + "\n---\n\n";
-  return frontMatter + profile.guidance + "\n";
-}
-
-// Copilot plugins load agents and skills by identifier. Prefixing every
-// generated component prevents a user's project-level debugging skill or agent
-// from being silently shadowed by this optional marketplace offering.
+// Plugin metadata is unique, but every distributable component is a Git-tracked
+// relative symlink into assets/. A future APM package can consume that same tree
+// without creating a third copy of the curated content.
 const pluginFiles = new Map([
   [
     "plugin.json",
@@ -118,20 +115,18 @@ const pluginFiles = new Map([
       2,
     ) + "\n",
   ],
-  [
-    "README.md",
-    "# Agent Distro for GitHub Copilot\n\nInstall curated, evidence-driven agents and skills from the Agent Distro marketplace. The plugin includes empty MCP and hook templates; configure them deliberately after installation.\n\n## Install\n\n```sh\ncopilot plugin marketplace add mortenbroesby/agent-distro\ncopilot plugin install agent-distro@agent-distro-marketplace\n```\n\nFor a direct development install, use:\n\n```sh\ncopilot plugin install mortenbroesby/agent-distro:plugins/agent-distro\n```\n",
-  ],
-  ["hooks.json", files.get(".github/hooks/agent-distro.json")],
-  [".mcp.json", files.get(".mcp.json")],
+]);
+const pluginLinks = new Map([
+  ["hooks.json", path.join(assets, ".github/hooks/agent-distro.json")],
+  [".mcp.json", path.join(assets, ".mcp.json")],
 ]);
 for (const profile of source.profiles) {
-  if (profile.id === "foundation")
-    pluginFiles.set("skills/agent-distro-foundation/SKILL.md", pluginProfile(profile, "skill"));
-  if (profile.assets.some((asset) => asset.endsWith(".agent.md")))
-    pluginFiles.set("agents/agent-distro-" + profile.id + ".agent.md", pluginProfile(profile, "agent"));
-  if (profile.assets.some((asset) => asset.endsWith("/SKILL.md")))
-    pluginFiles.set("skills/agent-distro-" + profile.id + "/SKILL.md", pluginProfile(profile, "skill"));
+  for (const asset of profile.assets) {
+    if (asset.endsWith(".agent.md"))
+      pluginLinks.set("agents/agent-distro-" + profile.id + ".agent.md", path.join(assets, asset));
+    if (asset.endsWith("/SKILL.md"))
+      pluginLinks.set("skills/agent-distro-" + profile.id + "/SKILL.md", path.join(assets, asset));
+  }
 }
 const marketplace =
   JSON.stringify(
@@ -176,4 +171,23 @@ for (const [relative, content] of pluginFiles) {
     fs.mkdirSync(path.dirname(output), { recursive: true });
     fs.writeFileSync(output, content);
   }
+}
+for (const [relative, target] of pluginLinks) {
+  const output = path.join(plugin, relative);
+  const link = path.relative(path.dirname(output), target);
+  if (check) {
+    if (!fs.lstatSync(output).isSymbolicLink() || fs.readlinkSync(output) !== link)
+      throw new Error("generated Copilot plugin symlink is stale: " + relative);
+  } else {
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.rmSync(output, { force: true });
+    fs.symlinkSync(link, output);
+  }
+}
+// These were generated copies before the shared-asset design. Refuse to leave
+// them behind so the plugin has one authoritative content source.
+for (const relative of ["README.md", "skills/agent-distro-foundation/SKILL.md"]) {
+  const output = path.join(plugin, relative);
+  if (check && fs.existsSync(output)) throw new Error("duplicate Copilot plugin asset: " + relative);
+  if (!check) fs.rmSync(output, { force: true });
 }

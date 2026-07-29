@@ -1,5 +1,5 @@
 ---
-name: debugging
+name: agent-distro-debugging
 description: Reproduction-first debugging specialist and workflow.
 ---
 
