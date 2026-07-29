@@ -89,7 +89,7 @@ export function install(target: string, { force = false, dryRun = false, selecte
   if (conflicts.length && !force) return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
   console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
-  if (dryRun) return 0;
+  if (dryRun || changed.length === 0) return 0;
   let staging = "";
   const replacements: { relative: string; output: string; backup?: string }[] = [];
   const committed: typeof replacements = [];

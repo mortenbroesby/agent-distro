@@ -25,7 +25,7 @@ export async function run(args: string[]) {
     .option("--code <code>", "Agent Distro failure code")
     .action((options) => { exitCode = reportIssue(options); });
   program.command("install [target]")
-    .description("Interactively select Agent Distro assets, or use --asset/--all for scripts")
+    .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
     .option("--force", "replace changed Agent Distro assets")
     .option("--dry-run", "show changes without writing")
     .option("--asset <path...>", "asset path to install; repeatable")
