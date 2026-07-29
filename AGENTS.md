@@ -19,3 +19,18 @@ Before changing files:
 
 Use a short branch prefix such as `feat/`, `fix/`, `docs/`, or `test/`. Reuse
 an existing task branch/worktree when it already owns the requested scope.
+
+## Pull-request delivery
+
+Agents must not commit or push directly to `main`. Create a task branch, push
+that branch, and open a pull request unless the user explicitly authorizes an
+exception for a specific commit.
+
+Before requesting review, report the branch name, commit, changed scope, and
+the checks actually run. Do not claim a hosted check passed until its completed
+run is inspected.
+
+Remote enforcement is a separate repository-admin action: protect `main` with
+a GitHub ruleset that requires pull requests and the `verify` status check.
+Local instructions and hooks are useful guardrails, but cannot replace remote
+branch protection.

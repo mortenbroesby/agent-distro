@@ -6,6 +6,7 @@
 | 1 | Active | [Opt-in issue-report handoff](../active/01-opt-in-issue-reporting.md) | Story 1 local sanitized issue URL |
 | 2 | Ready | Versioned npm distribution | Select only after the installer contract is proven |
 | 3 | Done | Hosted native-Windows base proof | Run `30468852345` passed macOS and Windows npm package smoke |
+| 4 | Ready | [Agent governance and PR workflow](../part/01-agent-governance-and-pr-workflow.md) | Story 2 PR delivery contract; Story 3 needs admin authorization |
 
 Status meanings: **Active** has an executable checklist; **Ready** is scoped
 but not selected; **Blocked** needs an external prerequisite; **Done** has
