@@ -18,7 +18,7 @@ for (const profile of source.profiles) {
     else if (asset.endsWith(".prompt.md")) files.set(asset, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
     else if (asset.endsWith(".instructions.md")) files.set(asset, "# " + profile.label + "\n\n" + profile.guidance + "\n");
     else if (asset === ".mcp.json") files.set(asset, JSON.stringify({ mcpServers: {} }, null, 2) + "\n");
-    else if (asset.includes("/hooks/") && asset.endsWith(".json")) files.set(asset, JSON.stringify({ version: 1, hooks: {} }, null, 2) + "\n");
+    else if (asset.includes("/hooks/") && asset.endsWith(".json")) files.set(asset, JSON.stringify({ version: 1, hooks: asset === ".github/hooks/agent-distro.json" ? {} : { sessionStart: [{ type: "prompt", prompt: profile.guidance }] } }, null, 2) + "\n");
     else throw new Error("unsupported generated asset: " + asset);
   }
 }

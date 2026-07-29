@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "sha256-377253b23a495851",
+  "version": "sha256-2c9e29280b4d1b74",
   "assets": [
     {
       "path": ".github/instructions/agent-distro.instructions.md",
@@ -9,6 +9,14 @@
     {
       "path": ".mcp.json",
       "label": "MCP configuration"
+    },
+    {
+      "path": ".github/instructions/safe-changes.instructions.md",
+      "label": "Safe-change instructions"
+    },
+    {
+      "path": ".github/instructions/verification.instructions.md",
+      "label": "Verification instructions"
     },
     {
       "path": ".github/agents/pull-request-review.agent.md",
@@ -49,6 +57,14 @@
     {
       "path": ".github/hooks/agent-distro.json",
       "label": "Hook template"
+    },
+    {
+      "path": ".github/hooks/session-context.json",
+      "label": "Session-context hook"
+    },
+    {
+      "path": ".github/hooks/verification-reminder.json",
+      "label": "Verification-reminder hook"
     }
   ],
   "profiles": [
@@ -59,6 +75,22 @@
       "assets": [
         ".github/instructions/agent-distro.instructions.md",
         ".mcp.json"
+      ]
+    },
+    {
+      "id": "safe-changes",
+      "label": "Safe changes",
+      "description": "Guardrails for safe, focused repository changes.",
+      "assets": [
+        ".github/instructions/safe-changes.instructions.md"
+      ]
+    },
+    {
+      "id": "verification",
+      "label": "Verification",
+      "description": "Evidence-first completion instructions.",
+      "assets": [
+        ".github/instructions/verification.instructions.md"
       ]
     },
     {
@@ -97,6 +129,22 @@
       "description": "Optional deterministic hook configuration template.",
       "assets": [
         ".github/hooks/agent-distro.json"
+      ]
+    },
+    {
+      "id": "session-context",
+      "label": "Session context hook",
+      "description": "Inject repository context at Copilot CLI session start.",
+      "assets": [
+        ".github/hooks/session-context.json"
+      ]
+    },
+    {
+      "id": "verification-reminder",
+      "label": "Verification reminder hook",
+      "description": "Inject an evidence reminder at Copilot CLI session start.",
+      "assets": [
+        ".github/hooks/verification-reminder.json"
       ]
     }
   ]
