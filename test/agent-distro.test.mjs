@@ -48,7 +48,9 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: (message) => calls.push(["intro", message]),
       text: async () => destination,
-      multiselect: async () => [".mcp.json"],
+      multiselect: async () => calls.filter(([name]) => name === "multiselect").length === 0
+        ? (calls.push(["multiselect", "profiles"]), [])
+        : [".mcp.json"],
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
@@ -70,7 +72,7 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: () => {},
       text: async () => destination,
-      multiselect: async () => [".mcp.json"],
+      multiselect: async () => [],
       confirm: async () => false,
       isCancel: () => false,
       cancel: () => {},
