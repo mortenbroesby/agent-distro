@@ -32,6 +32,11 @@ asks for a draft. Before handing a PR off, wait for its macOS and Windows
 changed scope, completed-run evidence, and known gaps. Do not claim a hosted
 check passed until its completed run is inspected.
 
+Before requesting review, fetch `origin` and rebase or merge the latest
+`origin/main` into the task branch. Confirm
+`git merge-base --is-ancestor origin/main HEAD` succeeds; a passing stale-base
+CI run is not enough.
+
 Remote enforcement is a separate repository-admin action: protect `main` with
 a GitHub ruleset that requires pull requests and the `verify` status check.
 Local instructions and hooks are useful guardrails, but cannot replace remote
