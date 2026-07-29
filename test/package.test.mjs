@@ -22,6 +22,27 @@ it("installs the packed npm binary without source assets", async () => {
     expect((await execute(["--version"])).stdout).toBe("0.0.0");
     await execute(["install", path.join(workspace, "target")]);
     expect(fs.existsSync(path.join(workspace, "target", ".asdlc", "manifest.json"))).toBe(true);
+    const reportDirectory = path.join(workspace, "report");
+    fs.mkdirSync(reportDirectory);
+    const beforeReport = fs.readdirSync(reportDirectory);
+    const report = new URL((await execute([
+      "report-issue",
+      "--diagnostics-consent",
+      "--message",
+      "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
+      "--action",
+      "install",
+      "--code",
+      "ASDLC_E_UNEXPECTED",
+    ], { cwd: reportDirectory })).stdout);
+    const body = report.searchParams.get("body") ?? "";
+    expect(report.origin + report.pathname).toBe("https://github.com/mortenbroesby/agent-distro/issues/new");
+    expect(body).toContain("Action: install");
+    expect(body).toContain("Code: ASDLC_E_UNEXPECTED");
+    expect(body).toContain("[redacted]");
+    expect(body).toContain("[local-path]");
+    expect(body).not.toContain("ghp_ABCdef123");
+    expect(fs.readdirSync(reportDirectory)).toEqual(beforeReport);
   } finally {
     fs.rmSync(workspace, { recursive: true, force: true });
   }

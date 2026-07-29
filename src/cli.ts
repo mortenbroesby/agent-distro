@@ -25,7 +25,7 @@ const nextSteps: Record<FailureCode, string> = {
   ASDLC_E_MANIFEST_INVALID: "Reinstall ASDLC assets with --force, then run verify again.",
   ASDLC_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
   ASDLC_E_USAGE: "Run asdlc --help for valid commands and options.",
-  ASDLC_E_UNEXPECTED: "Run asdlc diagnostics <target>; if it persists, report the redacted output.",
+  ASDLC_E_UNEXPECTED: "Run asdlc diagnostics <target>; if it persists, run asdlc report-issue --diagnostics-consent --message \"describe the failure\".",
 };
 
 function sanitize(value: unknown) {

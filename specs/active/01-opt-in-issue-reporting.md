@@ -20,7 +20,7 @@ collection.
 
 ## Story 1 — Local sanitized issue URL
 
-**Status:** Active
+**Status:** Done
 
 Build one small, exported URL encoder backed by Node's `URLSearchParams`.
 
@@ -40,7 +40,7 @@ contains no unredacted sensitive input.
 
 ## Story 2 — Explicit CLI consent boundary
 
-**Status:** Ready
+**Status:** Done
 
 Expose the encoder through `asdlc report-issue`.
 
@@ -50,38 +50,41 @@ Expose the encoder through `asdlc report-issue`.
 - [x] Require `--diagnostics-consent`; reject omission with the standard usage
       failure contract.
 - [x] Support optional `--action` and `--code` metadata with safe defaults.
-- [ ] Test that successful output is only one URL and has no filesystem writes.
+- [x] Test that successful output is only one URL and has no filesystem writes.
+
+Evidence (2026-07-29): `npm test` runs the command from an empty temporary
+directory and asserts its directory entries are unchanged.
 
 Acceptance: invoking the command has no side effects beyond writing the URL to
 stdout.
 
 ## Story 3 — Failure-to-report guidance
 
-**Status:** Ready
+**Status:** Done
 
 Make unexpected failures tell users how to generate a report without copying
 raw diagnostics into a shell command.
 
 ### Tasks
 
-- [ ] Add a concise, generic next-step command to unexpected-failure guidance.
-- [ ] Ensure the suggestion does not interpolate untrusted error text or paths.
-- [ ] Test unexpected-error output contains only sanitized text and guidance.
+- [x] Add a concise, generic next-step command to unexpected-failure guidance.
+- [x] Ensure the suggestion does not interpolate untrusted error text or paths.
+- [x] Test unexpected-error output contains only sanitized text and guidance.
 
 Acceptance: a user can discover reporting from an unexpected failure without
 ASDLC ever preparing a command containing sensitive data.
 
 ## Story 4 — Packaged and cross-platform proof
 
-**Status:** Ready
+**Status:** Active
 
 Prove the report command from a packed package on macOS and native Windows.
 
 ### Tasks
 
-- [ ] Add packed-package `report-issue` coverage to the existing npm proof.
-- [ ] Assert the Windows `.cmd` shim and macOS executable produce equivalent
-      decoded URL bodies.
+- [x] Add packed-package `report-issue` coverage to the existing npm proof.
+- [x] Assert the Windows `.cmd` shim and macOS executable produce the same
+      required decoded URL fields and redactions.
 - [ ] Record a completed hosted macOS/Windows Actions run in this epic.
 
 Acceptance: real installed-package proof covers the non-mutating report path

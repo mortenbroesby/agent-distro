@@ -55,6 +55,8 @@ describe("asdlc install", () => {
     expect(output).toContain("[redacted]");
     expect(output).toContain("[local-path]");
     expect(output).not.toContain("ghp_ABCdef123");
+    expect(output).toContain("asdlc report-issue --diagnostics-consent");
+    expect(output).not.toContain("/Users/example/project");
   });
 
   it("creates a local, redacted issue URL only with explicit consent", () => {
@@ -74,6 +76,18 @@ describe("asdlc install", () => {
     expect(failed("report-issue", "--message", "failure")).toContain("ASDLC_E_USAGE");
     const reported = new URL(command("report-issue", "--diagnostics-consent", "--message", "failure", "--action", "install", "--code", "ASDLC_E_UNEXPECTED").trim());
     expect(reported.searchParams.get("body")).toContain("Failure: failure");
+  });
+
+  it("does not write files while reporting an issue", () => {
+    const directory = target();
+    const before = fs.readdirSync(directory);
+    const output = execFileSync(
+      process.execPath,
+      [cli, "report-issue", "--diagnostics-consent", "--message", "failure"],
+      { cwd: directory, encoding: "utf8", stdio: "pipe" },
+    );
+    expect(new URL(output.trim()).pathname).toBe("/mortenbroesby/agent-distro/issues/new");
+    expect(fs.readdirSync(directory)).toEqual(before);
   });
 
   it("installs every Copilot asset category and records ownership", () => {
