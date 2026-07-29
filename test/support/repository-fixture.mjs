@@ -21,6 +21,7 @@ export const test = baseTest.extend("repository", async ({}, { onCleanup }) => {
   };
 
   return {
+    root,
     plain,
     async git(name = "git repository") {
       const target = plain(name);
