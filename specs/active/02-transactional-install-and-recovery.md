@@ -87,6 +87,9 @@ Evidence (2026-07-29): focused Vitest coverage creates a retained journal with
 a replaced manifest and newly created prompt, proves `install` refuses it,
 then proves `recover` restores the prior verified installation and leaves its
 partial asset absent. Diagnostics never emits the retained asset content.
+GitHub Actions [`verify` run 30474036743](https://github.com/mortenbroesby/agent-distro/actions/runs/30474036743)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and native
+Windows.
 
 ## Story 4 — Hostile-path proof
 
