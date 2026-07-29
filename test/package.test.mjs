@@ -17,7 +17,11 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   await execa(npm, ["pack", "--pack-destination", workspace], { cwd: root, env });
   const archive = fs.readdirSync(workspace).find((file) => file.endsWith(".tgz"));
   const consumer = path.join(workspace, "consumer");
-  await execa(npm, ["install", "--prefix", consumer, "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)], { env });
+  await execa(
+    npm,
+    ["install", "--prefix", consumer, "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)],
+    { env },
+  );
   const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "agent-distro", ...args], options);
   expect((await execute(["--version"])).stdout).toBe("0.0.0");
 
@@ -56,11 +60,23 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   expect(missing).toMatchObject({ target: { exists: false, directory: false }, manifest: { present: false } });
   const reportDirectory = repository.plain("report");
   const beforeReport = fs.readdirSync(reportDirectory);
-  const report = new URL((await execute([
-    "report-issue", "--diagnostics-consent",
-    "--message", "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
-    "--action", "install", "--code", "AGENT_DISTRO_E_UNEXPECTED",
-  ], { cwd: reportDirectory })).stdout);
+  const report = new URL(
+    (
+      await execute(
+        [
+          "report-issue",
+          "--diagnostics-consent",
+          "--message",
+          "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
+          "--action",
+          "install",
+          "--code",
+          "AGENT_DISTRO_E_UNEXPECTED",
+        ],
+        { cwd: reportDirectory },
+      )
+    ).stdout,
+  );
   const body = report.searchParams.get("body") ?? "";
   expect(body).toContain("[redacted]");
   expect(body).toContain("[local-path]");
