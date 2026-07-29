@@ -61,6 +61,7 @@ describe("agent-distro install", () => {
     });
     expect(commandFrom(destination, "doctor")).toContain("Verified");
     expect(failed("verify", destination)).toContain("unknown command 'verify'");
+    expect(failed("diagnostics", destination)).toContain("unknown command 'diagnostics'");
   });
 
   it("rejects options that do not belong to a command", () => {
@@ -145,7 +146,7 @@ describe("agent-distro install", () => {
 
     const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
-    expect(failed("doctor", destination)).toMatch(/AGENT_DISTRO_E_MANIFEST_INVALID:[\s\S]*Next:/);
+    expect(failed("doctor", destination)).toMatch(/AGENT_DISTRO_E_MANIFEST_INVALID:[\s\S]*run doctor again/);
   });
 
   it("redacts unexpected errors and prints a recovery action", () => {
@@ -155,6 +156,7 @@ describe("agent-distro install", () => {
     expect(output).toContain("[redacted]");
     expect(output).toContain("[local-path]");
     expect(output).not.toContain("ghp_ABCdef123");
+    expect(output).toContain("agent-distro doctor --diagnostics <target>");
     expect(output).toContain("agent-distro report-issue --diagnostics-consent");
     expect(output).not.toContain("/Users/example/project");
   });
