@@ -12,6 +12,25 @@ const recoveryFile = ".agent-distro-recovery.json";
 
 export { assetChoices, profileChoices };
 
+/** Receives concise, content-free lifecycle messages for an installation. */
+export type InstallProgress = (message: string) => void;
+
+/**
+ * Controls one transactional installation.
+ *
+ * Selection values are validated against the bundled catalog before any file is
+ * written. `onStep` observes phase boundaries only and never receives content
+ * or absolute managed-file paths.
+ */
+export type InstallOptions = {
+  force?: boolean;
+  dryRun?: boolean;
+  quiet?: boolean;
+  selected?: string[];
+  profiles?: string[];
+  onStep?: InstallProgress;
+};
+
 /** Stores transaction state under the target so recovery never needs global state. */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
@@ -74,21 +93,7 @@ export function recover(target: string) {
  */
 export function install(
   target: string,
-  {
-    force = false,
-    dryRun = false,
-    quiet = false,
-    selected = [],
-    profiles = [],
-    onStep,
-  }: {
-    force?: boolean;
-    dryRun?: boolean;
-    quiet?: boolean;
-    selected?: string[];
-    profiles?: string[];
-    onStep?: (message: string) => void;
-  },
+  { force = false, dryRun = false, quiet = false, selected = [], profiles = [], onStep }: InstallOptions,
 ) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory())
     return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
@@ -187,6 +192,7 @@ export function install(
   } catch (error) {
     // Only committed renames need rollback; uncommitted staged files are safe
     // to discard with the transaction directory.
+    onStep?.("Rolling back partial changes.");
     for (const { output, backup } of committed.reverse()) {
       if (backup && fs.existsSync(backup)) {
         fs.rmSync(output, { force: true });
@@ -195,6 +201,7 @@ export function install(
     }
     fs.rmSync(recoveryPath(destination), { force: true });
     if (staging) fs.rmSync(staging, { recursive: true, force: true });
+    onStep?.("Rollback complete.");
     return fail("AGENT_DISTRO_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }
   fs.rmSync(recoveryPath(destination), { force: true });

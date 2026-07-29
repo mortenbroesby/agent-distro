@@ -285,6 +285,7 @@ describe("agent-distro install", () => {
 
   it("rolls back completed renames when a later rename fails", () => {
     const destination = target();
+    const phases = [];
     expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
     const originalRename = fs.renameSync;
     let replacements = 0;
@@ -300,12 +301,17 @@ describe("agent-distro install", () => {
     };
     try {
       expect(
-        install(destination, { force: true, selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] }),
+        install(destination, {
+          force: true,
+          selected: [".mcp.json", ".github/prompts/debugging.prompt.md"],
+          onStep: (message) => phases.push(message),
+        }),
       ).toBe(1);
     } finally {
       fs.renameSync = originalRename;
     }
     expect(verify(destination)).toContain("Verified 1 assets");
+    expect(phases).toEqual(expect.arrayContaining(["Rolling back partial changes.", "Rollback complete."]));
     expect(fs.existsSync(path.join(destination, ".github/prompts/debugging.prompt.md"))).toBe(false);
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
   });

@@ -43,10 +43,10 @@ real install, while build tooling has its own explicit supported floor.
 
 ### Tasks
 
-- [ ] Add an opt-in concise verbose phase stream for validation, staging,
+- [x] Add an opt-in concise verbose phase stream for validation, staging,
   apply, rollback, and finalization.
-- [ ] Keep normal command output compact and failure output sanitized.
-- [ ] Cover a successful install and a rollback path with stable verbose
+- [x] Keep normal command output compact and failure output sanitized.
+- [x] Cover a successful install and a rollback path with stable verbose
   messages.
 
 Acceptance: an operator can identify the last completed installation phase
@@ -58,9 +58,9 @@ without exposing file contents, credentials, or unrelated local paths.
 
 ### Tasks
 
-- [ ] Replace broad installer callback/options shapes with documented exported
+- [x] Replace broad installer callback/options shapes with documented exported
   types at the public boundary.
-- [ ] Audit changed runtime and support modules for file intent, TSDoc on
+- [x] Audit changed runtime and support modules for file intent, TSDoc on
   exported APIs, and comments at non-obvious filesystem or platform seams.
 - [ ] Retain small standard-library helpers instead of adding a logging,
   validation, or runtime-transpilation dependency.
