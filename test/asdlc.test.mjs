@@ -169,6 +169,35 @@ describe("asdlc install", () => {
     expect(fs.readdirSync(path.join(destination, ".asdlc"))).toEqual(["manifest.json"]);
   });
 
+  it("recovers a retained interrupted transaction before allowing another install", () => {
+    const destination = target();
+    expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    const control = path.join(destination, ".asdlc");
+    const staging = fs.mkdtempSync(path.join(control, ".asdlc-stage-"));
+    const manifest = path.join(control, "manifest.json");
+    const backup = path.join(staging, ".backup", ".asdlc", "manifest.json");
+    fs.mkdirSync(path.dirname(backup), { recursive: true });
+    fs.copyFileSync(manifest, backup);
+    fs.writeFileSync(manifest, "interrupted\n");
+    const prompt = path.join(destination, ".github/prompts/asdlc.prompt.md");
+    fs.mkdirSync(path.dirname(prompt), { recursive: true });
+    fs.writeFileSync(prompt, "interrupted\n");
+    fs.writeFileSync(path.join(control, ".asdlc-recovery.json"), JSON.stringify({
+      version: 1,
+      staging: path.basename(staging),
+      files: [
+        { relative: ".github/prompts/asdlc.prompt.md", hadPrevious: false },
+        { relative: ".asdlc/manifest.json", hadPrevious: true },
+      ],
+    }));
+    expect(failed("install", destination, "--all")).toContain("ASDLC_E_RECOVERY_REQUIRED");
+    expect(command("diagnostics", destination)).not.toContain("interrupted");
+    expect(command("recover", destination)).toContain("Recovered the previous ASDLC installation");
+    expect(verify(destination)).toContain("Verified 1 assets");
+    expect(fs.existsSync(prompt)).toBe(false);
+    expect(fs.existsSync(path.join(control, ".asdlc-recovery.json"))).toBe(false);
+  });
+
   it("plans without creating the target", () => {
     const destination = path.join(os.tmpdir(), `asdlc-dry-run-${process.pid}-${Date.now()}`);
     expect(fs.existsSync(destination)).toBe(false);

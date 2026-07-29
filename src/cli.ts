@@ -13,6 +13,7 @@ type FailureCode =
   | "ASDLC_E_TARGET_INVALID"
   | "ASDLC_E_DESTINATION_UNSAFE"
   | "ASDLC_E_CONFLICT"
+  | "ASDLC_E_RECOVERY_REQUIRED"
   | "ASDLC_E_MANIFEST_INVALID"
   | "ASDLC_E_ASSET_DRIFT"
   | "ASDLC_E_USAGE"
@@ -22,6 +23,7 @@ const nextSteps: Record<FailureCode, string> = {
   ASDLC_E_TARGET_INVALID: "Pass an existing directory as <target>.",
   ASDLC_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
   ASDLC_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
+  ASDLC_E_RECOVERY_REQUIRED: "Run asdlc recover <target>, then retry the install.",
   ASDLC_E_MANIFEST_INVALID: "Reinstall ASDLC assets with --force, then run verify again.",
   ASDLC_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
   ASDLC_E_USAGE: "Run asdlc --help for valid commands and options.",
@@ -81,6 +83,51 @@ function manifestParts(relative: unknown) {
     throw new Error(`unsafe manifest path: ${relative}`);
   }
   return parts;
+}
+
+const recoveryFile = ".asdlc-recovery.json";
+
+function recoveryPath(destination: string) {
+  return path.join(destination, ".asdlc", recoveryFile);
+}
+
+export function recover(target: string) {
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+    return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
+  }
+  const destination = fs.realpathSync(target);
+  const journalPath = recoveryPath(destination);
+  if (!fs.existsSync(journalPath)) {
+    console.log("No ASDLC recovery is needed.");
+    return 0;
+  }
+  try {
+    if (hasSymlinkAncestor(destination, path.join(".asdlc", recoveryFile))) throw new Error("unsafe recovery journal");
+    const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
+    if (journal.version !== 1 || typeof journal.staging !== "string" || !journal.staging.startsWith(".asdlc-stage-") || journal.staging.includes(path.sep) || !Array.isArray(journal.files)) {
+      throw new Error("invalid recovery journal");
+    }
+    const staging = path.join(destination, ".asdlc", journal.staging);
+    for (const file of [...journal.files].reverse()) {
+      const parts = manifestParts(file?.relative);
+      const output = path.join(destination, ...parts);
+      const backup = path.join(staging, ".backup", ...parts);
+      if (file?.hadPrevious) {
+        if (!fs.existsSync(backup)) throw new Error("recovery backup missing");
+        fs.rmSync(output, { force: true });
+        fs.mkdirSync(path.dirname(output), { recursive: true });
+        fs.renameSync(backup, output);
+      } else {
+        fs.rmSync(output, { force: true });
+      }
+    }
+    fs.rmSync(journalPath, { force: true });
+    fs.rmSync(staging, { recursive: true, force: true });
+    console.log("Recovered the previous ASDLC installation.");
+    return 0;
+  } catch (error) {
+    return fail("ASDLC_E_MANIFEST_INVALID", error instanceof Error ? error.message : String(error));
+  }
 }
 
 function verify(target: string) {
@@ -183,6 +230,9 @@ export function install(target: string, { force = false, dryRun = false, selecte
   const destination = fs.existsSync(target)
     ? fs.realpathSync(target)
     : path.resolve(target);
+  if (fs.existsSync(recoveryPath(destination))) {
+    return fail("ASDLC_E_RECOVERY_REQUIRED", "An incomplete ASDLC transaction needs recovery.");
+  }
   const sourceFiles = selectedAssets(selected);
   const manifestPath = path.join(destination, ".asdlc", "manifest.json");
   const outputFiles = [...sourceFiles, ".asdlc/manifest.json"];
@@ -252,6 +302,11 @@ export function install(target: string, { force = false, dryRun = false, selecte
       }
       replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
     }
+    fs.writeFileSync(recoveryPath(destination), JSON.stringify({
+      version: 1,
+      staging: path.basename(staging),
+      files: replacements.map(({ relative, backup }) => ({ relative, hadPrevious: Boolean(backup) })),
+    }));
     for (const replacement of replacements) {
       const { relative, output } = replacement;
       fs.mkdirSync(path.dirname(output), { recursive: true });
@@ -267,9 +322,11 @@ export function install(target: string, { force = false, dryRun = false, selecte
         fs.rmSync(output, { force: true });
       }
     }
+    fs.rmSync(recoveryPath(destination), { force: true });
     if (staging) fs.rmSync(staging, { recursive: true, force: true });
     return fail("ASDLC_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }
+  fs.rmSync(recoveryPath(destination), { force: true });
   fs.rmSync(staging, { recursive: true, force: true });
   return 0;
 }
@@ -314,6 +371,9 @@ export async function run(args: string[]) {
 
   program.command("verify <target>").description("Verify installed ASDLC assets").action((target) => {
     exitCode = verify(target);
+  });
+  program.command("recover <target>").description("Restore an interrupted ASDLC installation").action((target) => {
+    exitCode = recover(target);
   });
   program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => {
     exitCode = diagnostics(target);
