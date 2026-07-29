@@ -25,7 +25,16 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   // supported platforms without relying on a synthetic filesystem.
   const plain = repository.plain("target with spaces-å");
   await execute(["install", plain, "--all"]);
-  expect((await execute(["verify", plain])).stdout).toContain("Verified 12 assets");
+  expect((await execute(["verify", plain])).stdout).toContain("Verified 16 assets");
+
+  // An existing matching installation is a true no-op: no force, staging, or
+  // ownership rewrite is needed when the selected profile has not changed.
+  const priorInstall = repository.plain("prior installation");
+  await execute(["install", priorInstall, "--profile", "debugging"]);
+  const manifest = fs.readFileSync(path.join(priorInstall, ".agent-distro", "manifest.json"));
+  expect((await execute(["install", priorInstall, "--profile", "debugging"])).stdout).toContain("Synced 0 changed assets");
+  expect(fs.readFileSync(path.join(priorInstall, ".agent-distro", "manifest.json"))).toEqual(manifest);
+  expect(fs.readdirSync(path.join(priorInstall, ".agent-distro")).some((name) => name.startsWith(".agent-distro-stage-"))).toBe(false);
   const debugging = repository.plain("debugging profile");
   await execute(["install", debugging, "--profile", "debugging"]);
   expect((await execute(["verify", debugging])).stdout).toContain("Verified 3 assets");

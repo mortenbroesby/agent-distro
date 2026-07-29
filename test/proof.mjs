@@ -15,7 +15,11 @@ const expected = [
   ".github/agents/debugging.agent.md",
   ".github/agents/handoff.agent.md",
   ".github/hooks/agent-distro.json",
+  ".github/hooks/session-context.json",
+  ".github/hooks/verification-reminder.json",
   ".github/instructions/agent-distro.instructions.md",
+  ".github/instructions/safe-changes.instructions.md",
+  ".github/instructions/verification.instructions.md",
   ".github/prompts/pull-request-review.prompt.md",
   ".github/prompts/debugging.prompt.md",
   ".github/prompts/grill-me.prompt.md",
@@ -38,4 +42,4 @@ const beforeDryRun = fs.readFileSync(path.join(target, ".agent-distro", "manifes
 execFileSync(process.execPath, [cli, "install", target, "--all", "--dry-run"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(path.join(target, ".agent-distro", "manifest.json")), beforeDryRun);
 
-console.log("Node install proof passed: twelve versioned assets synchronized safely.");
+console.log("Node install proof passed: sixteen versioned assets synchronized safely.");

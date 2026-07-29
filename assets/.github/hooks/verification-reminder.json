@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "prompt",
+        "prompt": "Before handoff, run the smallest relevant check and report its result with any known gaps."
+      }
+    ]
+  }
+}

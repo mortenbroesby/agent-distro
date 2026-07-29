@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "prompt",
+        "prompt": "Read AGENTS.md and the installed Agent Distro instructions before changing files. Use the selected specialist assets when they match the task."
+      }
+    ]
+  }
+}
