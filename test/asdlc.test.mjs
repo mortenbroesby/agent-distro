@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createIssueUrl, formatFailure } from "../dist/cli.mjs";
+import { createIssueUrl, formatFailure, install } from "../dist/cli.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "asdlc.mjs");
@@ -129,6 +129,23 @@ describe("asdlc install", () => {
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
     expect(() => run(destination)).toThrow();
     expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(false);
+  });
+
+  it("keeps the previous installation when staging a new install fails", () => {
+    const destination = target();
+    expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    const originalWrite = fs.writeFileSync;
+    fs.writeFileSync = (file, ...args) => {
+      if (String(file).includes(".asdlc-stage-")) throw new Error("simulated staged write failure");
+      return originalWrite(file, ...args);
+    };
+    try {
+      expect(install(destination, { selected: [".mcp.json", ".github/prompts/asdlc.prompt.md"] })).toBe(1);
+    } finally {
+      fs.writeFileSync = originalWrite;
+    }
+    expect(verify(destination)).toContain("Verified 1 assets");
+    expect(fs.readdirSync(path.join(destination, ".asdlc"))).toEqual(["manifest.json"]);
   });
 
   it("plans without creating the target", () => {

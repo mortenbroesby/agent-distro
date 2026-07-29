@@ -176,7 +176,7 @@ function selectedAssets(selected: string[]) {
   return selected.map((value) => value.split("/").join(path.sep));
 }
 
-function install(target: string, { force = false, dryRun = false, selected = [] }: { force?: boolean; dryRun?: boolean; selected?: string[] }) {
+export function install(target: string, { force = false, dryRun = false, selected = [] }: { force?: boolean; dryRun?: boolean; selected?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
     return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
   }
@@ -232,13 +232,25 @@ function install(target: string, { force = false, dryRun = false, selected = [] 
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
   console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun) return 0;
-  for (const relative of changed) {
-    const output = path.join(destination, relative);
-    fs.mkdirSync(path.dirname(output), { recursive: true });
-    const temporary = `${output}.asdlc-${process.pid}`;
-    fs.writeFileSync(temporary, contents.get(relative));
-    fs.renameSync(temporary, output);
+  let staging = "";
+  try {
+    fs.mkdirSync(path.join(destination, ".asdlc"), { recursive: true });
+    staging = fs.mkdtempSync(path.join(destination, ".asdlc", ".asdlc-stage-"));
+    for (const relative of changed) {
+      const staged = path.join(staging, relative);
+      fs.mkdirSync(path.dirname(staged), { recursive: true });
+      fs.writeFileSync(staged, contents.get(relative));
+    }
+    for (const relative of changed) {
+      const output = path.join(destination, relative);
+      fs.mkdirSync(path.dirname(output), { recursive: true });
+      fs.renameSync(path.join(staging, relative), output);
+    }
+  } catch (error) {
+    if (staging) fs.rmSync(staging, { recursive: true, force: true });
+    return fail("ASDLC_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }
+  fs.rmSync(staging, { recursive: true, force: true });
   return 0;
 }
 
