@@ -1,6 +1,7 @@
 {
   "name": "agent-distro",
   "version": "0.0.0",
+  "description": "Opt-in installation of curated agent-development assets.",
   "bin": {
     "agent-distro": "bin/agent-distro.mjs"
   },

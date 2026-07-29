@@ -10,6 +10,7 @@ import { createIssueUrl, formatFailure, install, runInteractiveInstall } from ".
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
+const localInstall = path.join(root, "scripts", "install-local.mjs");
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
 const failed = (...args) => {
   try {
@@ -29,6 +30,19 @@ describe("agent-distro install", () => {
     expect(command("install", "--help")).toContain("--dry-run");
     expect(command("install", "--help")).toContain("Install into any directory");
     expect(command("--version")).toBe("0.0.0\n");
+  });
+
+  it("explains local bootstrap usage without running an install", () => {
+    expect(
+      (() => {
+        try {
+          execFileSync(process.execPath, [localInstall], { encoding: "utf8", stdio: "pipe" });
+        } catch (error) {
+          return error.stderr;
+        }
+        throw new Error("Expected bootstrap usage to fail");
+      })(),
+    ).toContain("Usage: node scripts/install-local.mjs <target>");
   });
 
   it("rejects options that do not belong to a command", () => {
