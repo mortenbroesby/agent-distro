@@ -93,19 +93,29 @@ Windows.
 
 ## Story 4 — Hostile-path proof
 
-**Status:** Ready
+**Status:** Active
 
 ### Tasks
 
-- [ ] Cover a blocked write and a rename failure through the filesystem seam.
-- [ ] Cover an existing install, an empty target, and a partial-target conflict.
-- [ ] Exercise the packaged command in the existing macOS and Windows GitHub
+- [x] Cover a blocked write and a rename failure through the filesystem seam.
+- [x] Cover an existing install, an empty target, and a partial-target conflict.
+- [x] In the packed npm test, cover spaces/Unicode, install, dry-run, conflict,
+      force, verify, and a safe missing-target diagnostics snapshot.
+- [x] Exercise the packaged command in the existing macOS and Windows GitHub
       Actions matrix.
-- [ ] Record completed hosted run URLs and only check acceptance boxes with
+- [x] Record completed hosted run URLs and only check acceptance boxes with
       evidence.
+- [ ] Cover read-only target and symlink behavior with platform-specific proof.
 
 Acceptance: the packaged command proves the recovery behavior on macOS and
 native Windows without requiring Bash.
+
+Evidence (2026-07-29): direct tests inject staged-write and rename failures,
+then verify that the prior installation remains honest. GitHub Actions
+[`verify` run 30474716547](https://github.com/mortenbroesby/agent-distro/actions/runs/30474716547)
+passed the packed npm test on macOS and native Windows, including a target with
+spaces and Unicode plus install, dry-run, conflict, force, verify, and safe
+missing-target diagnostics.
 
 ## Completion
 
