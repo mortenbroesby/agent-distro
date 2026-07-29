@@ -7,15 +7,18 @@ import { describe, expect, it } from "vitest";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "asdlc.mjs");
+const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
 const run = (target, ...options) =>
-  execFileSync(process.execPath, [cli, "install", target, ...options], {
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-const verify = (target) => execFileSync(process.execPath, [cli, "verify", target], { encoding: "utf8", stdio: "pipe" });
+  command("install", target, ...options);
+const verify = (target) => command("verify", target);
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-test-"));
 
 describe("asdlc install", () => {
+  it("prints standard help and its package version", () => {
+    expect(command("--help")).toContain("Usage: asdlc");
+    expect(command("--version")).toBe("asdlc 0.0.0\n");
+  });
+
   it("installs every Copilot asset category and records ownership", () => {
     const destination = target();
     run(destination);

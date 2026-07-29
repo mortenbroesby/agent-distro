@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
+const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 function files(dir, prefix = "") {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -71,6 +72,14 @@ function verify(target: string) {
 
 export function run(args: string[]) {
   const [command, target, ...options] = args;
+  if (command === "--help" && !target) {
+    usage();
+    return 0;
+  }
+  if (command === "--version" && !target) {
+    console.log(`asdlc ${version}`);
+    return 0;
+  }
   if (command === "verify" && target && options.length === 0) return verify(target);
   if (
     command !== "install" ||

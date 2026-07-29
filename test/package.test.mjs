@@ -15,7 +15,9 @@ it("installs the packed npm binary without source assets", () => {
     execFileSync(npm, ["pack", "--pack-destination", workspace], { cwd: root, env, stdio: "pipe" });
     const archive = fs.readdirSync(workspace).find((file) => file.endsWith(".tgz"));
     execFileSync(npm, ["install", "--prefix", path.join(workspace, "consumer"), "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)], { env, stdio: "pipe" });
-    execFileSync(path.join(workspace, "consumer", "node_modules", ".bin", process.platform === "win32" ? "asdlc.cmd" : "asdlc"), ["install", path.join(workspace, "target")], { stdio: "pipe" });
+    const binary = path.join(workspace, "consumer", "node_modules", ".bin", process.platform === "win32" ? "asdlc.cmd" : "asdlc");
+    expect(execFileSync(binary, ["--version"], { encoding: "utf8" })).toBe("asdlc 0.0.0\n");
+    execFileSync(binary, ["install", path.join(workspace, "target")], { stdio: "pipe" });
     expect(fs.existsSync(path.join(workspace, "target", ".asdlc", "manifest.json"))).toBe(true);
   } finally {
     fs.rmSync(workspace, { recursive: true, force: true });
