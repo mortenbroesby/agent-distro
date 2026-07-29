@@ -2,8 +2,8 @@ import { Command, CommanderError } from "commander";
 import { diagnostics, verify } from "./doctor.js";
 import { fail, formatFailure } from "./errors.js";
 import { assetChoices, install, interactiveInstall, profileChoices, recover } from "./install.js";
-import { reportIssue } from "./report-issue.js";
 import { version } from "./package.js";
+import { reportIssue } from "./report-issue.js";
 
 /**
  * Runs the Commander-based CLI without terminating the Node process.
@@ -21,22 +21,44 @@ export async function run(args: string[]) {
     .showHelpAfterError()
     .exitOverride();
 
-  program.command("verify <target>").description("Verify installed Agent Distro assets").action((target) => { exitCode = verify(target); });
-  program.command("recover <target>").description("Restore an interrupted Agent Distro installation").action((target) => { exitCode = recover(target); });
-  program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => { exitCode = diagnostics(target); });
-  program.command("report-issue")
+  program
+    .command("verify <target>")
+    .description("Verify installed Agent Distro assets")
+    .action((target) => {
+      exitCode = verify(target);
+    });
+  program
+    .command("recover <target>")
+    .description("Restore an interrupted Agent Distro installation")
+    .action((target) => {
+      exitCode = recover(target);
+    });
+  program
+    .command("diagnostics <target>")
+    .description("Print a safe read-only diagnostics snapshot")
+    .action((target) => {
+      exitCode = diagnostics(target);
+    });
+  program
+    .command("report-issue")
     .description("Print a pre-filled GitHub issue URL without submitting it")
     .option("--diagnostics-consent", "confirm that the sanitized summary may be included")
     .requiredOption("--message <summary>", "sanitized failure summary")
     .option("--action <name>", "command that failed")
     .option("--code <code>", "Agent Distro failure code")
-    .action((options) => { exitCode = reportIssue(options); });
+    .action((options) => {
+      exitCode = reportIssue(options);
+    });
   // No selection flags means a human is asking for the guided TTY journey.
   // Scripts must choose assets explicitly so they cannot block on prompts.
-  program.command("profiles").description("Print available versioned asset profiles").action(() => {
-    process.stdout.write(`${JSON.stringify(profileChoices)}\n`);
-  });
-  program.command("install [target]")
+  program
+    .command("profiles")
+    .description("Print available versioned asset profiles")
+    .action(() => {
+      process.stdout.write(`${JSON.stringify(profileChoices)}\n`);
+    });
+  program
+    .command("install [target]")
     .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
     .option("--force", "replace changed Agent Distro assets")
     .option("--dry-run", "show changes without writing")
@@ -53,7 +75,11 @@ export async function run(args: string[]) {
         exitCode = fail("AGENT_DISTRO_E_USAGE", "Use --all or selected --profile/--asset values, not both.");
       } else {
         try {
-          exitCode = install(target, { ...options, profiles: options.profile, selected: options.all ? assetChoices.map(([value]) => value) : options.asset });
+          exitCode = install(target, {
+            ...options,
+            profiles: options.profile,
+            selected: options.all ? assetChoices.map(([value]) => value) : options.asset,
+          });
         } catch (error) {
           exitCode = fail("AGENT_DISTRO_E_USAGE", error instanceof Error ? error.message : String(error));
         }

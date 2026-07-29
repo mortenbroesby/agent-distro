@@ -19,8 +19,7 @@ const failed = (...args) => {
   }
   throw new Error("Expected command to fail");
 };
-const run = (target, ...options) =>
-  command("install", target, "--all", ...options);
+const run = (target, ...options) => command("install", target, "--all", ...options);
 const verify = (target) => command("verify", target);
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-test-"));
 
@@ -48,25 +47,33 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: (message) => calls.push(["intro", message]),
       text: async () => destination,
-      multiselect: async () => calls.filter(([name]) => name === "multiselect").length === 0
-        ? (calls.push(["multiselect", "profiles"]), [])
-        : [".mcp.json"],
+      multiselect: async () =>
+        calls.filter(([name]) => name === "multiselect").length === 0
+          ? (calls.push(["multiselect", "profiles"]), [])
+          : [".mcp.json"],
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
-      taskLog: ({ title }) => ({ message: (message) => calls.push(["log", message]), success: (message) => calls.push(["success", message]), error: (message) => calls.push(["error", message]), title }),
+      taskLog: ({ title }) => ({
+        message: (message) => calls.push(["log", message]),
+        success: (message) => calls.push(["success", message]),
+        error: (message) => calls.push(["error", message]),
+        title,
+      }),
       outro: (message) => calls.push(["outro", message]),
     };
     expect(await runInteractiveInstall(undefined, prompts)).toBe(0);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(calls).toEqual(expect.arrayContaining([
-      ["intro", "Agent Distro install"],
-      ["log", "Staging changes safely."],
-      ["log", "Applying staged changes."],
-      ["log", "Finalized installation."],
-      ["success", "Assets synchronized."],
-      ["outro", "Installation complete."],
-    ]));
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ["intro", "Agent Distro install"],
+        ["log", "Staging changes safely."],
+        ["log", "Applying staged changes."],
+        ["log", "Finalized installation."],
+        ["success", "Assets synchronized."],
+        ["outro", "Installation complete."],
+      ]),
+    );
   });
 
   it("cancels the TUI before writing", async () => {
@@ -112,11 +119,13 @@ describe("agent-distro install", () => {
   });
 
   it("creates a local, redacted issue URL only with explicit consent", () => {
-    const direct = new URL(createIssueUrl({
-      message: "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
-      action: "install",
-      code: "AGENT_DISTRO_E_UNEXPECTED",
-    }));
+    const direct = new URL(
+      createIssueUrl({
+        message: "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
+        action: "install",
+        code: "AGENT_DISTRO_E_UNEXPECTED",
+      }),
+    );
     const body = direct.searchParams.get("body");
     expect(direct.origin + direct.pathname).toBe("https://github.com/mortenbroesby/agent-distro/issues/new");
     expect(body).toContain("Review before submitting");
@@ -126,7 +135,18 @@ describe("agent-distro install", () => {
     expect(body).not.toContain("C:\\Users\\example");
 
     expect(failed("report-issue", "--message", "failure")).toContain("AGENT_DISTRO_E_USAGE");
-    const reported = new URL(command("report-issue", "--diagnostics-consent", "--message", "failure", "--action", "install", "--code", "AGENT_DISTRO_E_UNEXPECTED").trim());
+    const reported = new URL(
+      command(
+        "report-issue",
+        "--diagnostics-consent",
+        "--message",
+        "failure",
+        "--action",
+        "install",
+        "--code",
+        "AGENT_DISTRO_E_UNEXPECTED",
+      ).trim(),
+    );
     expect(reported.searchParams.get("body")).toContain("Failure: failure");
   });
 
@@ -157,7 +177,9 @@ describe("agent-distro install", () => {
 
   it("installs a profile, composes it with individual assets, and lists the catalog", () => {
     const destination = target();
-    expect(JSON.parse(command("profiles"))).toEqual(expect.arrayContaining([expect.objectContaining({ id: "debugging" })]));
+    expect(JSON.parse(command("profiles"))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: "debugging" })]),
+    );
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
     expect(manifest).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/) });
@@ -239,13 +261,19 @@ describe("agent-distro install", () => {
     const originalRename = fs.renameSync;
     let replacements = 0;
     fs.renameSync = (source, output) => {
-      if (String(source).includes(".agent-distro-stage-") && !String(source).includes(".backup") && ++replacements === 2) {
+      if (
+        String(source).includes(".agent-distro-stage-") &&
+        !String(source).includes(".backup") &&
+        ++replacements === 2
+      ) {
         throw new Error("simulated rename failure");
       }
       return originalRename(source, output);
     };
     try {
-      expect(install(destination, { force: true, selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] })).toBe(1);
+      expect(
+        install(destination, { force: true, selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] }),
+      ).toBe(1);
     } finally {
       fs.renameSync = originalRename;
     }
@@ -267,14 +295,17 @@ describe("agent-distro install", () => {
     const prompt = path.join(destination, ".github/prompts/debugging.prompt.md");
     fs.mkdirSync(path.dirname(prompt), { recursive: true });
     fs.writeFileSync(prompt, "interrupted\n");
-    fs.writeFileSync(path.join(control, ".agent-distro-recovery.json"), JSON.stringify({
-      version: 1,
-      staging: path.basename(staging),
-      files: [
-        { relative: ".github/prompts/debugging.prompt.md", hadPrevious: false },
-        { relative: ".agent-distro/manifest.json", hadPrevious: true },
-      ],
-    }));
+    fs.writeFileSync(
+      path.join(control, ".agent-distro-recovery.json"),
+      JSON.stringify({
+        version: 1,
+        staging: path.basename(staging),
+        files: [
+          { relative: ".github/prompts/debugging.prompt.md", hadPrevious: false },
+          { relative: ".agent-distro/manifest.json", hadPrevious: true },
+        ],
+      }),
+    );
     expect(failed("install", destination, "--all")).toContain("AGENT_DISTRO_E_RECOVERY_REQUIRED");
     expect(command("diagnostics", destination)).not.toContain("interrupted");
     expect(command("recover", destination)).toContain("Recovered the previous Agent Distro installation");

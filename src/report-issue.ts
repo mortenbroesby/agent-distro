@@ -1,4 +1,4 @@
-import { sanitize, fail } from "./errors.js";
+import { fail, sanitize } from "./errors.js";
 import { version } from "./package.js";
 
 const issueUrl = "https://github.com/mortenbroesby/agent-distro/issues/new";
@@ -13,7 +13,11 @@ export function createIssueUrl({
   message,
   action = "unknown",
   code = "AGENT_DISTRO_E_UNEXPECTED",
-}: { message: unknown; action?: unknown; code?: unknown }) {
+}: {
+  message: unknown;
+  action?: unknown;
+  code?: unknown;
+}) {
   const body = [
     "<!-- Generated locally. Review before submitting. -->",
     `Agent Distro: ${version}`,
@@ -36,7 +40,12 @@ export function reportIssue({
   message,
   action,
   code,
-}: { diagnosticsConsent?: boolean; message?: string; action?: string; code?: string }) {
+}: {
+  diagnosticsConsent?: boolean;
+  message?: string;
+  action?: string;
+  code?: string;
+}) {
   // Consent is explicit because even a sanitized diagnostic summary is user data.
   if (!diagnosticsConsent) return fail("AGENT_DISTRO_E_USAGE", "Issue reporting requires --diagnostics-consent.");
   if (!message) return fail("AGENT_DISTRO_E_USAGE", "Issue reporting requires --message <summary>.");

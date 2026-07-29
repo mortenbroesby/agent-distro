@@ -20,7 +20,13 @@ describe("Copilot marketplace offering", () => {
 
   it("ships only uniquely named Copilot components and optional empty templates", () => {
     const plugin = JSON.parse(read("plugins/agent-distro/plugin.json"));
-    expect(plugin).toMatchObject({ name: "agent-distro", agents: "agents", skills: "skills", hooks: "hooks.json", mcpServers: ".mcp.json" });
+    expect(plugin).toMatchObject({
+      name: "agent-distro",
+      agents: "agents",
+      skills: "skills",
+      hooks: "hooks.json",
+      mcpServers: ".mcp.json",
+    });
     const agent = read("plugins/agent-distro/agents/agent-distro-debugging.agent.md");
     const skill = read("plugins/agent-distro/skills/agent-distro-debugging/SKILL.md");
     expect(agent).toContain("name: Debugging");

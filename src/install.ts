@@ -24,7 +24,8 @@ function recoveryPath(destination: string) {
  * restores anything, preventing a corrupted journal from escaping the target.
  */
 export function recover(target: string) {
-  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory())
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.realpathSync(target);
   const journalPath = recoveryPath(destination);
   if (!fs.existsSync(journalPath)) {
@@ -32,9 +33,17 @@ export function recover(target: string) {
     return 0;
   }
   try {
-    if (hasSymlinkAncestor(destination, path.join(".agent-distro", recoveryFile))) throw new Error("unsafe recovery journal");
+    if (hasSymlinkAncestor(destination, path.join(".agent-distro", recoveryFile)))
+      throw new Error("unsafe recovery journal");
     const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
-    if (journal.version !== 1 || typeof journal.staging !== "string" || !journal.staging.startsWith(".agent-distro-stage-") || journal.staging.includes(path.sep) || !Array.isArray(journal.files)) throw new Error("invalid recovery journal");
+    if (
+      journal.version !== 1 ||
+      typeof journal.staging !== "string" ||
+      !journal.staging.startsWith(".agent-distro-stage-") ||
+      journal.staging.includes(path.sep) ||
+      !Array.isArray(journal.files)
+    )
+      throw new Error("invalid recovery journal");
     const staging = path.join(destination, ".agent-distro", journal.staging);
     for (const file of [...journal.files].reverse()) {
       const parts = manifestParts(file?.relative);
@@ -63,39 +72,79 @@ export function recover(target: string) {
  * records a local journal before renames. An unchanged selection is a true
  * no-op: it creates neither a staging directory nor a recovery journal.
  */
-export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [], profiles = [], onStep }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[]; profiles?: string[]; onStep?: (message: string) => void }) {
-  if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
+export function install(
+  target: string,
+  {
+    force = false,
+    dryRun = false,
+    quiet = false,
+    selected = [],
+    profiles = [],
+    onStep,
+  }: {
+    force?: boolean;
+    dryRun?: boolean;
+    quiet?: boolean;
+    selected?: string[];
+    profiles?: string[];
+    onStep?: (message: string) => void;
+  },
+) {
+  if (fs.existsSync(target) && !fs.statSync(target).isDirectory())
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
-  if (fs.existsSync(recoveryPath(destination))) return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
+  if (fs.existsSync(recoveryPath(destination)))
+    return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
   const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
   const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
-  const manifest = JSON.stringify({
-    tool: "agent-distro",
-    version: 1,
-    catalogVersion: catalog.version,
-    files: sourceFiles.map((relative) => relative.split(path.sep).join("/")),
-    hashes: Object.fromEntries(sourceFiles.map((relative) => [relative.split(path.sep).join("/"), crypto.createHash("sha256").update(fs.readFileSync(path.join(assets, relative))).digest("hex")])),
-  }, null, 2).concat("\n");
+  const manifest = JSON.stringify(
+    {
+      tool: "agent-distro",
+      version: 1,
+      catalogVersion: catalog.version,
+      files: sourceFiles.map((relative) => relative.split(path.sep).join("/")),
+      hashes: Object.fromEntries(
+        sourceFiles.map((relative) => [
+          relative.split(path.sep).join("/"),
+          crypto
+            .createHash("sha256")
+            .update(fs.readFileSync(path.join(assets, relative)))
+            .digest("hex"),
+        ]),
+      ),
+    },
+    null,
+    2,
+  ).concat("\n");
   const contents = new Map(sourceFiles.map((relative) => [relative, fs.readFileSync(path.join(assets, relative))]));
   contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
   // Never traverse a symlinked ancestor: even a valid relative path could then
   // write outside the explicitly chosen target.
   const unsafe = outputFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
-  if (unsafe.length) return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
+  if (unsafe.length)
+    return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
   const directories = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !fs.lstatSync(output).isFile();
   });
-  if (directories.length) return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
+  if (directories.length)
+    return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
   // Compare every managed output before staging so a conflict cannot leave a
   // partially updated target. --force is the explicit opt-in to replacement.
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !contents.get(relative).equals(fs.readFileSync(output));
   });
-  if (conflicts.length && !force) return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
-  const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
-  onStep?.(changed.length === 0 ? "Validated destination; selected assets are already up to date." : `Validated destination; ${changed.length} file${changed.length === 1 ? "" : "s"} need updating.`);
+  if (conflicts.length && !force)
+    return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
+  const changed = outputFiles.filter(
+    (relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative),
+  );
+  onStep?.(
+    changed.length === 0
+      ? "Validated destination; selected assets are already up to date."
+      : `Validated destination; ${changed.length} file${changed.length === 1 ? "" : "s"} need updating.`,
+  );
   if (!quiet) console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun || changed.length === 0) return 0;
   let staging = "";
@@ -121,7 +170,14 @@ export function install(target: string, { force = false, dryRun = false, quiet =
       }
       replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
     }
-    fs.writeFileSync(recoveryPath(destination), JSON.stringify({ version: 1, staging: path.basename(staging), files: replacements.map(({ relative, backup }) => ({ relative, hadPrevious: Boolean(backup) })) }));
+    fs.writeFileSync(
+      recoveryPath(destination),
+      JSON.stringify({
+        version: 1,
+        staging: path.basename(staging),
+        files: replacements.map(({ relative, backup }) => ({ relative, hadPrevious: Boolean(backup) })),
+      }),
+    );
     onStep?.("Applying staged changes.");
     for (const replacement of replacements) {
       fs.mkdirSync(path.dirname(replacement.output), { recursive: true });
@@ -155,17 +211,31 @@ export function install(target: string, { force = false, dryRun = false, quiet =
  */
 export async function runInteractiveInstall(target: string | undefined, p: any) {
   p.intro("Agent Distro install");
-  const destination = target ?? await p.text({ message: "Install into", initialValue: process.cwd(), validate: (value) => value ? undefined : "A target directory is required." });
+  const destination =
+    target ??
+    (await p.text({
+      message: "Install into",
+      initialValue: process.cwd(),
+      validate: (value) => (value ? undefined : "A target directory is required."),
+    }));
   if (p.isCancel(destination)) {
     p.cancel("Installation cancelled.");
     return 0;
   }
-  const profiles = await p.multiselect({ message: "Select profiles", options: profileChoices.map(({ id, label, description }) => ({ value: id, label, hint: description })), required: false });
+  const profiles = await p.multiselect({
+    message: "Select profiles",
+    options: profileChoices.map(({ id, label, description }) => ({ value: id, label, hint: description })),
+    required: false,
+  });
   if (p.isCancel(profiles)) {
     p.cancel("Installation cancelled.");
     return 0;
   }
-  const selected = await p.multiselect({ message: "Select individual assets", options: assetChoices.map(([value, label]) => ({ value, label, hint: value })), required: false });
+  const selected = await p.multiselect({
+    message: "Select individual assets",
+    options: assetChoices.map(([value, label]) => ({ value, label, hint: value })),
+    required: false,
+  });
   if (p.isCancel(selected)) {
     p.cancel("Installation cancelled.");
     return 0;
@@ -175,7 +245,10 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
     return 0;
   }
   const count = selectedCatalogAssets(selected, profiles).length;
-  const confirmed = await p.confirm({ message: `Install ${count} selected asset${count === 1 ? "" : "s"} into ${destination}?`, initialValue: true });
+  const confirmed = await p.confirm({
+    message: `Install ${count} selected asset${count === 1 ? "" : "s"} into ${destination}?`,
+    initialValue: true,
+  });
   if (p.isCancel(confirmed) || !confirmed) {
     p.cancel("Installation cancelled; nothing changed.");
     return 0;
@@ -190,6 +263,7 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
 
 /** Opens the real interactive UI only when both standard streams are terminals. */
 export async function interactiveInstall(target?: string) {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
+  if (!process.stdin.isTTY || !process.stdout.isTTY)
+    return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
   return runInteractiveInstall(target, await import("@clack/prompts"));
 }

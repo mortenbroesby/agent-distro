@@ -14,7 +14,10 @@ const cli = path.join(root, "bin", "agent-distro.mjs");
 execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { stdio: "inherit" });
 assert.match(execFileSync(process.execPath, [cli, "verify", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);
 const manifest = fs.readFileSync(path.join(target, ".agent-distro", "manifest.json"));
-assert.match(execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { encoding: "utf8" }), /Synced 0 changed assets/);
+assert.match(
+  execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { encoding: "utf8" }),
+  /Synced 0 changed assets/,
+);
 assert.deepEqual(fs.readFileSync(path.join(target, ".agent-distro", "manifest.json")), manifest);
 
 const owned = JSON.parse(manifest).files.find((file) => file.endsWith(".agent.md"));
@@ -22,7 +25,9 @@ assert.ok(owned, "profile must install an agent asset");
 const asset = path.join(target, owned);
 const original = fs.readFileSync(asset);
 fs.writeFileSync(asset, "changed\n");
-assert.throws(() => execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { stdio: "pipe" }));
+assert.throws(() =>
+  execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { stdio: "pipe" }),
+);
 execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging", "--force"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(asset), original);
 assert.match(execFileSync(process.execPath, [cli, "verify", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);

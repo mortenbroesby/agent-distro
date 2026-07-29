@@ -17,13 +17,14 @@ const nextSteps: Record<FailureCode, string> = {
   AGENT_DISTRO_E_MANIFEST_INVALID: "Reinstall Agent Distro assets with --force, then run verify again.",
   AGENT_DISTRO_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
   AGENT_DISTRO_E_USAGE: "Run agent-distro --help for valid commands and options.",
-  AGENT_DISTRO_E_UNEXPECTED: "Run agent-distro diagnostics <target>; if it persists, run agent-distro report-issue --diagnostics-consent --message \"describe the failure\".",
+  AGENT_DISTRO_E_UNEXPECTED:
+    'Run agent-distro diagnostics <target>; if it persists, run agent-distro report-issue --diagnostics-consent --message "describe the failure".',
 };
 
 /** Removes common credentials and local paths before text reaches the terminal or issue URL. */
 export function sanitize(value: unknown) {
   return String(value)
-    .replace(/(?:ghp|github_pat|npm)_[A-Za-z0-9_\-]+/g, "[redacted]")
+    .replace(/(?:ghp|github_pat|npm)_[A-Za-z0-9_-]+/g, "[redacted]")
     .replace(/(?:token|password|secret|authorization)\s*[=:]\s*\S+/gi, "$1=[redacted]")
     .replace(/(?:\/Users\/[^\s:]+|\/home\/[^\s:]+|[A-Z]:\\[^\s:]+)/g, "[local-path]")
     .replace(/\s+/g, " ")

@@ -41,7 +41,10 @@ export const test = baseTest.extend("repository", async ({}, { onCleanup }) => {
       await gitRepository(rootTarget);
       const packageTarget = path.join(rootTarget, "packages", "web app");
       fs.mkdirSync(packageTarget, { recursive: true });
-      fs.writeFileSync(path.join(rootTarget, "package.json"), JSON.stringify({ private: true, workspaces: ["packages/*"] }));
+      fs.writeFileSync(
+        path.join(rootTarget, "package.json"),
+        JSON.stringify({ private: true, workspaces: ["packages/*"] }),
+      );
       fs.writeFileSync(path.join(packageTarget, "package.json"), JSON.stringify({ name: "web-app", private: true }));
       return { root: rootTarget, package: packageTarget };
     },
