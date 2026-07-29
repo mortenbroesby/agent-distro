@@ -6,8 +6,7 @@ work.
 
 ## Current focus
 
-- [Versioned npm distribution](./specs/roadmap/progress.md)
-  — select the next installer work only after reviewing the completed
-  reliability evidence.
+- No publication work is selected. Agent Distro remains a locally distributed,
+  packed npm proof until publication is explicitly reconsidered.
 
 When a story changes state, update its epic and `specs/roadmap/progress.md`.
