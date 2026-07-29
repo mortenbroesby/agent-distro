@@ -7,7 +7,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+// Windows command shims require a shell, so invoke npm's JavaScript entrypoint
+// with Node and keep every path and user argument out of shell parsing.
+const npmCli =
+  process.platform === "win32"
+    ? (process.env.npm_execpath ??
+      path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"))
+    : undefined;
 const [major, minor, patch] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
@@ -23,6 +29,10 @@ function run(command, commandArgs, options = {}) {
   return result;
 }
 
+function runNpm(commandArgs, options = {}) {
+  return run(npmCli ? process.execPath : "npm", npmCli ? [npmCli, ...commandArgs] : commandArgs, options);
+}
+
 function main() {
   if (args.length !== 0 && (args.length !== 2 || args[0] !== "--doctor" || !args[1])) {
     usage();
@@ -35,8 +45,8 @@ function main() {
 
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-bootstrap-"));
   try {
-    if (run(npm, ["ci"]).status !== 0) return 1;
-    const packed = run(npm, ["pack", "--json", "--silent", "--pack-destination", temporary], {
+    if (runNpm(["ci"]).status !== 0) return 1;
+    const packed = runNpm(["pack", "--json", "--silent", "--pack-destination", temporary], {
       encoding: "utf8",
       stdio: ["inherit", "pipe", "inherit"],
     });
@@ -59,16 +69,17 @@ function main() {
       console.error("npm pack returned an invalid archive path.");
       return 1;
     }
-    if (run(npm, ["install", "--global", "--no-audit", "--no-fund", archive]).status !== 0) return 1;
+    if (runNpm(["install", "--global", "--force", archive]).status !== 0) return 1;
 
-    const configuredPrefix = run(npm, ["prefix", "--global"], {
+    const globalRoot = runNpm(["root", "--global"], {
       encoding: "utf8",
       stdio: ["inherit", "pipe", "inherit"],
     });
-    if (configuredPrefix.error || configuredPrefix.status !== 0 || !configuredPrefix.stdout.trim()) return 1;
-    const prefix = configuredPrefix.stdout.trim();
-    const executable = path.join(prefix, process.platform === "win32" ? "agent-distro.cmd" : "bin/agent-distro");
-    return run(executable, args.length === 0 ? ["--help"] : ["doctor", args[1]], { cwd: process.cwd() }).status === 0
+    if (globalRoot.error || globalRoot.status !== 0 || !globalRoot.stdout.trim()) return 1;
+    const executable = path.join(globalRoot.stdout.trim(), "agent-distro", "bin", "agent-distro.mjs");
+    return run(process.execPath, [executable, ...(args.length === 0 ? ["--help"] : ["doctor", args[1]])], {
+      cwd: process.cwd(),
+    }).status === 0
       ? 0
       : 1;
   } finally {

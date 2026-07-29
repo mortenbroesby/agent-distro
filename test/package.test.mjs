@@ -23,6 +23,35 @@ test("bootstraps the packed global binary without installing assets", async ({ r
   expect(fs.readdirSync(target)).toEqual([]);
   expect(fs.existsSync(executable)).toBe(true);
   expect((await execa(executable, ["--version"])).stdout).toBe("0.0.0");
+
+  const doctorTarget = repository.plain("doctor target-å");
+  await execa(executable, ["install", doctorTarget, "--asset", ".mcp.json"]);
+  const manifest = fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"));
+  const diagnosed = await execa(process.execPath, [bootstrap, "--doctor", doctorTarget], {
+    cwd: target,
+    env: { ...process.env, NPM_CONFIG_PREFIX: prefix },
+  });
+  expect(diagnosed.stdout).toContain("Verified 1 assets");
+  expect(fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"))).toEqual(manifest);
+  expect(fs.readdirSync(target)).toEqual([]);
+}, 60_000);
+
+test("cleans its temporary package after a failed global install", async ({ repository }) => {
+  const temporary = repository.plain("bootstrap temp");
+  const invalidPrefix = path.join(repository.root, "prefix file");
+  fs.writeFileSync(invalidPrefix, "not a directory\n");
+  const result = await execa(process.execPath, [bootstrap], {
+    env: {
+      ...process.env,
+      NPM_CONFIG_PREFIX: invalidPrefix,
+      TEMP: temporary,
+      TMP: temporary,
+      TMPDIR: temporary,
+    },
+    reject: false,
+  });
+  expect(result.exitCode).toBe(1);
+  expect(fs.readdirSync(temporary).filter((name) => name.startsWith("agent-distro-bootstrap-"))).toEqual([]);
 }, 60_000);
 
 test("declares and builds for the lowest supported Node runtime", () => {
