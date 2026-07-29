@@ -1,6 +1,6 @@
 # Reliable runtime and observable installation
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 0
 
@@ -23,23 +23,23 @@ support policy makes it unsafe to retain.
 
 ## Story 1 — Deliberate runtime compatibility
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
-- [ ] Declare the supported runtime range and compile distributable code for
+- [x] Declare the supported runtime range and compile distributable code for
   its lowest supported Node version.
-- [ ] Produce one packed artifact using the supported build runtime.
-- [ ] Install and run that same artifact on Node 20, 22, 24, and 26 on macOS
+- [x] Produce one packed artifact using the supported build runtime.
+- [x] Install and run that same artifact on Node 20, 22, 24, and 26 on macOS
   and Windows Git Bash.
-- [ ] Keep build-only tooling out of the runtime compatibility claim.
+- [x] Keep build-only tooling out of the runtime compatibility claim.
 
 Acceptance: every declared runtime executes the packed npm binary through a
 real install, while build tooling has its own explicit supported floor.
 
 ## Story 2 — Observable transactional installation
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
@@ -54,7 +54,7 @@ without exposing file contents, credentials, or unrelated local paths.
 
 ## Story 3 — Maintainable public contracts
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
@@ -62,7 +62,7 @@ without exposing file contents, credentials, or unrelated local paths.
   types at the public boundary.
 - [x] Audit changed runtime and support modules for file intent, TSDoc on
   exported APIs, and comments at non-obvious filesystem or platform seams.
-- [ ] Retain small standard-library helpers instead of adding a logging,
+- [x] Retain small standard-library helpers instead of adding a logging,
   validation, or runtime-transpilation dependency.
 
 Acceptance: a maintainer can understand public inputs, outputs, side effects,
@@ -70,15 +70,23 @@ and safety guarantees without reverse-engineering the installer body.
 
 ## Story 4 — Evidence and closeout
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
-- [ ] Run focused local formatting, lint, package, runtime, and installation
+- [x] Run focused local formatting, lint, package, runtime, and installation
   regression checks.
-- [ ] Verify completed hosted macOS and Windows checks for the exact PR head.
-- [ ] Move this epic to `../done/` only when every acceptance criterion has
+- [x] Verify completed hosted macOS and Windows checks for the exact PR head.
+- [x] Move this epic to `../done/` only when every acceptance criterion has
   direct evidence.
 
 Acceptance: support, observability, and maintainability claims are backed by
 the exact packaged workflow users run.
+
+## Evidence
+
+- Local `npm run fmt:check`, `npm run lint`, and `npm run test:proof` passed.
+- Merged PR #31 passed [GitHub Actions run 30493076277](https://github.com/mortenbroesby/agent-distro/actions/runs/30493076277)
+  for the exact rebased head `4366b31d6e07f487e5aea71c4fb87c4eb43ae7b1`:
+  standard macOS and Windows verification plus packed npm binary installs on
+  Node 20.12.0, 22.18.0, 24.11.0, and 26 for both operating systems.
