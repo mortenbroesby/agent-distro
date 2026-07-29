@@ -1,6 +1,6 @@
 # Copilot plugin marketplace offering
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 1
 
@@ -47,7 +47,7 @@ curated concepts without duplicate hand-maintained content.
 
 ## Story 3 — Real CLI proof and closeout
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
@@ -55,9 +55,14 @@ curated concepts without duplicate hand-maintained content.
   the repository path when the CLI is available.
 - [x] Add the same real-client smoke flow to the macOS and Windows Git Bash
   verification workflow.
-- [ ] Run completed macOS and Windows Git Bash verification for the exact PR
+- [x] Run completed macOS and Windows Git Bash verification for the exact PR
   head.
-- [ ] Move this epic to `../done/` only after direct or hosted evidence exists.
+- [x] Move this epic to `../done/` only after direct or hosted evidence exists.
 
 Acceptance: users have an install command that works from this repository on
 the supported platforms.
+
+Evidence: GitHub Actions [verify run 30487038245](https://github.com/mortenbroesby/agent-distro/actions/runs/30487038245)
+passed `npm ci`, `npm test`, `npm run test:proof`, and the real Copilot CLI
+marketplace add, browse, install, and list sequence on macOS and Windows Git
+Bash for PR #24's exact rebased head.
