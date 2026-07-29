@@ -32,7 +32,7 @@
 - Produces: registerDoctorCommand(program: Command, setExitCode: (code: number) => void): void.
 - Contract: doctor [target] verifies target or process.cwd(); doctor --diagnostics [target] prints diagnostics; verify and diagnostics are unknown commands.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ~~~js
 it("groups verification and diagnostics under doctor", () => {
@@ -49,13 +49,13 @@ it("groups verification and diagnostics under doctor", () => {
 Add a second assertion that runs doctor with no target from destination and
 expects the same verification output.
 
-- [ ] **Step 2: Run it and verify RED**
+- [x] **Step 2: Run it and verify RED**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
 
 Expected: FAIL because doctor is unknown.
 
-- [ ] **Step 3: Add the minimal command module**
+- [x] **Step 3: Add the minimal command module**
 
 ~~~ts
 export function registerDoctorCommand(program: Command, setExitCode: (code: number) => void) {
@@ -70,13 +70,13 @@ export function registerDoctorCommand(program: Command, setExitCode: (code: numb
 
 Remove the old top-level verify and diagnostics registrations from cli.ts.
 
-- [ ] **Step 4: Run the focused suite and verify GREEN**
+- [x] **Step 4: Run the focused suite and verify GREEN**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
 
 Expected: PASS with recovery tests updated to use doctor.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: git add src/cli.ts src/commands/doctor.ts test/agent-distro.test.mjs && git commit -m "refactor: group checks under doctor"
 
@@ -95,7 +95,7 @@ Run: git add src/cli.ts src/commands/doctor.ts test/agent-distro.test.mjs && git
 - Produces: registerInstallCommand, registerProfilesCommand, and registerReportIssueCommand, each with (program: Command, setExitCode: (code: number) => void).
 - Contract: every command/option/output apart from Task 1's doctor rename remains unchanged.
 
-- [ ] **Step 1: Run the existing command-characterization suite**
+- [x] **Step 1: Run the existing command-characterization suite**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
 
@@ -103,17 +103,17 @@ Expected: PASS. Task 1 already introduced the only public command behavior;
 this task is a pure extraction protected by its existing install, recovery,
 profile, report, and failure-code assertions.
 
-- [ ] **Step 2: Extract syntax and action translation**
+- [x] **Step 2: Extract syntax and action translation**
 
 install.ts owns install flags and recover registration. profiles.ts serializes profileChoices. report-issue.ts owns report options. cli.ts constructs Command, invokes all registrations, and retains only bare-help and CommanderError handling.
 
-- [ ] **Step 3: Run the focused suite after extraction**
+- [x] **Step 3: Run the focused suite after extraction**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
 
 Expected: PASS with unchanged install, recovery, profile, issue-report, and failure-code behavior.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Run: git add src/agent-distro.ts src/cli.ts src/commands test/agent-distro.test.mjs && git commit -m "refactor: isolate cli interactions"
 
@@ -131,24 +131,24 @@ Run: git add src/agent-distro.ts src/cli.ts src/commands test/agent-distro.test.
 - Produces: runInteractiveInstall(target, prompts) and interactiveInstall(target?) from interactive-install.ts.
 - Contract: TTY gating, empty selection, cancellation, task-log messages, and successful installation output stay unchanged.
 
-- [ ] **Step 1: Run the existing TUI characterization tests**
+- [x] **Step 1: Run the existing TUI characterization tests**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
 
 Expected: PASS. The existing adapter tests define the unchanging interactive
 behavior, so no new public test is needed for this internal move.
 
-- [ ] **Step 2: Move only Clack code**
+- [x] **Step 2: Move only Clack code**
 
 Move runInteractiveInstall, interactiveInstall, the Clack dynamic import, and the TTY gate into interactive-install.ts. Keep install, recover, catalog exports, and all filesystem transaction code in install.ts. Re-export the two interactive functions from agent-distro.ts, preserving the current public package surface without adding a second build entry.
 
-- [ ] **Step 3: Run the full suite after extraction**
+- [x] **Step 3: Run the full suite after extraction**
 
 Run: npm test
 
 Expected: PASS; Clack adapter tests still prove selection, cancellation, and task-log progress without terminal emulation.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Run: git add src/agent-distro.ts src/commands/install.ts src/install.ts src/interactive-install.ts test/agent-distro.test.mjs && git commit -m "refactor: separate interactive install"
 
@@ -166,7 +166,7 @@ Run: git add src/agent-distro.ts src/commands/install.ts src/install.ts src/inte
 - Produces: node scripts/bootstrap.mjs [--doctor <target>].
 - Contract: no argument globally installs and proves help; --doctor <target> additionally runs doctor; neither invokes install.
 
-- [ ] **Step 1: Write failing argument and isolated-prefix tests**
+- [x] **Step 1: Write failing argument and isolated-prefix tests**
 
 ~~~js
 it("rejects an incomplete bootstrap doctor option", () => {
@@ -181,23 +181,23 @@ test("bootstraps the packed global binary without installing assets", async ({ r
 });
 ~~~
 
-- [ ] **Step 2: Run them and verify RED**
+- [x] **Step 2: Run them and verify RED**
 
 Run: npx vitest run test/agent-distro.test.mjs test/package.test.mjs --no-file-parallelism
 
 Expected: FAIL because bootstrap.mjs is absent.
 
-- [ ] **Step 3: Implement bootstrap and quick start**
+- [x] **Step 3: Implement bootstrap and quick start**
 
 Use fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-bootstrap-")) plus try/finally. Run npm ci, parse the one-item JSON result from npm pack --json --pack-destination, globally install the archive, and invoke the global binary. Accept only no arguments or --doctor <target>. Replace README's clone-local installer with node scripts/bootstrap.mjs and document explicit later install and doctor calls.
 
-- [ ] **Step 4: Run focused bootstrap tests and proof**
+- [x] **Step 4: Run focused bootstrap tests and proof**
 
 Run: npx vitest run test/agent-distro.test.mjs test/package.test.mjs --no-file-parallelism && npm run test:proof
 
 Expected: PASS; isolated prefix receives the packed CLI and bootstrap never installs assets.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: git add README.md scripts/bootstrap.mjs scripts/install-local.mjs test/agent-distro.test.mjs test/package.test.mjs && git commit -m "feat: bootstrap packed global cli"
 
@@ -212,23 +212,23 @@ Run: git add README.md scripts/bootstrap.mjs scripts/install-local.mjs test/agen
 - Produces: repository-wide fmt:check and lint commands that inspect only repository-owned content.
 - Contract: assets/catalog.json, plugins/agent-distro/**, markdown, dist/**, node_modules/**, and now .agents/** retain their existing exclusion intent; no vendored skill file changes.
 
-- [ ] **Step 1: Write the failing repository-check characterization**
+- [x] **Step 1: Write the failing repository-check characterization**
 
 Run: npm run fmt:check && npm run lint
 
 Expected: FAIL only on files under .agents/**, proving the current check configuration scans pinned vendor content.
 
-- [ ] **Step 2: Add the minimal paired ignore patterns**
+- [x] **Step 2: Add the minimal paired ignore patterns**
 
 Add .agents/** to the existing ignorePatterns arrays in both Oxc configuration files. Do not change lint rules, formatter style, or the submodule contents.
 
-- [ ] **Step 3: Run repository-wide checks and verify GREEN**
+- [x] **Step 3: Run repository-wide checks and verify GREEN**
 
 Run: npm run fmt:check && npm run lint
 
 Expected: both commands exit 0 while the repository-owned source and tests remain covered.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Run: git add .oxfmtrc.json .oxlintrc.json && git commit -m "chore: ignore pinned development skills"
 
@@ -241,11 +241,11 @@ Run: git add .oxfmtrc.json .oxlintrc.json && git commit -m "chore: ignore pinned
 - Consumes: all preceding task contracts.
 - Produces: a current ready-for-review PR with hosted macOS and Windows evidence.
 
-- [ ] **Step 1: Check boxes only after each matching evidence command passes**
+- [x] **Step 1: Check boxes only after each matching evidence command passes**
 
 Keep incomplete tasks unchecked.
 
-- [ ] **Step 2: Run final local verification**
+- [x] **Step 2: Run final local verification**
 
 Run: npm run fmt:check && npm run lint && npm test && npm run test:proof && npm pack --dry-run --json && git diff --check
 
