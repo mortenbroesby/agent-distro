@@ -5,6 +5,13 @@ import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 import { version } from "./package.js";
 
+/**
+ * Verifies that every manifest-owned file still exists at its safe relative
+ * path and matches its recorded SHA-256 hash.
+ *
+ * @returns A CLI exit code; malformed ownership metadata is deliberately
+ * reported separately from ordinary user edits.
+ */
 export function verify(target: string) {
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.realpathSync(target);
@@ -27,7 +34,15 @@ export function verify(target: string) {
   }
 }
 
+/**
+ * Prints a sanitized, read-only environment and manifest snapshot.
+ *
+ * This command intentionally avoids throwing for malformed ownership metadata
+ * so it remains usable when normal verification cannot explain a failure.
+ */
 export function diagnostics(target: string) {
+  // Diagnostics are intentionally read-only and resilient: this is the escape
+  // hatch used when a manifest is too malformed for normal verification.
   const snapshot = { version, runtime: { node: process.versions.node, platform: process.platform, arch: process.arch }, target: { exists: fs.existsSync(target), directory: false }, manifest: { present: false, valid: false, assetCount: 0 } };
   if (snapshot.target.exists) {
     snapshot.target.directory = fs.statSync(target).isDirectory();

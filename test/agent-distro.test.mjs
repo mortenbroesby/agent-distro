@@ -1,3 +1,5 @@
+// CLI and installer regression suite: exercises the public binary plus failure,
+// transaction, recovery, and interactive seams without a real terminal.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";

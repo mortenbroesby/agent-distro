@@ -5,6 +5,13 @@ import { assetChoices, install, interactiveInstall, recover } from "./install.js
 import { reportIssue } from "./report-issue.js";
 import { version } from "./package.js";
 
+/**
+ * Runs the Commander-based CLI without terminating the Node process.
+ *
+ * Keeping process exit outside this function lets tests and package launchers
+ * reuse the exact command contract while callers decide how to handle the
+ * resulting exit code.
+ */
 export async function run(args: string[]) {
   let exitCode = 0;
   const program = new Command()
@@ -24,6 +31,8 @@ export async function run(args: string[]) {
     .option("--action <name>", "command that failed")
     .option("--code <code>", "Agent Distro failure code")
     .action((options) => { exitCode = reportIssue(options); });
+  // No selection flags means a human is asking for the guided TTY journey.
+  // Scripts must choose assets explicitly so they cannot block on prompts.
   program.command("install [target]")
     .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
     .option("--force", "replace changed Agent Distro assets")
@@ -47,6 +56,7 @@ export async function run(args: string[]) {
       }
     });
 
+  // Bare invocation is help, rather than an implicit filesystem mutation.
   if (args.length === 0) {
     program.outputHelp();
     return 1;

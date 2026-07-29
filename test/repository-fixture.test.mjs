@@ -1,3 +1,5 @@
+// Focused installer contract tests using disposable real directories and Git
+// repositories; see the shared fixture for why these are not in-memory mocks.
 import fs from "node:fs";
 import path from "node:path";
 import { expect } from "vitest";

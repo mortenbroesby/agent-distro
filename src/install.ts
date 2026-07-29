@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 
+/** The installer owns only these intentionally bare Copilot-compatible assets. */
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const recoveryFile = ".agent-distro-recovery.json";
 
+/** Paths presented to people and accepted by non-interactive automation. */
 export const assetChoices = [
   [".github/agents/agent-distro.agent.md", "Agent"],
   [".github/hooks/agent-distro.json", "Hook"],
@@ -17,10 +19,12 @@ export const assetChoices = [
   [".mcp.json", "MCP configuration"],
 ] as const;
 
+/** Stores transaction state under the target so recovery never needs global state. */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
 }
 
+/** Validates user-selected logical paths before they reach the filesystem. */
 function selectedAssets(selected: string[]) {
   const choices = new Set(assetChoices.map(([value]) => value));
   const unknown = selected.filter((value) => !choices.has(value));
@@ -28,6 +32,12 @@ function selectedAssets(selected: string[]) {
   return selected.map((value) => value.split("/").join(path.sep));
 }
 
+/**
+ * Restores backups left by an interrupted installation transaction.
+ *
+ * Recovery validates the journal and each managed path before it removes or
+ * restores anything, preventing a corrupted journal from escaping the target.
+ */
 export function recover(target: string) {
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.realpathSync(target);
@@ -61,6 +71,13 @@ export function recover(target: string) {
   }
 }
 
+/**
+ * Synchronizes selected bundled assets into one exact target directory.
+ *
+ * The operation plans all conflicts before writing, stages replacements, and
+ * records a local journal before renames. An unchanged selection is a true
+ * no-op: it creates neither a staging directory nor a recovery journal.
+ */
 export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [] }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
@@ -75,6 +92,8 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   }, null, 2).concat("\n");
   const contents = new Map(sourceFiles.map((relative) => [relative, fs.readFileSync(path.join(assets, relative))]));
   contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
+  // Never traverse a symlinked ancestor: even a valid relative path could then
+  // write outside the explicitly chosen target.
   const unsafe = outputFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
   if (unsafe.length) return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
   const directories = outputFiles.filter((relative) => {
@@ -82,6 +101,8 @@ export function install(target: string, { force = false, dryRun = false, quiet =
     return fs.existsSync(output) && !fs.lstatSync(output).isFile();
   });
   if (directories.length) return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
+  // Compare every managed output before staging so a conflict cannot leave a
+  // partially updated target. --force is the explicit opt-in to replacement.
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !contents.get(relative).equals(fs.readFileSync(output));
@@ -94,6 +115,8 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   const replacements: { relative: string; output: string; backup?: string }[] = [];
   const committed: typeof replacements = [];
   try {
+    // Stage first, then journal backups before the first visible rename. This
+    // makes both in-process rollback and a later `recover` operation possible.
     fs.mkdirSync(path.join(destination, ".agent-distro"), { recursive: true });
     staging = fs.mkdtempSync(path.join(destination, ".agent-distro", ".agent-distro-stage-"));
     for (const relative of changed) {
@@ -117,6 +140,8 @@ export function install(target: string, { force = false, dryRun = false, quiet =
       committed.push(replacement);
     }
   } catch (error) {
+    // Only committed renames need rollback; uncommitted staged files are safe
+    // to discard with the transaction directory.
     for (const { output, backup } of committed.reverse()) {
       if (backup && fs.existsSync(backup)) {
         fs.rmSync(output, { force: true });
@@ -132,6 +157,12 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   return 0;
 }
 
+/**
+ * Runs the prompt flow through an injected Clack-compatible adapter.
+ *
+ * Injection keeps the UX testable without emulating a terminal while the real
+ * wrapper below still imports the production prompt library only for TTY use.
+ */
 export async function runInteractiveInstall(target: string | undefined, p: any) {
   p.intro("Agent Distro install");
   const destination = target ?? await p.text({ message: "Install into", initialValue: process.cwd(), validate: (value) => value ? undefined : "A target directory is required." });
@@ -161,6 +192,7 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
   return code;
 }
 
+/** Opens the real interactive UI only when both standard streams are terminals. */
 export async function interactiveInstall(target?: string) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
   return runInteractiveInstall(target, await import("@clack/prompts"));

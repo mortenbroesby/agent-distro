@@ -4,12 +4,20 @@ import path from "node:path";
 import { execa } from "execa";
 import { test as baseTest } from "vitest";
 
+/** Creates a local Git repository with identity only; no network remote exists. */
 async function gitRepository(directory) {
   await execa("git", ["init", "--quiet"], { cwd: directory });
   await execa("git", ["config", "user.name", "Agent Distro fixture"], { cwd: directory });
   await execa("git", ["config", "user.email", "fixture@example.invalid"], { cwd: directory });
 }
 
+/**
+ * Vitest fixture for disposable real repository shapes.
+ *
+ * Native directories, npm launchers, and the real `git` executable expose the
+ * same path and cleanup behavior users see on macOS and Windows. In-memory
+ * filesystems would miss those boundaries, so cleanup is registered with Vitest.
+ */
 export const test = baseTest.extend("repository", async ({}, { onCleanup }) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-fixture-å "));
   onCleanup(() => fs.rmSync(root, { recursive: true, force: true }));

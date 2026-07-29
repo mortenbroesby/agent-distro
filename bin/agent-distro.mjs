@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Minimal npm bin launcher: delegates all behavior to the built library and
+// converts an unexpected boundary failure into the stable CLI error format.
 import { formatFailure, run } from "../dist/agent-distro.mjs";
 
 try {
