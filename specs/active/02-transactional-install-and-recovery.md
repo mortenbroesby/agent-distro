@@ -67,21 +67,26 @@ Windows.
 
 ## Story 3 — Explicit recovery command
 
-**Status:** Ready
+**Status:** Done
 
 ### Tasks
 
-- [ ] Persist the smallest transaction journal needed to recover an interrupted
+- [x] Persist the smallest transaction journal needed to recover an interrupted
       commit.
-- [ ] Add `agent-distro recover <target>` with the existing stderr-code/recovery
+- [x] Add `agent-distro recover <target>` with the existing stderr-code/recovery
       contract.
-- [ ] Refuse a new install while an incomplete transaction is present and point
+- [x] Refuse a new install while an incomplete transaction is present and point
       to `recover`.
-- [ ] Test recovery from a deliberately retained journal without reading asset
+- [x] Test recovery from a deliberately retained journal without reading asset
       contents into diagnostics.
 
 Acceptance: after process interruption, `recover` deterministically restores
 the previous complete state or reports that no recovery is needed.
+
+Evidence (2026-07-29): focused Vitest coverage creates a retained journal with
+a replaced manifest and newly created prompt, proves `install` refuses it,
+then proves `recover` restores the prior verified installation and leaves its
+partial asset absent. Diagnostics never emits the retained asset content.
 
 ## Story 4 — Hostile-path proof
 

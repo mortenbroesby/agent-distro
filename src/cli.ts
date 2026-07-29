@@ -13,6 +13,7 @@ type FailureCode =
   | "AGENT_DISTRO_E_TARGET_INVALID"
   | "AGENT_DISTRO_E_DESTINATION_UNSAFE"
   | "AGENT_DISTRO_E_CONFLICT"
+  | "AGENT_DISTRO_E_RECOVERY_REQUIRED"
   | "AGENT_DISTRO_E_MANIFEST_INVALID"
   | "AGENT_DISTRO_E_ASSET_DRIFT"
   | "AGENT_DISTRO_E_USAGE"
@@ -22,6 +23,7 @@ const nextSteps: Record<FailureCode, string> = {
   AGENT_DISTRO_E_TARGET_INVALID: "Pass an existing directory as <target>.",
   AGENT_DISTRO_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
   AGENT_DISTRO_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
+  AGENT_DISTRO_E_RECOVERY_REQUIRED: "Run agent-distro recover <target>, then retry the install.",
   AGENT_DISTRO_E_MANIFEST_INVALID: "Reinstall Agent Distro assets with --force, then run verify again.",
   AGENT_DISTRO_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
   AGENT_DISTRO_E_USAGE: "Run agent-distro --help for valid commands and options.",
@@ -81,6 +83,51 @@ function manifestParts(relative: unknown) {
     throw new Error(`unsafe manifest path: ${relative}`);
   }
   return parts;
+}
+
+const recoveryFile = ".agent-distro-recovery.json";
+
+function recoveryPath(destination: string) {
+  return path.join(destination, ".agent-distro", recoveryFile);
+}
+
+export function recover(target: string) {
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
+  }
+  const destination = fs.realpathSync(target);
+  const journalPath = recoveryPath(destination);
+  if (!fs.existsSync(journalPath)) {
+    console.log("No Agent Distro recovery is needed.");
+    return 0;
+  }
+  try {
+    if (hasSymlinkAncestor(destination, path.join(".agent-distro", recoveryFile))) throw new Error("unsafe recovery journal");
+    const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
+    if (journal.version !== 1 || typeof journal.staging !== "string" || !journal.staging.startsWith(".agent-distro-stage-") || journal.staging.includes(path.sep) || !Array.isArray(journal.files)) {
+      throw new Error("invalid recovery journal");
+    }
+    const staging = path.join(destination, ".agent-distro", journal.staging);
+    for (const file of [...journal.files].reverse()) {
+      const parts = manifestParts(file?.relative);
+      const output = path.join(destination, ...parts);
+      const backup = path.join(staging, ".backup", ...parts);
+      if (file?.hadPrevious) {
+        if (!fs.existsSync(backup)) throw new Error("recovery backup missing");
+        fs.rmSync(output, { force: true });
+        fs.mkdirSync(path.dirname(output), { recursive: true });
+        fs.renameSync(backup, output);
+      } else {
+        fs.rmSync(output, { force: true });
+      }
+    }
+    fs.rmSync(journalPath, { force: true });
+    fs.rmSync(staging, { recursive: true, force: true });
+    console.log("Recovered the previous Agent Distro installation.");
+    return 0;
+  } catch (error) {
+    return fail("AGENT_DISTRO_E_MANIFEST_INVALID", error instanceof Error ? error.message : String(error));
+  }
 }
 
 function verify(target: string) {
@@ -183,6 +230,9 @@ export function install(target: string, { force = false, dryRun = false, selecte
   const destination = fs.existsSync(target)
     ? fs.realpathSync(target)
     : path.resolve(target);
+  if (fs.existsSync(recoveryPath(destination))) {
+    return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
+  }
   const sourceFiles = selectedAssets(selected);
   const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
   const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
@@ -252,6 +302,11 @@ export function install(target: string, { force = false, dryRun = false, selecte
       }
       replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
     }
+    fs.writeFileSync(recoveryPath(destination), JSON.stringify({
+      version: 1,
+      staging: path.basename(staging),
+      files: replacements.map(({ relative, backup }) => ({ relative, hadPrevious: Boolean(backup) })),
+    }));
     for (const replacement of replacements) {
       const { relative, output } = replacement;
       fs.mkdirSync(path.dirname(output), { recursive: true });
@@ -267,9 +322,11 @@ export function install(target: string, { force = false, dryRun = false, selecte
         fs.rmSync(output, { force: true });
       }
     }
+    fs.rmSync(recoveryPath(destination), { force: true });
     if (staging) fs.rmSync(staging, { recursive: true, force: true });
     return fail("AGENT_DISTRO_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }
+  fs.rmSync(recoveryPath(destination), { force: true });
   fs.rmSync(staging, { recursive: true, force: true });
   return 0;
 }
@@ -314,6 +371,9 @@ export async function run(args: string[]) {
 
   program.command("verify <target>").description("Verify installed Agent Distro assets").action((target) => {
     exitCode = verify(target);
+  });
+  program.command("recover <target>").description("Restore an interrupted Agent Distro installation").action((target) => {
+    exitCode = recover(target);
   });
   program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => {
     exitCode = diagnostics(target);
