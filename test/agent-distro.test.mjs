@@ -39,6 +39,13 @@ describe("agent-distro install", () => {
     expect(command("--version")).toBe("0.0.0\n");
   });
 
+  it("lists commands in the established help order", () => {
+    const commands = command("--help")
+      .split("\n")
+      .flatMap((line) => line.match(/^  ([a-z-]+)(?:\s|$)/)?.[1] ?? []);
+    expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "help"]);
+  });
+
   it("explains local bootstrap usage without running an install", () => {
     expect(
       (() => {

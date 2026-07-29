@@ -1,6 +1,6 @@
 import { Command, CommanderError } from "commander";
 import { registerDoctorCommand } from "./commands/doctor.js";
-import { registerInstallCommand } from "./commands/install.js";
+import { registerInstallCommand, registerRecoveryCommand } from "./commands/install.js";
 import { registerProfilesCommand } from "./commands/profiles.js";
 import { registerReportIssueCommand } from "./commands/report-issue.js";
 import { formatFailure } from "./errors.js";
@@ -25,13 +25,16 @@ export async function run(args: string[]) {
   registerDoctorCommand(program, (code) => {
     exitCode = code;
   });
-  registerInstallCommand(program, (code) => {
+  registerRecoveryCommand(program, (code) => {
+    exitCode = code;
+  });
+  registerReportIssueCommand(program, (code) => {
     exitCode = code;
   });
   registerProfilesCommand(program, (code) => {
     exitCode = code;
   });
-  registerReportIssueCommand(program, (code) => {
+  registerInstallCommand(program, (code) => {
     exitCode = code;
   });
 

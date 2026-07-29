@@ -2,14 +2,18 @@ import { Command } from "commander";
 import { fail } from "../errors.js";
 import { assetChoices, install, interactiveInstall, recover } from "../install.js";
 
-/** Registers installation and recovery commands without owning process exit. */
-export function registerInstallCommand(program: Command, setExitCode: (code: number) => void): void {
+/** Registers recovery without owning process exit. */
+export function registerRecoveryCommand(program: Command, setExitCode: (code: number) => void): void {
   program
     .command("recover <target>")
     .description("Restore an interrupted Agent Distro installation")
     .action((target) => {
       setExitCode(recover(target));
     });
+}
+
+/** Registers installation without owning process exit. */
+export function registerInstallCommand(program: Command, setExitCode: (code: number) => void): void {
   // No selection flags means a human is asking for the guided TTY journey.
   // Scripts must choose assets explicitly so they cannot block on prompts.
   program
