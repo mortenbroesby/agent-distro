@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+const readLink = (file) => fs.readlinkSync(file).replaceAll(path.sep, "/");
 
 describe("Copilot marketplace offering", () => {
   it("lists the same-repository plugin with strict metadata", () => {
@@ -32,8 +33,8 @@ describe("Copilot marketplace offering", () => {
     const skillPath = path.join(root, "plugins/agent-distro/skills/agent-distro-debugging/SKILL.md");
     expect(fs.lstatSync(agentPath).isSymbolicLink()).toBe(true);
     expect(fs.lstatSync(skillPath).isSymbolicLink()).toBe(true);
-    expect(fs.readlinkSync(agentPath)).toBe("../../../assets/.github/agents/debugging.agent.md");
-    expect(fs.readlinkSync(skillPath)).toBe("../../../../assets/.github/skills/debugging/SKILL.md");
+    expect(readLink(agentPath)).toBe("../../../assets/.github/agents/debugging.agent.md");
+    expect(readLink(skillPath)).toBe("../../../../assets/.github/skills/debugging/SKILL.md");
     const agent = read("plugins/agent-distro/agents/agent-distro-debugging.agent.md");
     const skill = read("plugins/agent-distro/skills/agent-distro-debugging/SKILL.md");
     expect(agent).toContain("name: Debugging");
