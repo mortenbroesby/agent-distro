@@ -35,6 +35,8 @@ workflow the default without relying on hidden local configuration.
 
 - [x] Define the minimum PR handoff: summary, verification evidence, and known
       gaps.
+- [x] Require ready-for-review, non-draft PRs unless the user asks otherwise.
+- [x] Require completed macOS and Windows `verify` evidence before handoff.
 - [x] Add a PR template after an explicit user request.
 - [x] Prove an ASDLC change can be delivered from a branch without touching the
       shared checkout.

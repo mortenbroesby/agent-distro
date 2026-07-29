@@ -26,9 +26,11 @@ Agents must not commit or push directly to `main`. Create a task branch, push
 that branch, and open a pull request unless the user explicitly authorizes an
 exception for a specific commit.
 
-Before requesting review, report the branch name, commit, changed scope, and
-the checks actually run. Do not claim a hosted check passed until its completed
-run is inspected.
+Open ready-for-review pull requests, not drafts, unless the user explicitly
+asks for a draft. Before handing a PR off, wait for its macOS and Windows
+`verify` jobs to finish successfully, then report the branch name, commit,
+changed scope, completed-run evidence, and known gaps. Do not claim a hosted
+check passed until its completed run is inspected.
 
 Remote enforcement is a separate repository-admin action: protect `main` with
 a GitHub ruleset that requires pull requests and the `verify` status check.
