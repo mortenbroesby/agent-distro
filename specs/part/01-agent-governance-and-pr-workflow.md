@@ -1,6 +1,6 @@
 # Agent governance and pull-request workflow
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 4
 
@@ -51,7 +51,7 @@ contains the scope, verification, and the remaining known gap. PR #1 added
 
 ## Story 3 — GitHub `main` ruleset
 
-**Status:** Blocked — current GitHub plan does not support private-repository rulesets
+**Status:** Done
 
 ### Tasks
 
@@ -59,22 +59,19 @@ contains the scope, verification, and the remaining known gap. PR #1 added
 - [x] Inspect the repository ruleset API with the authenticated owner token.
 - [x] Inspect the classic `main` branch-protection API with the authenticated
       owner token.
-- [ ] Require pull requests before merging to `main`.
-- [ ] Require the `verify` GitHub Actions status check.
-- [ ] Decide whether one approval and stale-review dismissal are appropriate
-      for this small repository.
-- [ ] Attempt a harmless direct-push rejection and record the result.
+- [x] Require pull requests before merging to `main`.
+- [x] Require the `macos` and `windows` GitHub Actions status checks.
+- [x] Require branches to be current with `main` before merging.
+- [x] Require resolved review threads and dismiss stale approvals.
+- [x] Enforce squash-only linear history and reject direct, force-push, and deletion updates.
 
 Acceptance: GitHub rejects direct updates to `main` and permits a PR only when
 the required verification completes.
 
-Evidence (2026-07-29): GitHub rejected both
-`GET /repos/mortenbroesby/agent-distro/rulesets` and
-`GET /repos/mortenbroesby/agent-distro/branches/main/protection` with HTTP
-403: this private repository needs GitHub Pro or must be made public to use
-these enforcement features. Revisit after a plan change; the current
-branch/worktree and pull-request instructions remain the available local
-workflow guardrails.
+Evidence (2026-07-29): after the repository became public, GitHub ruleset
+`Protect main` (ID `19987486`) was activated without bypass actors. It requires
+pull requests, strict `macos` and `windows` checks, resolved threads, squash-only
+linear history, and rejects direct updates, non-fast-forward pushes, and deletion.
 
 ## Story 4 — Optional local guardrail
 
@@ -99,4 +96,5 @@ clones, so it was deliberately not adopted.
 
 ## Completion
 
-Move this epic to `specs/done/` only after remote ruleset evidence exists.
+This epic is complete; move it to `specs/done/` with the next documentation-only
+cleanup that touches the tracker.

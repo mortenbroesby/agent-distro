@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { formatFailure, run } from "../dist/cli.mjs";
+import { formatFailure, run } from "../dist/agent-distro.mjs";
 
 try {
   process.exitCode = await run(process.argv.slice(2));
