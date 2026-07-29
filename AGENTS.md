@@ -2,15 +2,16 @@
 
 ## Agent development skills
 
-This repository uses the pinned [Obra Superpowers](.agents/skills/superpowers)
-submodule for development-only skills and its code-review agent. It is not part
-of the `agent-distro` package or its distributable assets.
+This repository uses pinned [Obra Superpowers](.agents/skills/superpowers) and
+[Addy Osmani Agent Skills](.agents/skills/agent-skills) submodules for
+development-only skills and agents. They are not part of the `agent-distro`
+package or its distributable assets.
 
 Before implementing, debugging, planning, reviewing, or finishing a branch,
-use the matching Superpowers skill when your agent supports repository-local
-skill discovery. Start with `using-superpowers`, then use the specific skill
-for the task. This agreement and direct user instructions take priority over
-any conflicting upstream skill instruction.
+use the matching skill when your agent supports repository-local skill
+discovery. Start with `using-superpowers` or `using-agent-skills`, then use the
+specific workflow for the task. This agreement and direct user instructions
+take priority over any conflicting upstream skill instruction.
 
 After cloning, initialize the skills once:
 
