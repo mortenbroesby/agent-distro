@@ -9,16 +9,27 @@ import path from "node:path";
 const archive = process.argv[2];
 if (!archive || !fs.existsSync(archive)) throw new Error("Pass an existing npm package archive.");
 
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npmCli =
+  process.platform === "win32"
+    ? path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js")
+    : "npm";
 const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-runtime-"));
 const consumer = path.join(workspace, "consumer");
 const target = path.join(workspace, "target with spaces-å");
 
-/** Runs npm through the native launcher for the active platform. */
+/** Runs the npm CLI without introducing a platform shell or its quoting rules. */
 function runNpm(args) {
-  // Node 22+ rejects direct `.cmd` execution. All arguments here are generated
-  // by this disposable test fixture, so Windows shell dispatch is safe.
-  return execFileSync(npm, args, { encoding: "utf8", shell: process.platform === "win32", stdio: "pipe" });
+  // Node cannot execute npm.cmd directly, and CMD would split the deliberately
+  // space-containing fixture path. npm's JavaScript entry point avoids both.
+  if (process.platform === "win32") assert.ok(fs.existsSync(npmCli), `Missing npm CLI: ${npmCli}`);
+  return execFileSync(
+    process.platform === "win32" ? process.execPath : npmCli,
+    process.platform === "win32" ? [npmCli, ...args] : args,
+    {
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
 }
 
 try {
