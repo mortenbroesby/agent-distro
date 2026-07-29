@@ -26,6 +26,7 @@ describe("agent-distro install", () => {
   it("prints standard help and its package version", () => {
     expect(command("--help")).toContain("Usage: agent-distro");
     expect(command("install", "--help")).toContain("--dry-run");
+    expect(command("install", "--help")).toContain("Install into any directory");
     expect(command("--version")).toBe("0.0.0\n");
   });
 
@@ -128,6 +129,26 @@ describe("agent-distro install", () => {
     expect(() => run(destination)).toThrow();
     run(destination, "--force");
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({ mcpServers: {} });
+  });
+
+  it("does not create transactional state for an unchanged install", () => {
+    const destination = target();
+    expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    const originalMkdtemp = fs.mkdtempSync;
+    const originalWrite = fs.writeFileSync;
+    fs.mkdtempSync = () => {
+      throw new Error("unchanged install created staging");
+    };
+    fs.writeFileSync = () => {
+      throw new Error("unchanged install wrote a file");
+    };
+    try {
+      expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    } finally {
+      fs.mkdtempSync = originalMkdtemp;
+      fs.writeFileSync = originalWrite;
+    }
+    expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
   });
 
   it("does not partially install when any target file conflicts", () => {
