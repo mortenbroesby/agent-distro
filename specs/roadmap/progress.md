@@ -2,7 +2,7 @@
 
 | Priority | Status | Work | Next evidence |
 | --- | --- | --- | --- |
-| 0 | Active | [Cross-platform core and compatibility contract](../active/04-cross-platform-core-and-compatibility.md) | Explicit target semantics and true unchanged-install no-op |
+| 0 | Done | [Cross-platform core and compatibility contract](../done/04-cross-platform-core-and-compatibility.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0.1 | Done | [Interactive TUI and real-repository smoke](../done/05-interactive-tui-and-repository-smoke.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0 | Done | [Reliable installation and diagnostics](../done/00-reliable-installation-and-diagnostics.md) | Completed in hosted run `30475273988` on macOS and Windows |
 | 1 | Done | [Opt-in issue-report handoff](../done/01-opt-in-issue-reporting.md) | Completed in hosted run `30475273988` on macOS and Windows |
