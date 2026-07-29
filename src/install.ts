@@ -12,11 +12,6 @@ const recoveryFile = ".agent-distro-recovery.json";
 
 export { assetChoices, profileChoices };
 
-type InteractivePrompts = Pick<
-  typeof import("@clack/prompts"),
-  "cancel" | "confirm" | "intro" | "isCancel" | "multiselect" | "outro" | "taskLog" | "text"
->;
-
 /** Stores transaction state under the target so recovery never needs global state. */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
@@ -214,7 +209,7 @@ export function install(
  * Injection keeps the UX testable without emulating a terminal while the real
  * wrapper below still imports the production prompt library only for TTY use.
  */
-export async function runInteractiveInstall(target: string | undefined, p: InteractivePrompts) {
+export async function runInteractiveInstall(target: string | undefined, p: any) {
   p.intro("Agent Distro install");
   const destination =
     target ??

@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "denyWarnings": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": ["dist/**", "node_modules/**"],
+  "overrides": [
+    {
+      "files": ["test/support/repository-fixture.mjs"],
+      "rules": {
+        "eslint/no-empty-pattern": "off"
+      }
+    }
+  ]
+}
