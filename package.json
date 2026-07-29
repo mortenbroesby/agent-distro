@@ -1,0 +1,31 @@
+{
+  "name": "agent-distro",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "agent-distro": "bin/agent-distro.mjs"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown src/cli.ts --format esm --out-dir dist --copy assets",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "test": "npm run build && vitest run --no-file-parallelism",
+    "test:proof": "npm run build && node test/proof.mjs"
+  },
+  "devDependencies": {
+    "execa": "^9.6.1",
+    "tsdown": "^0.22.14",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "commander": "^14.0.3"
+  }
+}
