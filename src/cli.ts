@@ -8,6 +8,43 @@ import { Command, CommanderError } from "commander";
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
+type FailureCode =
+  | "ASDLC_E_TARGET_INVALID"
+  | "ASDLC_E_DESTINATION_UNSAFE"
+  | "ASDLC_E_CONFLICT"
+  | "ASDLC_E_MANIFEST_INVALID"
+  | "ASDLC_E_ASSET_DRIFT"
+  | "ASDLC_E_USAGE"
+  | "ASDLC_E_UNEXPECTED";
+
+const nextSteps: Record<FailureCode, string> = {
+  ASDLC_E_TARGET_INVALID: "Pass an existing directory as <target>.",
+  ASDLC_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
+  ASDLC_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
+  ASDLC_E_MANIFEST_INVALID: "Reinstall ASDLC assets with --force, then run verify again.",
+  ASDLC_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
+  ASDLC_E_USAGE: "Run asdlc --help for valid commands and options.",
+  ASDLC_E_UNEXPECTED: "Run asdlc diagnostics <target>; if it persists, report the redacted output.",
+};
+
+function sanitize(value: unknown) {
+  return String(value)
+    .replace(/(?:ghp|github_pat|npm)_[A-Za-z0-9_\-]+/g, "[redacted]")
+    .replace(/(?:token|password|secret|authorization)\s*[=:]\s*\S+/gi, "$1=[redacted]")
+    .replace(/(?:\/Users\/[^\s:]+|\/home\/[^\s:]+|[A-Z]:\\[^\s:]+)/g, "[local-path]")
+    .replace(/\s+/g, " ")
+    .slice(0, 500);
+}
+
+export function formatFailure(code: FailureCode, message: unknown) {
+  return `${code}: ${sanitize(message)}\nNext: ${nextSteps[code]}`;
+}
+
+function fail(code: FailureCode, message: unknown) {
+  console.error(formatFailure(code, message));
+  return 1;
+}
+
 function files(dir, prefix = "") {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const relative = path.join(prefix, entry.name);
@@ -39,8 +76,7 @@ function manifestParts(relative: unknown) {
 
 function verify(target: string) {
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
-    console.error(`Target is not a directory: ${target}`);
-    return 1;
+    return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
   }
   const destination = fs.realpathSync(target);
   const manifestPath = path.join(destination, ".asdlc", "manifest.json");
@@ -62,15 +98,50 @@ function verify(target: string) {
     console.log(`Verified ${manifest.files.length} assets in ${destination}`);
     return 0;
   } catch (error) {
-    console.error(`ASDLC verification failed: ${error instanceof Error ? error.message : String(error)}`);
-    return 1;
+    const message = error instanceof Error ? error.message : String(error);
+    return fail(
+      message.startsWith("missing asset:") || message.startsWith("changed asset:")
+        ? "ASDLC_E_ASSET_DRIFT"
+        : "ASDLC_E_MANIFEST_INVALID",
+      message,
+    );
   }
+}
+
+function diagnostics(target: string) {
+  const snapshot = {
+    version,
+    runtime: { node: process.versions.node, platform: process.platform, arch: process.arch },
+    target: { exists: fs.existsSync(target), directory: false },
+    manifest: { present: false, valid: false, assetCount: 0 },
+  };
+  if (!snapshot.target.exists) {
+    process.stdout.write(`${JSON.stringify(snapshot)}\n`);
+    return 0;
+  }
+  snapshot.target.directory = fs.statSync(target).isDirectory();
+  if (!snapshot.target.directory) {
+    process.stdout.write(`${JSON.stringify(snapshot)}\n`);
+    return 0;
+  }
+  const manifestPath = path.join(fs.realpathSync(target), ".asdlc", "manifest.json");
+  snapshot.manifest.present = fs.existsSync(manifestPath);
+  if (snapshot.manifest.present) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      snapshot.manifest.valid = manifest.tool === "asdlc" && manifest.version === 1 && Array.isArray(manifest.files);
+      snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;
+    } catch {
+      // Diagnostics must remain available when the manifest is malformed.
+    }
+  }
+  process.stdout.write(`${JSON.stringify(snapshot)}\n`);
+  return 0;
 }
 
 function install(target: string, { force = false, dryRun = false }: { force?: boolean; dryRun?: boolean }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
-    console.error(`Target is not a directory: ${target}`);
-    return 1;
+    return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
   }
   const destination = fs.existsSync(target)
     ? fs.realpathSync(target)
@@ -102,16 +173,14 @@ function install(target: string, { force = false, dryRun = false }: { force?: bo
   contents.set(".asdlc/manifest.json", Buffer.from(manifest));
   const unsafe = outputFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
   if (unsafe.length) {
-    console.error(`Refusing symlinked target path: ${unsafe.join(", ")}`);
-    return 1;
+    return fail("ASDLC_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
   }
   const directories = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !fs.lstatSync(output).isFile();
   });
   if (directories.length) {
-    console.error(`Refusing non-file target path: ${directories.join(", ")}`);
-    return 1;
+    return fail("ASDLC_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
   }
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
@@ -120,9 +189,7 @@ function install(target: string, { force = false, dryRun = false }: { force?: bo
   });
 
   if (conflicts.length && !force) {
-    console.error(`Refusing to overwrite: ${conflicts.join(", ")}`);
-    console.error("Run again with --force to replace them.");
-    return 1;
+    return fail("ASDLC_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
   }
 
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
@@ -150,6 +217,9 @@ export function run(args: string[]) {
   program.command("verify <target>").description("Verify installed ASDLC assets").action((target) => {
     exitCode = verify(target);
   });
+  program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => {
+    exitCode = diagnostics(target);
+  });
   program.command("install <target>")
     .description("Install ASDLC assets")
     .option("--force", "replace changed ASDLC assets")
@@ -165,7 +235,10 @@ export function run(args: string[]) {
   try {
     program.parse(args, { from: "user" });
   } catch (error) {
-    if (error instanceof CommanderError) return error.exitCode;
+    if (error instanceof CommanderError) {
+      console.error(formatFailure("ASDLC_E_USAGE", error.message));
+      return error.exitCode;
+    }
     throw error;
   }
   return exitCode;

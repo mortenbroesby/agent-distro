@@ -30,5 +30,4 @@ const beforeDryRun = fs.readFileSync(path.join(target, ".asdlc", "manifest.json"
 execFileSync(process.execPath, [cli, "install", target, "--dry-run"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(path.join(target, ".asdlc", "manifest.json")), beforeDryRun);
 
-console.log("macOS and Git Bash proof passed: six Copilot asset types synchronized safely.");
-console.log("Windows Git Bash: run `sh test/git-bash-proof.sh`.");
+console.log("Node install proof passed: six Copilot asset types synchronized safely.");

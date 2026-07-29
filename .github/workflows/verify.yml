@@ -15,15 +15,14 @@ jobs:
       - run: npm test
       - run: npm run test:proof
 
-  windows-git-bash:
+  windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22.23.1
           cache: npm
-      - run: sh test/git-bash-proof.sh
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:proof

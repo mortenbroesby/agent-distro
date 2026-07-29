@@ -4,10 +4,19 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { formatFailure } from "../dist/cli.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "asdlc.mjs");
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
+const failed = (...args) => {
+  try {
+    command(...args);
+  } catch (error) {
+    return error.stderr;
+  }
+  throw new Error("Expected command to fail");
+};
 const run = (target, ...options) =>
   command("install", target, ...options);
 const verify = (target) => command("verify", target);
@@ -21,7 +30,31 @@ describe("asdlc install", () => {
   });
 
   it("rejects options that do not belong to a command", () => {
-    expect(() => command("verify", target(), "--force")).toThrow();
+    expect(failed("verify", target(), "--force")).toContain("ASDLC_E_USAGE");
+  });
+
+  it("prints stable codes and recovery actions for expected failures", () => {
+    const fileTarget = path.join(os.tmpdir(), `asdlc-file-${process.pid}-${Date.now()}`);
+    fs.writeFileSync(fileTarget, "not a directory\n");
+    expect(failed("install", fileTarget)).toMatch(/ASDLC_E_TARGET_INVALID:[\s\S]*Next:/);
+
+    const destination = target();
+    run(destination);
+    fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
+    expect(failed("install", destination)).toMatch(/ASDLC_E_CONFLICT:[\s\S]*Next:/);
+
+    const manifestPath = path.join(destination, ".asdlc", "manifest.json");
+    fs.writeFileSync(manifestPath, "not json\n");
+    expect(failed("verify", destination)).toMatch(/ASDLC_E_MANIFEST_INVALID:[\s\S]*Next:/);
+  });
+
+  it("redacts unexpected errors and prints a recovery action", () => {
+    const output = formatFailure("ASDLC_E_UNEXPECTED", "token=ghp_ABCdef123 /Users/example/project");
+    expect(output).toContain("ASDLC_E_UNEXPECTED");
+    expect(output).toContain("Next:");
+    expect(output).toContain("[redacted]");
+    expect(output).toContain("[local-path]");
+    expect(output).not.toContain("ghp_ABCdef123");
   });
 
   it("installs every Copilot asset category and records ownership", () => {
@@ -57,6 +90,18 @@ describe("asdlc install", () => {
     expect(fs.existsSync(destination)).toBe(false);
     expect(run(destination, "--dry-run")).toContain("Would sync 7 changed assets");
     expect(fs.existsSync(destination)).toBe(false);
+  });
+
+  it("prints read-only diagnostics without target paths or asset contents", () => {
+    const destination = target();
+    run(destination);
+    const result = JSON.parse(command("diagnostics", destination));
+    expect(result).toMatchObject({
+      version: "0.0.0",
+      target: { exists: true, directory: true },
+      manifest: { present: true, valid: true, assetCount: 6 },
+    });
+    expect(JSON.stringify(result)).not.toContain(destination);
   });
 
   it("verifies recorded assets and detects drift", () => {
