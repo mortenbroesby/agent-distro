@@ -54,15 +54,17 @@ describe("agent-distro install", () => {
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
-      spinner: () => ({ start: (message) => calls.push(["start", message]), stop: (message) => calls.push(["stop", message]) }),
+      taskLog: ({ title }) => ({ message: (message) => calls.push(["log", message]), success: (message) => calls.push(["success", message]), error: (message) => calls.push(["error", message]), title }),
       outro: (message) => calls.push(["outro", message]),
     };
     expect(await runInteractiveInstall(undefined, prompts)).toBe(0);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
     expect(calls).toEqual(expect.arrayContaining([
       ["intro", "Agent Distro install"],
-      ["start", "Installing selected assets"],
-      ["stop", "Assets synchronized."],
+      ["log", "Staging changes safely."],
+      ["log", "Applying staged changes."],
+      ["log", "Finalized installation."],
+      ["success", "Assets synchronized."],
       ["outro", "Installation complete."],
     ]));
   });
@@ -76,7 +78,7 @@ describe("agent-distro install", () => {
       confirm: async () => false,
       isCancel: () => false,
       cancel: () => {},
-      spinner: () => ({ start: () => {}, stop: () => {} }),
+      taskLog: () => ({ message: () => {}, success: () => {}, error: () => {} }),
       outro: () => {},
     };
     expect(await runInteractiveInstall(undefined, prompts)).toBe(0);
