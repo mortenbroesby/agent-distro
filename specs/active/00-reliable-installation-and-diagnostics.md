@@ -92,7 +92,7 @@ Acceptance criteria:
 
 ## Story 4 — Cross-platform hostile-path proof
 
-**Status:** Active
+**Status:** Done
 
 Extend real packaged smoke coverage to macOS and native Windows for spaces,
 Unicode, read-only locations, Windows separators, symlinks, absent targets,

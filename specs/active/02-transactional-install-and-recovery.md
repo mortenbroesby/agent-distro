@@ -1,6 +1,6 @@
 # Transactional install and recovery
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 0
 
@@ -116,7 +116,10 @@ then verify that the prior installation remains honest. GitHub Actions
 [`verify` run 30474716547](https://github.com/mortenbroesby/agent-distro/actions/runs/30474716547)
 passed the packed npm test on macOS and native Windows, including a target with
 spaces and Unicode plus install, dry-run, conflict, force, verify, and safe
-missing-target diagnostics.
+missing-target diagnostics. GitHub Actions
+[`verify` run 30475121731](https://github.com/mortenbroesby/agent-distro/actions/runs/30475121731)
+passed the final permission-denied and native symlink/junction proof on macOS
+and Windows.
 
 ## Completion
 
