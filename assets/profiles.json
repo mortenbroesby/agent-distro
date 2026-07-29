@@ -19,14 +19,80 @@
     ".github/hooks/verification-reminder.json": "Verification-reminder hook"
   },
   "profiles": [
-    { "id": "foundation", "label": "Foundation", "description": "Repository context and MCP configuration.", "guidance": "Follow repository conventions.", "assets": [".github/instructions/agent-distro.instructions.md", ".mcp.json"] },
-    { "id": "safe-changes", "label": "Safe changes", "description": "Guardrails for safe, focused repository changes.", "guidance": "Inspect the target and its callers first. Keep changes scoped, preserve unrelated work, and never use destructive Git commands without explicit approval.", "assets": [".github/instructions/safe-changes.instructions.md"] },
-    { "id": "verification", "label": "Verification", "description": "Evidence-first completion instructions.", "guidance": "Run the smallest relevant verification, report its result, and do not claim external state that was not inspected.", "assets": [".github/instructions/verification.instructions.md"] },
-    { "id": "pull-request-review", "label": "Pull-request review", "description": "Review specialist, workflow, and reusable prompt.", "guidance": "Inspect the diff and relevant callers. Report only actionable correctness, security, regression, and test-gap findings.", "assets": [".github/agents/pull-request-review.agent.md", ".github/skills/pull-request-review/SKILL.md", ".github/prompts/pull-request-review.prompt.md"] },
-    { "id": "debugging", "label": "Debugging", "description": "Reproduction-first debugging specialist and workflow.", "guidance": "Reproduce first, trace all callers of the shared boundary, isolate the root cause, and leave focused verification.", "assets": [".github/agents/debugging.agent.md", ".github/skills/debugging/SKILL.md", ".github/prompts/debugging.prompt.md"] },
-    { "id": "handoff", "label": "Handoff and grill me", "description": "Evidence-based handoff and adversarial readiness check.", "guidance": "State changed scope, verification, known gaps, and the next action. Challenge unsupported release claims.", "assets": [".github/agents/handoff.agent.md", ".github/skills/handoff/SKILL.md", ".github/prompts/grill-me.prompt.md"] },
-    { "id": "hook-template", "label": "Hook template", "description": "Optional deterministic hook configuration template.", "guidance": "Enable hooks only when a deterministic lifecycle guard is required.", "assets": [".github/hooks/agent-distro.json"] },
-    { "id": "session-context", "label": "Session context hook", "description": "Inject repository context at Copilot CLI session start.", "guidance": "Read AGENTS.md and the installed Agent Distro instructions before changing files. Use the selected specialist assets when they match the task.", "assets": [".github/hooks/session-context.json"] },
-    { "id": "verification-reminder", "label": "Verification reminder hook", "description": "Inject an evidence reminder at Copilot CLI session start.", "guidance": "Before handoff, run the smallest relevant check and report its result with any known gaps.", "assets": [".github/hooks/verification-reminder.json"] }
+    {
+      "id": "foundation",
+      "label": "Foundation",
+      "description": "Repository context and MCP configuration.",
+      "guidance": "Follow repository conventions.",
+      "assets": [".github/instructions/agent-distro.instructions.md", ".mcp.json"]
+    },
+    {
+      "id": "safe-changes",
+      "label": "Safe changes",
+      "description": "Guardrails for safe, focused repository changes.",
+      "guidance": "Inspect the target and its callers first. Keep changes scoped, preserve unrelated work, and never use destructive Git commands without explicit approval.",
+      "assets": [".github/instructions/safe-changes.instructions.md"]
+    },
+    {
+      "id": "verification",
+      "label": "Verification",
+      "description": "Evidence-first completion instructions.",
+      "guidance": "Run the smallest relevant verification, report its result, and do not claim external state that was not inspected.",
+      "assets": [".github/instructions/verification.instructions.md"]
+    },
+    {
+      "id": "pull-request-review",
+      "label": "Pull-request review",
+      "description": "Review specialist, workflow, and reusable prompt.",
+      "guidance": "Inspect the diff and relevant callers. Report only actionable correctness, security, regression, and test-gap findings.",
+      "assets": [
+        ".github/agents/pull-request-review.agent.md",
+        ".github/skills/pull-request-review/SKILL.md",
+        ".github/prompts/pull-request-review.prompt.md"
+      ]
+    },
+    {
+      "id": "debugging",
+      "label": "Debugging",
+      "description": "Reproduction-first debugging specialist and workflow.",
+      "guidance": "Reproduce first, trace all callers of the shared boundary, isolate the root cause, and leave focused verification.",
+      "assets": [
+        ".github/agents/debugging.agent.md",
+        ".github/skills/debugging/SKILL.md",
+        ".github/prompts/debugging.prompt.md"
+      ]
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff and grill me",
+      "description": "Evidence-based handoff and adversarial readiness check.",
+      "guidance": "State changed scope, verification, known gaps, and the next action. Challenge unsupported release claims.",
+      "assets": [
+        ".github/agents/handoff.agent.md",
+        ".github/skills/handoff/SKILL.md",
+        ".github/prompts/grill-me.prompt.md"
+      ]
+    },
+    {
+      "id": "hook-template",
+      "label": "Hook template",
+      "description": "Optional deterministic hook configuration template.",
+      "guidance": "Enable hooks only when a deterministic lifecycle guard is required.",
+      "assets": [".github/hooks/agent-distro.json"]
+    },
+    {
+      "id": "session-context",
+      "label": "Session context hook",
+      "description": "Inject repository context at Copilot CLI session start.",
+      "guidance": "Read AGENTS.md and the installed Agent Distro instructions before changing files. Use the selected specialist assets when they match the task.",
+      "assets": [".github/hooks/session-context.json"]
+    },
+    {
+      "id": "verification-reminder",
+      "label": "Verification reminder hook",
+      "description": "Inject an evidence reminder at Copilot CLI session start.",
+      "guidance": "Before handoff, run the smallest relevant check and report its result with any known gaps.",
+      "assets": [".github/hooks/verification-reminder.json"]
+    }
   ]
 }

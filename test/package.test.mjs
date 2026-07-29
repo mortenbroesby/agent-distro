@@ -36,9 +36,13 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   const priorInstall = repository.plain("prior installation");
   await execute(["install", priorInstall, "--profile", "debugging"]);
   const manifest = fs.readFileSync(path.join(priorInstall, ".agent-distro", "manifest.json"));
-  expect((await execute(["install", priorInstall, "--profile", "debugging"])).stdout).toContain("Synced 0 changed assets");
+  expect((await execute(["install", priorInstall, "--profile", "debugging"])).stdout).toContain(
+    "Synced 0 changed assets",
+  );
   expect(fs.readFileSync(path.join(priorInstall, ".agent-distro", "manifest.json"))).toEqual(manifest);
-  expect(fs.readdirSync(path.join(priorInstall, ".agent-distro")).some((name) => name.startsWith(".agent-distro-stage-"))).toBe(false);
+  expect(
+    fs.readdirSync(path.join(priorInstall, ".agent-distro")).some((name) => name.startsWith(".agent-distro-stage-")),
+  ).toBe(false);
   const debugging = repository.plain("debugging profile");
   await execute(["install", debugging, "--profile", "debugging"]);
   expect((await execute(["verify", debugging])).stdout).toMatch(/Verified [1-9]\d* assets/);

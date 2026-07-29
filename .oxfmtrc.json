@@ -6,5 +6,5 @@
   "semi": true,
   "singleQuote": false,
   "trailingComma": "all",
-  "ignorePatterns": ["assets/catalog.json", "**/*.md"]
+  "ignorePatterns": ["assets/catalog.json", "plugins/agent-distro/**", "**/*.md"]
 }
