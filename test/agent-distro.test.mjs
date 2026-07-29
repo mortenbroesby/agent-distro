@@ -1,6 +1,6 @@
 // CLI and installer regression suite: exercises the public binary plus failure,
 // transaction, recovery, and interactive seams without a real terminal.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +12,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
 const localInstall = path.join(root, "scripts", "install-local.mjs");
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
+const commandResult = (...args) => {
+  const result = spawnSync(process.execPath, [cli, ...args], { encoding: "utf8" });
+  if (result.status !== 0) throw new Error(result.stderr);
+  return result;
+};
 const failed = (...args) => {
   try {
     command(...args);
@@ -53,6 +58,15 @@ describe("agent-distro install", () => {
     const destination = path.join(os.tmpdir(), `agent-distro-no-tty-${process.pid}-${Date.now()}`);
     expect(failed("install", destination)).toContain("Interactive install requires a terminal");
     expect(fs.existsSync(destination)).toBe(false);
+  });
+
+  it("reports concise installation phases only when verbose output is requested", () => {
+    const result = commandResult("install", target(), "--asset", ".mcp.json", "--verbose");
+    expect(result.stdout).toContain("Synced 2 changed assets");
+    expect(result.stderr).toContain("[agent-distro] Validated destination;");
+    expect(result.stderr).toContain("[agent-distro] Staging changes safely.");
+    expect(result.stderr).toContain("[agent-distro] Applying staged changes.");
+    expect(result.stderr).toContain("[agent-distro] Finalized installation.");
   });
 
   it("runs the TUI through target, selection, confirmation, and progress", async () => {
@@ -271,6 +285,7 @@ describe("agent-distro install", () => {
 
   it("rolls back completed renames when a later rename fails", () => {
     const destination = target();
+    const phases = [];
     expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
     const originalRename = fs.renameSync;
     let replacements = 0;
@@ -286,12 +301,17 @@ describe("agent-distro install", () => {
     };
     try {
       expect(
-        install(destination, { force: true, selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] }),
+        install(destination, {
+          force: true,
+          selected: [".mcp.json", ".github/prompts/debugging.prompt.md"],
+          onStep: (message) => phases.push(message),
+        }),
       ).toBe(1);
     } finally {
       fs.renameSync = originalRename;
     }
     expect(verify(destination)).toContain("Verified 1 assets");
+    expect(phases).toEqual(expect.arrayContaining(["Rolling back partial changes.", "Rollback complete."]));
     expect(fs.existsSync(path.join(destination, ".github/prompts/debugging.prompt.md"))).toBe(false);
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
   });

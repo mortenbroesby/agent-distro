@@ -62,6 +62,7 @@ export async function run(args: string[]) {
     .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
     .option("--force", "replace changed Agent Distro assets")
     .option("--dry-run", "show changes without writing")
+    .option("--verbose", "print concise installation phases to stderr")
     .option("--asset <path...>", "asset path to install; repeatable")
     .option("--profile <name...>", "profile to install; repeatable and composable with --asset")
     .option("--all", "install every Agent Distro asset")
@@ -76,9 +77,13 @@ export async function run(args: string[]) {
       } else {
         try {
           exitCode = install(target, {
-            ...options,
+            force: options.force,
+            dryRun: options.dryRun,
             profiles: options.profile,
             selected: options.all ? assetChoices.map(([value]) => value) : options.asset,
+            // Keep normal stdout machine-friendly; the opt-in stream identifies
+            // the last completed transactional phase without exposing contents.
+            onStep: options.verbose ? (message) => process.stderr.write(`[agent-distro] ${message}\n`) : undefined,
           });
         } catch (error) {
           exitCode = fail("AGENT_DISTRO_E_USAGE", error instanceof Error ? error.message : String(error));
