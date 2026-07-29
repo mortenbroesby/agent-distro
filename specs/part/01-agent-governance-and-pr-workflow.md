@@ -1,6 +1,6 @@
 # Agent governance and pull-request workflow
 
-**Status:** Ready
+**Status:** Active
 
 **Priority:** 4
 
@@ -15,7 +15,7 @@ can reject direct remote pushes or require review.
 
 ## Story 1 — Agent working agreement
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
@@ -29,19 +29,25 @@ workflow the default without relying on hidden local configuration.
 
 ## Story 2 — PR delivery contract
 
-**Status:** Ready
+**Status:** Done
 
 ### Tasks
 
-- [ ] Define the minimum PR handoff: summary, verification evidence, and known
+- [x] Define the minimum PR handoff: summary, verification evidence, and known
       gaps.
 - [ ] Add a PR template only if repeated reviews show that the instruction is
       insufficient.
-- [ ] Prove an ASDLC change can be delivered from a branch without touching the
+- [x] Prove an ASDLC change can be delivered from a branch without touching the
       shared checkout.
 
 Acceptance: a reviewer can understand scope and proof without reconstructing
 the branch history.
+
+Evidence (2026-07-29): this pull request is the proof: it was created and
+updated from `docs/worktree-protocol` in its own worktree. Its description
+contains the scope, verification, and the remaining known gap. A template is
+not warranted until repeated review shows that the documented handoff is
+insufficient.
 
 ## Story 3 — GitHub `main` ruleset
 
