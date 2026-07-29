@@ -9,3 +9,4 @@ Move an epic here only after each acceptance criterion has current evidence.
 - [Interactive TUI and real-repository smoke](./05-interactive-tui-and-repository-smoke.md)
 - [Source documentation standard](./06-source-documentation-standard.md)
 - [Copilot plugin marketplace offering](./07-copilot-plugin-marketplace.md)
+- [Reliable runtime and observable installation](./09-reliable-runtime-and-observability.md)
