@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createIssueUrl, formatFailure, install } from "../dist/cli.mjs";
+import { createIssueUrl, formatFailure, install } from "../dist/agent-distro.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
