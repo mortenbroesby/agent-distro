@@ -40,7 +40,18 @@ Before requesting review, fetch `origin` and rebase or merge the latest
 `git merge-base --is-ancestor origin/main HEAD` succeeds; a passing stale-base
 CI run is not enough.
 
+## Merging pull requests
+
+Agents may squash-merge their own ready-for-review pull requests without a
+separate user confirmation only after GitHub reports the PR as mergeable and
+all required checks for its exact head commit are successful. For `main`,
+inspect the completed `macos` and `windows` `verify` jobs with `gh pr view` or
+the GitHub merge button, confirm there are no unresolved review threads, then
+run `gh pr merge --squash`. Do not merge on local test results, a stale run, a
+draft PR, or a blocked/behind merge state.
+
 Remote enforcement is a separate repository-admin action: protect `main` with
-a GitHub ruleset that requires pull requests and the `verify` status check.
+a GitHub ruleset that requires pull requests plus the `macos` and `windows`
+`verify` status checks.
 Local instructions and hooks are useful guardrails, but cannot replace remote
 branch protection.
