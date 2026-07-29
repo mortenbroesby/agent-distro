@@ -1,11 +1,9 @@
-import fs from "node:fs";
 import { Command, CommanderError } from "commander";
 import { diagnostics, verify } from "./doctor.js";
 import { fail, formatFailure } from "./errors.js";
 import { assetChoices, install, interactiveInstall, recover } from "./install.js";
 import { reportIssue } from "./report-issue.js";
-
-const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+import { version } from "./package.js";
 
 export async function run(args: string[]) {
   let exitCode = 0;

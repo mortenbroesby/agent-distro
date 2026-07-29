@@ -42,7 +42,21 @@ Acceptance: every command has one clear user purpose; no speculative command is 
 
 Acceptance: changing one interaction does not require editing the root entrypoint or unrelated command implementation.
 
-## Story 3 — Preserve the packaged contract
+## Story 3 — Keep utilities domain-specific
+
+**Status:** Done
+
+### Tasks
+
+- [x] Keep command-only behavior in its command module instead of creating a generic utilities file.
+- [x] Extract shared managed-path validation into `src/managed-path.ts`.
+- [x] Extract the shared package-version lookup into `src/package.ts`.
+- [x] Keep asset selection, transaction recovery, and issue formatting with their owning interaction.
+
+Acceptance: a shared module serves at least two consumers and has a specific
+domain name; command modules retain their own behavior.
+
+## Story 4 — Preserve the packaged contract
 
 **Status:** Done
 

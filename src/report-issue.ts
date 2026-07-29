@@ -1,7 +1,6 @@
-import fs from "node:fs";
 import { sanitize, fail } from "./errors.js";
+import { version } from "./package.js";
 
-const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 const issueUrl = "https://github.com/mortenbroesby/agent-distro/issues/new";
 
 export function createIssueUrl({

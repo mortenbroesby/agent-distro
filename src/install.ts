@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail } from "./errors.js";
+import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const recoveryFile = ".agent-distro-recovery.json";
@@ -15,22 +16,6 @@ export const assetChoices = [
   [".github/skills/agent-distro/SKILL.md", "Skill"],
   [".mcp.json", "MCP configuration"],
 ] as const;
-
-function hasSymlinkAncestor(root: string, relative: string) {
-  let current = root;
-  for (const part of relative.split(path.sep).slice(0, -1)) {
-    current = path.join(current, part);
-    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) return true;
-  }
-  return false;
-}
-
-function manifestParts(relative: unknown) {
-  if (typeof relative !== "string" || path.posix.isAbsolute(relative) || path.win32.isAbsolute(relative)) throw new Error(`unsafe manifest path: ${relative}`);
-  const parts = relative.split(/[\\/]/);
-  if (parts.some((part) => part === "" || part === "." || part === "..")) throw new Error(`unsafe manifest path: ${relative}`);
-  return parts;
-}
 
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
