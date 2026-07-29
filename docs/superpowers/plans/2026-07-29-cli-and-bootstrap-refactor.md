@@ -11,7 +11,8 @@
 ## Global Constraints
 
 - Require Node >=22.23.1 <23; add no dependency.
-- Keep install, recover, profiles, and report-issue; replace verify and diagnostics with doctor and doctor --diagnostics.
+- Keep install, recover, profiles, and report-issue; replace verify and diagnostics with doctor [target] and doctor --diagnostics [target].
+- install without a target prompts in the TUI; doctor without a target verifies process.cwd().
 - Preserve stable failure codes, transactional safety, empty default selection, and explicit --force semantics.
 - Bootstrap never calls install; it uses a temporary tarball and reports global-install failures without privilege escalation.
 - Do not edit pinned .agents submodules.
@@ -28,7 +29,7 @@
 **Interfaces:**
 - Consumes: verify(target: string): number and diagnostics(target: string): number from src/doctor.ts.
 - Produces: registerDoctorCommand(program: Command, setExitCode: (code: number) => void): void.
-- Contract: doctor <target> verifies; doctor --diagnostics <target> prints diagnostics; verify and diagnostics are unknown commands.
+- Contract: doctor [target] verifies target or process.cwd(); doctor --diagnostics [target] prints diagnostics; verify and diagnostics are unknown commands.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -44,6 +45,9 @@ it("groups verification and diagnostics under doctor", () => {
 });
 ~~~
 
+Add a second assertion that runs doctor with no target from destination and
+expects the same verification output.
+
 - [ ] **Step 2: Run it and verify RED**
 
 Run: npx vitest run test/agent-distro.test.mjs --no-file-parallelism
@@ -55,10 +59,10 @@ Expected: FAIL because doctor is unknown.
 ~~~ts
 export function registerDoctorCommand(program: Command, setExitCode: (code: number) => void) {
   program
-    .command("doctor <target>")
+    .command("doctor [target]")
     .option("--diagnostics", "print a safe read-only diagnostics snapshot")
     .action((target, options) => {
-      setExitCode(options.diagnostics ? diagnostics(target) : verify(target));
+      setExitCode(options.diagnostics ? diagnostics(target ?? process.cwd()) : verify(target ?? process.cwd()));
     });
 }
 ~~~
