@@ -33,7 +33,7 @@ copy-pasting setup or teardown.
 
 ## Story 2 — Packaged real-world smoke matrix
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
@@ -46,6 +46,9 @@ copy-pasting setup or teardown.
 Acceptance: a packed consumer exercises the same installer path a user runs,
 across representative repository shapes.
 
+Evidence: GitHub Actions [verify run 30482302484](https://github.com/mortenbroesby/agent-distro/actions/runs/30482302484)
+passed the packed fixture matrix, full tests, and packaged proof on macOS and
+Windows Git Bash.
 
 ## Story 3 — TUI journey refactor
 
@@ -67,13 +70,13 @@ terminal; the existing non-TTY test preserves the automated alternative.
 
 ## Story 4 — TUI and smoke evidence
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
 - [x] Add focused state/adapter tests without emulating a terminal in memory.
 - [x] Exercise the selected assets against a real repository fixture.
-- [ ] Run the packaged fixture matrix on macOS and Windows Git Bash.
+- [x] Run the packaged fixture matrix on macOS and Windows Git Bash.
 - [x] Record the manual TTY smoke command for human terminal validation.
 
 Manual TTY smoke: from a real terminal, run `npm run build && node
@@ -90,7 +93,7 @@ proved in real disposable repositories on both platforms.
 ### Tasks
 
 - [x] Update the decision record if a new dependency becomes necessary.
-- [ ] Check every task only with direct or hosted evidence.
+- [x] Check every task only with direct or hosted evidence.
 - [ ] Move this epic to `../done/` after the exact PR head passes both platforms.
 
 Acceptance: the TUI and smoke harness are maintainable without a custom test
