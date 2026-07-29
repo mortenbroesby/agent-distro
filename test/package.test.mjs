@@ -10,6 +10,12 @@ import { test } from "./support/repository-fixture.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
+test("declares and builds for the lowest supported Node runtime", () => {
+  const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  expect(packageJson.engines.node).toBe(">=20.12.0 <27");
+  expect(packageJson.scripts.build).toContain("--target node20.12");
+});
+
 test("installs the packed npm binary into real repository shapes", async ({ repository }) => {
   const workspace = repository.root;
   const cache = path.join(workspace, "cache");

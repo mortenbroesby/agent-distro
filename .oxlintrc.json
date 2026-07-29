@@ -7,7 +7,7 @@
   "categories": {
     "correctness": "error"
   },
-  "ignorePatterns": ["dist/**", "node_modules/**"],
+  "ignorePatterns": [".agents/**", "dist/**", "node_modules/**"],
   "overrides": [
     {
       "files": ["test/support/repository-fixture.mjs"],

@@ -5,3 +5,4 @@ requirements. Update the [progress tracker](../roadmap/progress.md) when their
 status materially changes.
 
 - [Symlinked shared distribution assets](./08-symlinked-shared-assets.md)
+- [Reliable runtime and observable installation](./09-reliable-runtime-and-observability.md)

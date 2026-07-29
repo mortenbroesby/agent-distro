@@ -6,6 +6,7 @@ set -euo pipefail
 
 while IFS= read -r -d '' file; do
   case "$file" in
+    package-lock.json) ;;
     *.cjs | *.js | *.json | *.jsx | *.mjs | *.ts | *.tsx)
       ./node_modules/.bin/oxfmt "$file"
       git add -- "$file"

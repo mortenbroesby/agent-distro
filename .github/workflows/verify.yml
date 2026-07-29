@@ -55,3 +55,29 @@ jobs:
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin install agent-distro@agent-distro-marketplace
           npm exec --yes --package @github/copilot@1.0.75 -- copilot plugin list
           test -f "$COPILOT_HOME/installed-plugins/agent-distro-marketplace/agent-distro/skills/agent-distro-debugging/SKILL.md"
+
+  runtime:
+    name: runtime (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        node: [20.12.0, 22.18.0, 24.11.0, 26]
+    steps:
+      - uses: actions/checkout@v4
+      # Tsdown is build-only and needs Node 22.18+, so package before
+      # switching to the consumer runtime that this job actually validates.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.1
+          cache: npm
+      - run: npm ci
+      - run: npm pack
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node test/runtime-package.mjs agent-distro-0.0.0.tgz
