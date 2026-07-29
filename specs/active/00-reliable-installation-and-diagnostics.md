@@ -116,7 +116,7 @@ packed npm install and invokes Agent Distro using `npm exec`.
 
 ## Story 5 — Deliberate dependency adoption
 
-**Status:** Ready
+**Status:** Active
 
 Evaluate libraries only at real boundaries and record the selected seam.
 Commander is retained for parsing and help; Execa is retained in the packaged
@@ -133,6 +133,16 @@ Acceptance criteria:
       filesystem writes, URL encoding, and environment data.
 - [ ] The decision record explains why rejected modules do not yet exist in the
       runtime dependency graph.
+
+### Decision record
+
+| Package or facility | Boundary | Evidence / decision |
+| --- | --- | --- |
+| `commander` | CLI commands, help, options, and usage failures | Retain; the focused CLI suite exercises help, invalid options, and command parsing. |
+| `execa` | Packed npm consumer proof | Retain as a test-only dependency; `test/package.test.mjs` uses it to invoke npm without shell quoting. |
+| `@clack/prompts` | Explicit TTY asset-selection wizard | Retain for the requested interactive wizard; its non-TTY rejection is covered, while a real TTY selection proof remains pending. |
+| Node standard library | Files, paths, hashes, URLs, and runtime metadata | Retain; no package is added for these platform facilities. |
+| `zod`, `jiti`, registry/cache/resolver libraries | User-authored config or package-distribution boundaries | Defer; Agent Distro has no such boundary today. |
 
 ## Verification and completion
 
