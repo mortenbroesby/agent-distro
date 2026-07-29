@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { fail } from "../errors.js";
-import { assetChoices, install, interactiveInstall, recover } from "../install.js";
+import { assetChoices, install, recover } from "../install.js";
+import { interactiveInstall } from "../interactive-install.js";
 
 /** Registers recovery without owning process exit. */
 export function registerRecoveryCommand(program: Command, setExitCode: (code: number) => void): void {
