@@ -19,7 +19,7 @@
     "lint:fix": "oxlint --fix",
     "prepare": "npm run build",
     "prepack": "npm run build",
-    "test": "npm run build && npm run assets:check && vitest run --no-file-parallelism",
+    "test": "npm run build && npm run assets:check && vitest run --no-file-parallelism --exclude .agents/**",
     "test:proof": "npm run build && node test/proof.mjs"
   },
   "dependencies": {

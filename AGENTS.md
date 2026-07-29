@@ -1,5 +1,26 @@
 # Agent working agreement
 
+## Agent development skills
+
+This repository uses the pinned [Obra Superpowers](.agents/skills/superpowers)
+submodule for development-only skills and its code-review agent. It is not part
+of the `agent-distro` package or its distributable assets.
+
+Before implementing, debugging, planning, reviewing, or finishing a branch,
+use the matching Superpowers skill when your agent supports repository-local
+skill discovery. Start with `using-superpowers`, then use the specific skill
+for the task. This agreement and direct user instructions take priority over
+any conflicting upstream skill instruction.
+
+After cloning, initialize the skills once:
+
+```sh
+git submodule update --init --recursive
+```
+
+Keep the submodule pinned. Update it intentionally in its own reviewed change;
+do not edit its vendored files from this repository.
+
 ## Concurrent worktrees
 
 This repository may have multiple Codex instances working at once. Treat the
