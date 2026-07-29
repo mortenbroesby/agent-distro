@@ -6,8 +6,8 @@ work.
 
 ## Current focus
 
-No active epic is selected. Choose the next item from the
-[progress tracker](./specs/roadmap/progress.md).
+- [Symlinked shared distribution assets](./specs/active/08-symlinked-shared-assets.md)
+  — make `assets/` the one source for custom installation and Copilot plugins.
 
 Npm publication remains deferred.
 

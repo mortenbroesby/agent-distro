@@ -1,5 +1,5 @@
 ---
-name: pull-request-review
+name: agent-distro-pull-request-review
 description: Review specialist, workflow, and reusable prompt.
 ---
 
