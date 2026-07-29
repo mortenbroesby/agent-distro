@@ -1,6 +1,6 @@
 # Source documentation standard
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** Side mission
 
@@ -53,14 +53,18 @@ covers and why.
 
 ## Story 4 — Verification and closeout
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
 - [x] Run focused tests and the standalone proof after documentation changes.
-- [ ] Require completed macOS and Windows Git Bash verification for the exact
+- [x] Require completed macOS and Windows Git Bash verification for the exact
   pull-request head.
-- [ ] Move this epic to `../done/` only after every task has direct evidence.
+- [x] Move this epic to `../done/` only after every task has direct evidence.
 
 Acceptance: documentation is shipped through the same cross-platform process
 as behavior changes.
+
+Evidence: GitHub Actions [verify run 30484057022](https://github.com/mortenbroesby/agent-distro/actions/runs/30484057022)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and Windows Git
+Bash for PR #20's exact head.

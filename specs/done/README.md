@@ -7,3 +7,4 @@ Move an epic here only after each acceptance criterion has current evidence.
 - [Transactional install and recovery](./02-transactional-install-and-recovery.md)
 - [Cross-platform core and compatibility contract](./04-cross-platform-core-and-compatibility.md)
 - [Interactive TUI and real-repository smoke](./05-interactive-tui-and-repository-smoke.md)
+- [Source documentation standard](./06-source-documentation-standard.md)

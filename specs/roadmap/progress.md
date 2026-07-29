@@ -2,7 +2,7 @@
 
 | Priority | Status | Work | Next evidence |
 | --- | --- | --- | --- |
-| Side mission | Active | [Source documentation standard](../active/06-source-documentation-standard.md) | Runtime and proof-source annotation audit |
+| Side mission | Done | [Source documentation standard](../done/06-source-documentation-standard.md) | PR #20 passed run `30484057022` on macOS and Windows Git Bash |
 | 0 | Done | [Cross-platform core and compatibility contract](../done/04-cross-platform-core-and-compatibility.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0.1 | Done | [Interactive TUI and real-repository smoke](../done/05-interactive-tui-and-repository-smoke.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0 | Done | [Reliable installation and diagnostics](../done/00-reliable-installation-and-diagnostics.md) | Completed in hosted run `30475273988` on macOS and Windows |
