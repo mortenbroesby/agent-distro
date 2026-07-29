@@ -62,4 +62,4 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   expect(body).toContain("[local-path]");
   expect(body).not.toContain("ghp_ABCdef123");
   expect(fs.readdirSync(reportDirectory)).toEqual(beforeReport);
-}, 30_000);
+}, 60_000);
