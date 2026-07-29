@@ -96,12 +96,17 @@ test asserts, then invokes through npm's own cross-platform executable runner.
 
 Acceptance criteria:
 
-- [ ] Packaged npm install is tested on macOS and native Windows.
+- [x] Packaged npm install is tested on macOS and native Windows.
 - [ ] Each tested platform covers install, dry-run, conflict, force, verify,
       and diagnostic failure output.
-- [ ] Windows results come from a completed hosted runner or user-supplied
+- [x] Windows results come from a completed hosted runner or user-supplied
       Windows evidence, not source-level inference. Git Bash smoke is a useful
       additional check, but native Windows npm-shim execution is authoritative.
+
+Evidence (2026-07-29): GitHub Actions run `30468852345` passed `npm ci`,
+`npm test`, and `npm run test:proof` on both `macos-latest` and
+`windows-latest`. The Windows package test asserts `asdlc.cmd` exists after a
+packed npm install and invokes ASDLC using `npm exec`.
 
 ## Story 5 — Deliberate dependency adoption
 
