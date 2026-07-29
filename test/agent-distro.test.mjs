@@ -136,7 +136,9 @@ describe("agent-distro install", () => {
     expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
     const originalWrite = fs.writeFileSync;
     fs.writeFileSync = (file, ...args) => {
-      if (String(file).includes(".agent-distro-stage-")) throw new Error("simulated staged write failure");
+      if (String(file).includes(".agent-distro-stage-")) {
+        throw Object.assign(new Error("simulated EACCES staged write failure"), { code: "EACCES" });
+      }
       return originalWrite(file, ...args);
     };
     try {
@@ -146,6 +148,14 @@ describe("agent-distro install", () => {
     }
     expect(verify(destination)).toContain("Verified 1 assets");
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
+  });
+
+  it("refuses a symlinked managed asset path without writing through it", () => {
+    const destination = target();
+    const outside = target();
+    fs.symlinkSync(outside, path.join(destination, ".github"), process.platform === "win32" ? "junction" : "dir");
+    expect(install(destination, { selected: [".github/prompts/agent-distro.prompt.md"] })).toBe(1);
+    expect(fs.existsSync(path.join(outside, "prompts/agent-distro.prompt.md"))).toBe(false);
   });
 
   it("rolls back completed renames when a later rename fails", () => {

@@ -105,7 +105,8 @@ Windows.
       Actions matrix.
 - [x] Record completed hosted run URLs and only check acceptance boxes with
       evidence.
-- [ ] Cover read-only target and symlink behavior with platform-specific proof.
+- [x] Cover a permission-denied staged write and symlink behavior through the
+      cross-platform filesystem seam.
 
 Acceptance: the packaged command proves the recovery behavior on macOS and
 native Windows without requiring Bash.
