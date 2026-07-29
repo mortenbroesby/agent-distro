@@ -1,3 +1,5 @@
+// Small dependency-free smoke proof used by CI and humans after a build. It
+// invokes the packaged launcher, not internal functions, for the six bare assets.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";

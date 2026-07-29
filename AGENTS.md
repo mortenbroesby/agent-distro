@@ -40,6 +40,20 @@ Before requesting review, fetch `origin` and rebase or merge the latest
 `git merge-base --is-ancestor origin/main HEAD` succeeds; a passing stale-base
 CI run is not enough.
 
+## Source documentation
+
+Every new or materially changed runtime, test, and support source file must
+make its purpose clear to the next maintainer. Start with a short file-level
+comment when the file's role is not obvious from its name. Use TSDoc for
+exported types and functions, documenting inputs, outputs, side effects, and
+important failure or safety guarantees. Add normal comments at non-obvious
+security, filesystem, transaction, platform, and compatibility boundaries.
+
+Do not narrate self-evident syntax or restate the code line by line. Keep
+documentation accurate as behavior changes, and add or update it in the same
+pull request as the implementation. Tests and fixtures must explain the user
+scenario or invariant they prove when that is not apparent from the test name.
+
 ## Merging pull requests
 
 Agents may squash-merge their own ready-for-review pull requests without a

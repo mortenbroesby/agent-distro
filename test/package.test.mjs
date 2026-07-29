@@ -1,3 +1,5 @@
+// End-to-end consumer proof: npm packs this project, installs it into a fresh
+// consumer, and runs its public binary against real filesystem repository shapes.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +23,8 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "agent-distro", ...args], options);
   expect((await execute(["--version"])).stdout).toBe("0.0.0");
 
+  // Spaces and Unicode make launcher and path handling failures visible on both
+  // supported platforms without relying on a synthetic filesystem.
   const plain = repository.plain("target with spaces-å");
   await execute(["install", plain, "--all"]);
   const manifest = path.join(plain, ".agent-distro", "manifest.json");
@@ -34,6 +38,8 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   await execute(["install", plain, "--all", "--force"]);
   expect((await execute(["verify", plain])).stdout).toContain("Verified 6 assets");
 
+  // Git state is deliberately incidental: the installer targets only the exact
+  // directory supplied, including a nested package within a monorepo.
   const git = await repository.git();
   await execute(["install", git, "--asset", ".mcp.json"]);
   expect((await execute(["verify", git])).stdout).toContain("Verified 1 assets");

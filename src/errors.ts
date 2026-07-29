@@ -1,3 +1,4 @@
+/** Stable, user-facing failure categories used by the CLI and diagnostics. */
 export type FailureCode =
   | "AGENT_DISTRO_E_TARGET_INVALID"
   | "AGENT_DISTRO_E_DESTINATION_UNSAFE"
@@ -19,6 +20,7 @@ const nextSteps: Record<FailureCode, string> = {
   AGENT_DISTRO_E_UNEXPECTED: "Run agent-distro diagnostics <target>; if it persists, run agent-distro report-issue --diagnostics-consent --message \"describe the failure\".",
 };
 
+/** Removes common credentials and local paths before text reaches the terminal or issue URL. */
 export function sanitize(value: unknown) {
   return String(value)
     .replace(/(?:ghp|github_pat|npm)_[A-Za-z0-9_\-]+/g, "[redacted]")
@@ -28,10 +30,12 @@ export function sanitize(value: unknown) {
     .slice(0, 500);
 }
 
+/** Formats a stable failure code with a safe, actionable recovery step. */
 export function formatFailure(code: FailureCode, message: unknown) {
   return `${code}: ${sanitize(message)}\nNext: ${nextSteps[code]}`;
 }
 
+/** Writes a formatted failure to stderr and returns the conventional failure exit code. */
 export function fail(code: FailureCode, message: unknown) {
   console.error(formatFailure(code, message));
   return 1;
