@@ -1,9 +1,10 @@
 import { Command, CommanderError } from "commander";
 import { registerDoctorCommand } from "./commands/doctor.js";
-import { fail, formatFailure } from "./errors.js";
-import { assetChoices, install, interactiveInstall, profileChoices, recover } from "./install.js";
+import { registerInstallCommand } from "./commands/install.js";
+import { registerProfilesCommand } from "./commands/profiles.js";
+import { registerReportIssueCommand } from "./commands/report-issue.js";
+import { formatFailure } from "./errors.js";
 import { version } from "./package.js";
-import { reportIssue } from "./report-issue.js";
 
 /**
  * Runs the Commander-based CLI without terminating the Node process.
@@ -24,63 +25,15 @@ export async function run(args: string[]) {
   registerDoctorCommand(program, (code) => {
     exitCode = code;
   });
-  program
-    .command("recover <target>")
-    .description("Restore an interrupted Agent Distro installation")
-    .action((target) => {
-      exitCode = recover(target);
-    });
-  program
-    .command("report-issue")
-    .description("Print a pre-filled GitHub issue URL without submitting it")
-    .option("--diagnostics-consent", "confirm that the sanitized summary may be included")
-    .requiredOption("--message <summary>", "sanitized failure summary")
-    .option("--action <name>", "command that failed")
-    .option("--code <code>", "Agent Distro failure code")
-    .action((options) => {
-      exitCode = reportIssue(options);
-    });
-  // No selection flags means a human is asking for the guided TTY journey.
-  // Scripts must choose assets explicitly so they cannot block on prompts.
-  program
-    .command("profiles")
-    .description("Print available versioned asset profiles")
-    .action(() => {
-      process.stdout.write(`${JSON.stringify(profileChoices)}\n`);
-    });
-  program
-    .command("install [target]")
-    .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
-    .option("--force", "replace changed Agent Distro assets")
-    .option("--dry-run", "show changes without writing")
-    .option("--verbose", "print concise installation phases to stderr")
-    .option("--asset <path...>", "asset path to install; repeatable")
-    .option("--profile <name...>", "profile to install; repeatable and composable with --asset")
-    .option("--all", "install every Agent Distro asset")
-    .option("--interactive", "open the selection wizard")
-    .action(async (target, options) => {
-      if (options.interactive || (!options.asset && !options.profile && !options.all)) {
-        exitCode = await interactiveInstall(target);
-      } else if (!target) {
-        exitCode = fail("AGENT_DISTRO_E_USAGE", "A target directory is required with --asset or --all.");
-      } else if ((options.asset || options.profile) && options.all) {
-        exitCode = fail("AGENT_DISTRO_E_USAGE", "Use --all or selected --profile/--asset values, not both.");
-      } else {
-        try {
-          exitCode = install(target, {
-            force: options.force,
-            dryRun: options.dryRun,
-            profiles: options.profile,
-            selected: options.all ? assetChoices.map(([value]) => value) : options.asset,
-            // Keep normal stdout machine-friendly; the opt-in stream identifies
-            // the last completed transactional phase without exposing contents.
-            onStep: options.verbose ? (message) => process.stderr.write(`[agent-distro] ${message}\n`) : undefined,
-          });
-        } catch (error) {
-          exitCode = fail("AGENT_DISTRO_E_USAGE", error instanceof Error ? error.message : String(error));
-        }
-      }
-    });
+  registerInstallCommand(program, (code) => {
+    exitCode = code;
+  });
+  registerProfilesCommand(program, (code) => {
+    exitCode = code;
+  });
+  registerReportIssueCommand(program, (code) => {
+    exitCode = code;
+  });
 
   // Bare invocation is help, rather than an implicit filesystem mutation.
   if (args.length === 0) {
