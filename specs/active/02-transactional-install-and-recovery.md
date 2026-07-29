@@ -35,7 +35,10 @@ destination is replaced.
 
 Evidence (2026-07-29): focused Vitest coverage injects a staged-write failure,
 then verifies the prior complete installation and confirms that staging state
-was removed. `npm run test:proof` passed locally.
+was removed. `npm run test:proof` passed locally. GitHub Actions
+[`verify` run 30472562682](https://github.com/mortenbroesby/agent-distro/actions/runs/30472562682)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and native
+Windows.
 
 ## Story 2 — Commit and rollback
 
