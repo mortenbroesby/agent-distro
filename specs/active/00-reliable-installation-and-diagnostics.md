@@ -56,11 +56,14 @@ test:proof` passed the packaged macOS proof.
 
 ## Story 2 — Opt-in issue-report handoff
 
-**Status:** Ready
+**Status:** Active
 
 Adopt Astrograph's useful pattern: a local function creates a pre-filled GitHub
 issue URL from a sanitized failure summary and minimal runtime metadata. The
 user must explicitly invoke it and review it before submission.
+
+Implementation detail and task evidence live in the child
+[opt-in issue-report handoff epic](./01-opt-in-issue-reporting.md).
 
 Acceptance criteria:
 

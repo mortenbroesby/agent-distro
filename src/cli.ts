@@ -7,6 +7,7 @@ import { Command, CommanderError } from "commander";
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
+const issueUrl = "https://github.com/mortenbroesby/agent-distro/issues/new";
 
 type FailureCode =
   | "ASDLC_E_TARGET_INVALID"
@@ -38,6 +39,23 @@ function sanitize(value: unknown) {
 
 export function formatFailure(code: FailureCode, message: unknown) {
   return `${code}: ${sanitize(message)}\nNext: ${nextSteps[code]}`;
+}
+
+export function createIssueUrl({
+  message,
+  action = "unknown",
+  code = "ASDLC_E_UNEXPECTED",
+}: { message: unknown; action?: unknown; code?: unknown }) {
+  const body = [
+    "<!-- Generated locally. Review before submitting. -->",
+    `ASDLC: ${version}`,
+    `Node: ${process.versions.node}`,
+    `Platform: ${process.platform} ${process.arch}`,
+    `Action: ${sanitize(action)}`,
+    `Code: ${sanitize(code)}`,
+    `Failure: ${sanitize(message)}`,
+  ].join("\n");
+  return `${issueUrl}?${new URLSearchParams({ title: "ASDLC failure", body }).toString()}`;
 }
 
 function fail(code: FailureCode, message: unknown) {
@@ -139,6 +157,18 @@ function diagnostics(target: string) {
   return 0;
 }
 
+function reportIssue({
+  diagnosticsConsent,
+  message,
+  action,
+  code,
+}: { diagnosticsConsent?: boolean; message?: string; action?: string; code?: string }) {
+  if (!diagnosticsConsent) return fail("ASDLC_E_USAGE", "Issue reporting requires --diagnostics-consent.");
+  if (!message) return fail("ASDLC_E_USAGE", "Issue reporting requires --message <summary>.");
+  process.stdout.write(`${createIssueUrl({ message, action, code })}\n`);
+  return 0;
+}
+
 function install(target: string, { force = false, dryRun = false }: { force?: boolean; dryRun?: boolean }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
     return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
@@ -220,6 +250,15 @@ export function run(args: string[]) {
   program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => {
     exitCode = diagnostics(target);
   });
+  program.command("report-issue")
+    .description("Print a pre-filled GitHub issue URL without submitting it")
+    .option("--diagnostics-consent", "confirm that the sanitized summary may be included")
+    .requiredOption("--message <summary>", "sanitized failure summary")
+    .option("--action <name>", "command that failed")
+    .option("--code <code>", "ASDLC failure code")
+    .action((options) => {
+      exitCode = reportIssue(options);
+    });
   program.command("install <target>")
     .description("Install ASDLC assets")
     .option("--force", "replace changed ASDLC assets")

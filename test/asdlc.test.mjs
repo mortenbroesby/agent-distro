@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { formatFailure } from "../dist/cli.mjs";
+import { createIssueUrl, formatFailure } from "../dist/cli.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "asdlc.mjs");
@@ -55,6 +55,25 @@ describe("asdlc install", () => {
     expect(output).toContain("[redacted]");
     expect(output).toContain("[local-path]");
     expect(output).not.toContain("ghp_ABCdef123");
+  });
+
+  it("creates a local, redacted issue URL only with explicit consent", () => {
+    const direct = new URL(createIssueUrl({
+      message: "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
+      action: "install",
+      code: "ASDLC_E_UNEXPECTED",
+    }));
+    const body = direct.searchParams.get("body");
+    expect(direct.origin + direct.pathname).toBe("https://github.com/mortenbroesby/agent-distro/issues/new");
+    expect(body).toContain("Review before submitting");
+    expect(body).toContain("[redacted]");
+    expect(body).toContain("[local-path]");
+    expect(body).not.toContain("ghp_ABCdef123");
+    expect(body).not.toContain("C:\\Users\\example");
+
+    expect(failed("report-issue", "--message", "failure")).toContain("ASDLC_E_USAGE");
+    const reported = new URL(command("report-issue", "--diagnostics-consent", "--message", "failure", "--action", "install", "--code", "ASDLC_E_UNEXPECTED").trim());
+    expect(reported.searchParams.get("body")).toContain("Failure: failure");
   });
 
   it("installs every Copilot asset category and records ownership", () => {
