@@ -1,6 +1,6 @@
 # Opt-in issue-report handoff
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 1
 
@@ -76,7 +76,7 @@ Agent Distro ever preparing a command containing sensitive data.
 
 ## Story 4 — Packaged and cross-platform proof
 
-**Status:** Active
+**Status:** Done
 
 Prove the report command from a packed package on macOS and native Windows.
 
@@ -85,7 +85,13 @@ Prove the report command from a packed package on macOS and native Windows.
 - [x] Add packed-package `report-issue` coverage to the existing npm proof.
 - [x] Assert the Windows `.cmd` shim and macOS executable produce the same
       required decoded URL fields and redactions.
-- [ ] Record a completed hosted macOS/Windows Actions run in this epic.
+- [x] Record a completed hosted macOS/Windows Actions run in this epic.
+
+Evidence (2026-07-29): GitHub Actions [`verify` run
+30475273988](https://github.com/mortenbroesby/agent-distro/actions/runs/30475273988)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and native
+Windows. The packed proof invokes `report-issue`, decodes the returned URL,
+checks redaction and metadata, and confirms no files were written.
 
 Acceptance: real installed-package proof covers the non-mutating report path
 on both supported operating systems.

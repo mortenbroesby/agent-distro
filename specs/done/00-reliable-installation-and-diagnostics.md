@@ -1,6 +1,6 @@
 # Reliable installation and diagnostics
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 0
 
@@ -34,7 +34,7 @@ those are reference patterns, not requirements for this minimal installer.
 
 ## Story 1 — Failure contract and safe diagnostics
 
-**Status:** Active
+**Status:** Done
 
 Create one error boundary for the CLI. It must classify expected invalid input,
 unsafe destination state, and unexpected I/O/runtime faults; show an error code,
@@ -50,13 +50,14 @@ Acceptance criteria:
 - [x] Focused tests cover invalid target, conflict, malformed manifest, and an
       injected unexpected error.
 
-Evidence (2026-07-29): `npm test` passed 14 tests, including the stable
-stderr-code/recovery contract, redaction, and diagnostics snapshot. `npm run
-test:proof` passed the packaged macOS proof.
+Evidence (2026-07-29): GitHub Actions [`verify` run
+30475273988](https://github.com/mortenbroesby/agent-distro/actions/runs/30475273988)
+passed the focused and packed tests on macOS and native Windows, including the
+stable stderr-code/recovery contract, redaction, and diagnostics snapshot.
 
 ## Story 2 — Opt-in issue-report handoff
 
-**Status:** Active
+**Status:** Done
 
 Adopt Astrograph's useful pattern: a local function creates a pre-filled GitHub
 issue URL from a sanitized failure summary and minimal runtime metadata. The
@@ -67,15 +68,19 @@ Implementation detail and task evidence live in the child
 
 Acceptance criteria:
 
-- [ ] `agent-distro report-issue --diagnostics-consent --message <summary>` prints a
+- [x] `agent-distro report-issue --diagnostics-consent --message <summary>` prints a
       GitHub issue URL without network or browser activity.
-- [ ] The URL body records Agent Distro version, Node version, OS/architecture, action,
+- [x] The URL body records Agent Distro version, Node version, OS/architecture, action,
       error code, and redacted summary only.
-- [ ] Tests prove token and POSIX/Windows-path redaction.
+- [x] Tests prove token and POSIX/Windows-path redaction.
+
+Evidence (2026-07-29): the completed packaged macOS/Windows run `30475273988`
+exercises `report-issue`; the focused suite decodes the local URL and verifies
+the required metadata and token/POSIX/Windows-path redaction.
 
 ## Story 3 — Transactional install and recovery
 
-**Status:** Active
+**Status:** Done
 
 Prove that interrupted, permission-denied, concurrent, and rename-failed writes
 leave no partial managed state and provide a deterministic recovery command.
@@ -116,7 +121,7 @@ packed npm install and invokes Agent Distro using `npm exec`.
 
 ## Story 5 — Deliberate dependency adoption
 
-**Status:** Ready
+**Status:** Done
 
 Evaluate libraries only at real boundaries and record the selected seam.
 Commander is retained for parsing and help; Execa is retained in the packaged
@@ -128,15 +133,25 @@ APM-sized dependency graph.
 
 Acceptance criteria:
 
-- [ ] Every retained or added package has a named boundary and test.
-- [ ] Node standard library remains the implementation for paths, hashing,
+- [x] Every retained or added package has a named boundary and test.
+- [x] Node standard library remains the implementation for paths, hashing,
       filesystem writes, URL encoding, and environment data.
-- [ ] The decision record explains why rejected modules do not yet exist in the
+- [x] The decision record explains why rejected modules do not yet exist in the
       runtime dependency graph.
+
+### Decision record
+
+| Package or facility | Boundary | Evidence / decision |
+| --- | --- | --- |
+| `commander` | CLI commands, help, options, and usage failures | Retain; the focused CLI suite exercises help, invalid options, and command parsing. |
+| `execa` | Packed npm consumer proof | Retain as a test-only dependency; `test/package.test.mjs` invokes npm without shell quoting. |
+| `@clack/prompts` | Explicit TTY asset-selection wizard | Retain for the requested wizard; the focused CLI test proves non-TTY invocation rejects without creating a target. |
+| Node standard library | Files, paths, hashes, URLs, and runtime metadata | Retain; no package is added for these platform facilities. |
+| `zod`, `jiti`, registry/cache/resolver libraries | User-authored config or package-distribution boundaries | Defer; Agent Distro has no such boundary today. |
 
 ## Verification and completion
 
-Close this epic only after all five stories have direct tests or platform
-evidence, `npm test`, `npm run test:proof`, and both hosted macOS and native
-Windows package proofs pass. Move this file to `../done/` and update
-`../roadmap/progress.md` and `../../pointer.md` at that time.
+All five stories have direct tests or platform evidence. GitHub Actions
+[`verify` run 30475273988](https://github.com/mortenbroesby/agent-distro/actions/runs/30475273988)
+passed `npm ci`, `npm test`, and `npm run test:proof` on both macOS and native
+Windows.

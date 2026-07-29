@@ -6,8 +6,8 @@ work.
 
 ## Current focus
 
-- [Reliable installation and diagnostics epic](./specs/active/00-reliable-installation-and-diagnostics.md)
-  — make every supported install outcome explicit, recoverable, and safe to
-  report without exposing secrets or local paths.
+- [Versioned npm distribution](./specs/roadmap/progress.md)
+  — select the next installer work only after reviewing the completed
+  reliability evidence.
 
 When a story changes state, update its epic and `specs/roadmap/progress.md`.

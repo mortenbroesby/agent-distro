@@ -32,6 +32,9 @@ asks for a draft. Before handing a PR off, wait for its macOS and Windows
 changed scope, completed-run evidence, and known gaps. Do not claim a hosted
 check passed until its completed run is inspected.
 
+`verify` runs for pull requests only. Do not expect a branch push to provide
+current CI evidence; inspect the pull-request run for its exact head commit.
+
 Before requesting review, fetch `origin` and rebase or merge the latest
 `origin/main` into the task branch. Confirm
 `git merge-base --is-ancestor origin/main HEAD` succeeds; a passing stale-base

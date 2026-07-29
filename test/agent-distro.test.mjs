@@ -33,6 +33,12 @@ describe("agent-distro install", () => {
     expect(failed("verify", target(), "--force")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
+  it("does not start the interactive wizard without a terminal", () => {
+    const destination = path.join(os.tmpdir(), `agent-distro-no-tty-${process.pid}-${Date.now()}`);
+    expect(failed("install", destination)).toContain("Interactive install requires a terminal");
+    expect(fs.existsSync(destination)).toBe(false);
+  });
+
   it("prints stable codes and recovery actions for expected failures", () => {
     const fileTarget = path.join(os.tmpdir(), `agent-distro-file-${process.pid}-${Date.now()}`);
     fs.writeFileSync(fileTarget, "not a directory\n");
