@@ -5,7 +5,7 @@
 **Priority:** 4
 
 **Goal:** Make branch/worktree isolation and pull-request delivery the default
-for every ASDLC agent, then enforce the same policy remotely on `main`.
+for every Agent Distro agent, then enforce the same policy remotely on `main`.
 
 ## Boundary
 
@@ -36,7 +36,7 @@ workflow the default without relying on hidden local configuration.
 - [x] Define the minimum PR handoff: summary, verification evidence, and known
       gaps.
 - [x] Add a PR template after an explicit user request.
-- [x] Prove an ASDLC change can be delivered from a branch without touching the
+- [x] Prove an Agent Distro change can be delivered from a branch without touching the
       shared checkout.
 
 Acceptance: a reviewer can understand scope and proof without reconstructing

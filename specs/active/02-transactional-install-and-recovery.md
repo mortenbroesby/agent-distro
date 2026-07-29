@@ -6,7 +6,7 @@
 
 **Parent:** [Reliable installation and diagnostics](./00-reliable-installation-and-diagnostics.md), Story 3
 
-**Goal:** A failed install never leaves a partial ASDLC asset set. ASDLC stages
+**Goal:** A failed install never leaves a partial Agent Distro asset set. Agent Distro stages
 every intended file, commits as one recoverable operation, and can restore a
 known-complete prior state after an interrupted commit.
 
@@ -65,7 +65,7 @@ installation or the new complete installation, never a mix.
 
 - [ ] Persist the smallest transaction journal needed to recover an interrupted
       commit.
-- [ ] Add `asdlc recover <target>` with the existing stderr-code/recovery
+- [ ] Add `agent-distro recover <target>` with the existing stderr-code/recovery
       contract.
 - [ ] Refuse a new install while an incomplete transaction is present and point
       to `recover`.

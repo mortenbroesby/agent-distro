@@ -1,9 +1,9 @@
 {
-  "name": "asdlc",
+  "name": "agent-distro",
   "version": "0.0.0",
   "type": "module",
   "bin": {
-    "asdlc": "bin/asdlc.mjs"
+    "agent-distro": "bin/agent-distro.mjs"
   },
   "files": [
     "bin",

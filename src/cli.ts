@@ -10,22 +10,22 @@ const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.met
 const issueUrl = "https://github.com/mortenbroesby/agent-distro/issues/new";
 
 type FailureCode =
-  | "ASDLC_E_TARGET_INVALID"
-  | "ASDLC_E_DESTINATION_UNSAFE"
-  | "ASDLC_E_CONFLICT"
-  | "ASDLC_E_MANIFEST_INVALID"
-  | "ASDLC_E_ASSET_DRIFT"
-  | "ASDLC_E_USAGE"
-  | "ASDLC_E_UNEXPECTED";
+  | "AGENT_DISTRO_E_TARGET_INVALID"
+  | "AGENT_DISTRO_E_DESTINATION_UNSAFE"
+  | "AGENT_DISTRO_E_CONFLICT"
+  | "AGENT_DISTRO_E_MANIFEST_INVALID"
+  | "AGENT_DISTRO_E_ASSET_DRIFT"
+  | "AGENT_DISTRO_E_USAGE"
+  | "AGENT_DISTRO_E_UNEXPECTED";
 
 const nextSteps: Record<FailureCode, string> = {
-  ASDLC_E_TARGET_INVALID: "Pass an existing directory as <target>.",
-  ASDLC_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
-  ASDLC_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
-  ASDLC_E_MANIFEST_INVALID: "Reinstall ASDLC assets with --force, then run verify again.",
-  ASDLC_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
-  ASDLC_E_USAGE: "Run asdlc --help for valid commands and options.",
-  ASDLC_E_UNEXPECTED: "Run asdlc diagnostics <target>; if it persists, run asdlc report-issue --diagnostics-consent --message \"describe the failure\".",
+  AGENT_DISTRO_E_TARGET_INVALID: "Pass an existing directory as <target>.",
+  AGENT_DISTRO_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
+  AGENT_DISTRO_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
+  AGENT_DISTRO_E_MANIFEST_INVALID: "Reinstall Agent Distro assets with --force, then run verify again.",
+  AGENT_DISTRO_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
+  AGENT_DISTRO_E_USAGE: "Run agent-distro --help for valid commands and options.",
+  AGENT_DISTRO_E_UNEXPECTED: "Run agent-distro diagnostics <target>; if it persists, run agent-distro report-issue --diagnostics-consent --message \"describe the failure\".",
 };
 
 function sanitize(value: unknown) {
@@ -44,18 +44,18 @@ export function formatFailure(code: FailureCode, message: unknown) {
 export function createIssueUrl({
   message,
   action = "unknown",
-  code = "ASDLC_E_UNEXPECTED",
+  code = "AGENT_DISTRO_E_UNEXPECTED",
 }: { message: unknown; action?: unknown; code?: unknown }) {
   const body = [
     "<!-- Generated locally. Review before submitting. -->",
-    `ASDLC: ${version}`,
+    `Agent Distro: ${version}`,
     `Node: ${process.versions.node}`,
     `Platform: ${process.platform} ${process.arch}`,
     `Action: ${sanitize(action)}`,
     `Code: ${sanitize(code)}`,
     `Failure: ${sanitize(message)}`,
   ].join("\n");
-  return `${issueUrl}?${new URLSearchParams({ title: "ASDLC failure", body }).toString()}`;
+  return `${issueUrl}?${new URLSearchParams({ title: "Agent Distro failure", body }).toString()}`;
 }
 
 function fail(code: FailureCode, message: unknown) {
@@ -85,13 +85,13 @@ function manifestParts(relative: unknown) {
 
 function verify(target: string) {
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
-    return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   }
   const destination = fs.realpathSync(target);
-  const manifestPath = path.join(destination, ".asdlc", "manifest.json");
+  const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
   try {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    if (manifest.tool !== "asdlc" || manifest.version !== 1 || !Array.isArray(manifest.files)) {
+    if (manifest.tool !== "agent-distro" || manifest.version !== 1 || !Array.isArray(manifest.files)) {
       throw new Error("invalid manifest");
     }
     for (const relative of manifest.files) {
@@ -110,8 +110,8 @@ function verify(target: string) {
     const message = error instanceof Error ? error.message : String(error);
     return fail(
       message.startsWith("missing asset:") || message.startsWith("changed asset:")
-        ? "ASDLC_E_ASSET_DRIFT"
-        : "ASDLC_E_MANIFEST_INVALID",
+        ? "AGENT_DISTRO_E_ASSET_DRIFT"
+        : "AGENT_DISTRO_E_MANIFEST_INVALID",
       message,
     );
   }
@@ -133,12 +133,12 @@ function diagnostics(target: string) {
     process.stdout.write(`${JSON.stringify(snapshot)}\n`);
     return 0;
   }
-  const manifestPath = path.join(fs.realpathSync(target), ".asdlc", "manifest.json");
+  const manifestPath = path.join(fs.realpathSync(target), ".agent-distro", "manifest.json");
   snapshot.manifest.present = fs.existsSync(manifestPath);
   if (snapshot.manifest.present) {
     try {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-      snapshot.manifest.valid = manifest.tool === "asdlc" && manifest.version === 1 && Array.isArray(manifest.files);
+      snapshot.manifest.valid = manifest.tool === "agent-distro" && manifest.version === 1 && Array.isArray(manifest.files);
       snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;
     } catch {
       // Diagnostics must remain available when the manifest is malformed.
@@ -154,18 +154,18 @@ function reportIssue({
   action,
   code,
 }: { diagnosticsConsent?: boolean; message?: string; action?: string; code?: string }) {
-  if (!diagnosticsConsent) return fail("ASDLC_E_USAGE", "Issue reporting requires --diagnostics-consent.");
-  if (!message) return fail("ASDLC_E_USAGE", "Issue reporting requires --message <summary>.");
+  if (!diagnosticsConsent) return fail("AGENT_DISTRO_E_USAGE", "Issue reporting requires --diagnostics-consent.");
+  if (!message) return fail("AGENT_DISTRO_E_USAGE", "Issue reporting requires --message <summary>.");
   process.stdout.write(`${createIssueUrl({ message, action, code })}\n`);
   return 0;
 }
 
 const assetChoices = [
-  [".github/agents/asdlc.agent.md", "Agent"],
-  [".github/hooks/asdlc.json", "Hook"],
-  [".github/instructions/asdlc.instructions.md", "Instructions"],
-  [".github/prompts/asdlc.prompt.md", "Prompt"],
-  [".github/skills/asdlc/SKILL.md", "Skill"],
+  [".github/agents/agent-distro.agent.md", "Agent"],
+  [".github/hooks/agent-distro.json", "Hook"],
+  [".github/instructions/agent-distro.instructions.md", "Instructions"],
+  [".github/prompts/agent-distro.prompt.md", "Prompt"],
+  [".github/skills/agent-distro/SKILL.md", "Skill"],
   [".mcp.json", "MCP configuration"],
 ] as const;
 
@@ -178,17 +178,17 @@ function selectedAssets(selected: string[]) {
 
 export function install(target: string, { force = false, dryRun = false, selected = [] }: { force?: boolean; dryRun?: boolean; selected?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
-    return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   }
   const destination = fs.existsSync(target)
     ? fs.realpathSync(target)
     : path.resolve(target);
   const sourceFiles = selectedAssets(selected);
-  const manifestPath = path.join(destination, ".asdlc", "manifest.json");
-  const outputFiles = [...sourceFiles, ".asdlc/manifest.json"];
+  const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
+  const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
   const manifest = JSON.stringify(
     {
-      tool: "asdlc",
+      tool: "agent-distro",
       version: 1,
       files: sourceFiles.map((relative) => relative.split(path.sep).join("/")),
       hashes: Object.fromEntries(
@@ -207,17 +207,17 @@ export function install(target: string, { force = false, dryRun = false, selecte
   const contents = new Map(
     sourceFiles.map((relative) => [relative, fs.readFileSync(path.join(assets, relative))]),
   );
-  contents.set(".asdlc/manifest.json", Buffer.from(manifest));
+  contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
   const unsafe = outputFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
   if (unsafe.length) {
-    return fail("ASDLC_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
+    return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
   }
   const directories = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !fs.lstatSync(output).isFile();
   });
   if (directories.length) {
-    return fail("ASDLC_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
+    return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing non-file managed paths: ${directories.join(", ")}`);
   }
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
@@ -226,7 +226,7 @@ export function install(target: string, { force = false, dryRun = false, selecte
   });
 
   if (conflicts.length && !force) {
-    return fail("ASDLC_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
+    return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
   }
 
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
@@ -234,8 +234,8 @@ export function install(target: string, { force = false, dryRun = false, selecte
   if (dryRun) return 0;
   let staging = "";
   try {
-    fs.mkdirSync(path.join(destination, ".asdlc"), { recursive: true });
-    staging = fs.mkdtempSync(path.join(destination, ".asdlc", ".asdlc-stage-"));
+    fs.mkdirSync(path.join(destination, ".agent-distro"), { recursive: true });
+    staging = fs.mkdtempSync(path.join(destination, ".agent-distro", ".agent-distro-stage-"));
     for (const relative of changed) {
       const staged = path.join(staging, relative);
       fs.mkdirSync(path.dirname(staged), { recursive: true });
@@ -248,7 +248,7 @@ export function install(target: string, { force = false, dryRun = false, selecte
     }
   } catch (error) {
     if (staging) fs.rmSync(staging, { recursive: true, force: true });
-    return fail("ASDLC_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
+    return fail("AGENT_DISTRO_E_UNEXPECTED", error instanceof Error ? error.message : String(error));
   }
   fs.rmSync(staging, { recursive: true, force: true });
   return 0;
@@ -256,10 +256,10 @@ export function install(target: string, { force = false, dryRun = false, selecte
 
 async function interactiveInstall(target?: string) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    return fail("ASDLC_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
+    return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
   }
   const p = await import("@clack/prompts");
-  p.intro("ASDLC install");
+  p.intro("Agent Distro install");
   const destination = target ?? await p.text({ message: "Install into", initialValue: process.cwd(), validate: (value) => value ? undefined : "A target directory is required." });
   if (p.isCancel(destination)) {
     p.cancel("Installation cancelled.");
@@ -286,13 +286,13 @@ async function interactiveInstall(target?: string) {
 export async function run(args: string[]) {
   let exitCode = 0;
   const program = new Command()
-    .name("asdlc")
-    .description("Install and verify ASDLC assets")
+    .name("agent-distro")
+    .description("Install and verify Agent Distro assets")
     .version(version)
     .showHelpAfterError()
     .exitOverride();
 
-  program.command("verify <target>").description("Verify installed ASDLC assets").action((target) => {
+  program.command("verify <target>").description("Verify installed Agent Distro assets").action((target) => {
     exitCode = verify(target);
   });
   program.command("diagnostics <target>").description("Print a safe read-only diagnostics snapshot").action((target) => {
@@ -303,16 +303,16 @@ export async function run(args: string[]) {
     .option("--diagnostics-consent", "confirm that the sanitized summary may be included")
     .requiredOption("--message <summary>", "sanitized failure summary")
     .option("--action <name>", "command that failed")
-    .option("--code <code>", "ASDLC failure code")
+    .option("--code <code>", "Agent Distro failure code")
     .action((options) => {
       exitCode = reportIssue(options);
     });
   program.command("install [target]")
-    .description("Interactively select ASDLC assets, or use --asset/--all for scripts")
-    .option("--force", "replace changed ASDLC assets")
+    .description("Interactively select Agent Distro assets, or use --asset/--all for scripts")
+    .option("--force", "replace changed Agent Distro assets")
     .option("--dry-run", "show changes without writing")
     .option("--asset <path...>", "asset path to install; repeatable")
-    .option("--all", "install every ASDLC asset")
+    .option("--all", "install every Agent Distro asset")
     .option("--interactive", "open the selection wizard")
     .action(async (target, options) => {
       if (options.interactive || (!options.asset && !options.all)) {
@@ -320,17 +320,17 @@ export async function run(args: string[]) {
         return;
       }
       if (!target) {
-        exitCode = fail("ASDLC_E_USAGE", "A target directory is required with --asset or --all.");
+        exitCode = fail("AGENT_DISTRO_E_USAGE", "A target directory is required with --asset or --all.");
         return;
       }
       if (options.asset && options.all) {
-        exitCode = fail("ASDLC_E_USAGE", "Use either --asset or --all, not both.");
+        exitCode = fail("AGENT_DISTRO_E_USAGE", "Use either --asset or --all, not both.");
         return;
       }
       try {
         exitCode = install(target, { ...options, selected: options.all ? assetChoices.map(([value]) => value) : options.asset });
       } catch (error) {
-        exitCode = fail("ASDLC_E_USAGE", error instanceof Error ? error.message : String(error));
+        exitCode = fail("AGENT_DISTRO_E_USAGE", error instanceof Error ? error.message : String(error));
       }
     });
 
@@ -343,7 +343,7 @@ export async function run(args: string[]) {
   } catch (error) {
     if (error instanceof CommanderError) {
       if (error.exitCode === 0) return 0;
-      console.error(formatFailure("ASDLC_E_USAGE", error.message));
+      console.error(formatFailure("AGENT_DISTRO_E_USAGE", error.message));
       return error.exitCode;
     }
     throw error;

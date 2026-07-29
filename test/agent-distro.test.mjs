@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { createIssueUrl, formatFailure, install } from "../dist/cli.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const cli = path.join(root, "bin", "asdlc.mjs");
+const cli = path.join(root, "bin", "agent-distro.mjs");
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
 const failed = (...args) => {
   try {
@@ -20,42 +20,42 @@ const failed = (...args) => {
 const run = (target, ...options) =>
   command("install", target, "--all", ...options);
 const verify = (target) => command("verify", target);
-const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-test-"));
+const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-test-"));
 
-describe("asdlc install", () => {
+describe("agent-distro install", () => {
   it("prints standard help and its package version", () => {
-    expect(command("--help")).toContain("Usage: asdlc");
+    expect(command("--help")).toContain("Usage: agent-distro");
     expect(command("install", "--help")).toContain("--dry-run");
     expect(command("--version")).toBe("0.0.0\n");
   });
 
   it("rejects options that do not belong to a command", () => {
-    expect(failed("verify", target(), "--force")).toContain("ASDLC_E_USAGE");
+    expect(failed("verify", target(), "--force")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
   it("prints stable codes and recovery actions for expected failures", () => {
-    const fileTarget = path.join(os.tmpdir(), `asdlc-file-${process.pid}-${Date.now()}`);
+    const fileTarget = path.join(os.tmpdir(), `agent-distro-file-${process.pid}-${Date.now()}`);
     fs.writeFileSync(fileTarget, "not a directory\n");
-    expect(failed("install", fileTarget, "--all")).toMatch(/ASDLC_E_TARGET_INVALID:[\s\S]*Next:/);
+    expect(failed("install", fileTarget, "--all")).toMatch(/AGENT_DISTRO_E_TARGET_INVALID:[\s\S]*Next:/);
 
     const destination = target();
     run(destination);
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
-    expect(failed("install", destination, "--all")).toMatch(/ASDLC_E_CONFLICT:[\s\S]*Next:/);
+    expect(failed("install", destination, "--all")).toMatch(/AGENT_DISTRO_E_CONFLICT:[\s\S]*Next:/);
 
-    const manifestPath = path.join(destination, ".asdlc", "manifest.json");
+    const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
-    expect(failed("verify", destination)).toMatch(/ASDLC_E_MANIFEST_INVALID:[\s\S]*Next:/);
+    expect(failed("verify", destination)).toMatch(/AGENT_DISTRO_E_MANIFEST_INVALID:[\s\S]*Next:/);
   });
 
   it("redacts unexpected errors and prints a recovery action", () => {
-    const output = formatFailure("ASDLC_E_UNEXPECTED", "token=ghp_ABCdef123 /Users/example/project");
-    expect(output).toContain("ASDLC_E_UNEXPECTED");
+    const output = formatFailure("AGENT_DISTRO_E_UNEXPECTED", "token=ghp_ABCdef123 /Users/example/project");
+    expect(output).toContain("AGENT_DISTRO_E_UNEXPECTED");
     expect(output).toContain("Next:");
     expect(output).toContain("[redacted]");
     expect(output).toContain("[local-path]");
     expect(output).not.toContain("ghp_ABCdef123");
-    expect(output).toContain("asdlc report-issue --diagnostics-consent");
+    expect(output).toContain("agent-distro report-issue --diagnostics-consent");
     expect(output).not.toContain("/Users/example/project");
   });
 
@@ -63,7 +63,7 @@ describe("asdlc install", () => {
     const direct = new URL(createIssueUrl({
       message: "token=ghp_ABCdef123 C:\\Users\\example\\project /Users/example/project",
       action: "install",
-      code: "ASDLC_E_UNEXPECTED",
+      code: "AGENT_DISTRO_E_UNEXPECTED",
     }));
     const body = direct.searchParams.get("body");
     expect(direct.origin + direct.pathname).toBe("https://github.com/mortenbroesby/agent-distro/issues/new");
@@ -73,8 +73,8 @@ describe("asdlc install", () => {
     expect(body).not.toContain("ghp_ABCdef123");
     expect(body).not.toContain("C:\\Users\\example");
 
-    expect(failed("report-issue", "--message", "failure")).toContain("ASDLC_E_USAGE");
-    const reported = new URL(command("report-issue", "--diagnostics-consent", "--message", "failure", "--action", "install", "--code", "ASDLC_E_UNEXPECTED").trim());
+    expect(failed("report-issue", "--message", "failure")).toContain("AGENT_DISTRO_E_USAGE");
+    const reported = new URL(command("report-issue", "--diagnostics-consent", "--message", "failure", "--action", "install", "--code", "AGENT_DISTRO_E_UNEXPECTED").trim());
     expect(reported.searchParams.get("body")).toContain("Failure: failure");
   });
 
@@ -93,26 +93,26 @@ describe("asdlc install", () => {
   it("installs every Copilot asset category and records ownership", () => {
     const destination = target();
     run(destination);
-    expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/hooks/asdlc.json"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/instructions/asdlc.instructions.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/prompts/asdlc.prompt.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/skills/asdlc/SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/hooks/agent-distro.json"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/instructions/agent-distro.instructions.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/skills/agent-distro/SKILL.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".asdlc/manifest.json"), "utf8")).files).toHaveLength(6);
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toHaveLength(6);
   });
 
   it("installs only explicitly selected assets outside the wizard", () => {
     const destination = target();
-    command("install", destination, "--asset", ".mcp.json", ".github/prompts/asdlc.prompt.md");
+    command("install", destination, "--asset", ".mcp.json", ".github/prompts/agent-distro.prompt.md");
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/prompts/asdlc.prompt.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(false);
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".asdlc/manifest.json"), "utf8")).files).toEqual([
+    expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toEqual([
       ".mcp.json",
-      ".github/prompts/asdlc.prompt.md",
+      ".github/prompts/agent-distro.prompt.md",
     ]);
-    expect(failed("install", destination, "--asset", "unknown")).toContain("ASDLC_E_USAGE");
+    expect(failed("install", destination, "--asset", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
   it("does not overwrite a changed target without --force", () => {
@@ -128,7 +128,7 @@ describe("asdlc install", () => {
     const destination = target();
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
     expect(() => run(destination)).toThrow();
-    expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
   });
 
   it("keeps the previous installation when staging a new install fails", () => {
@@ -136,20 +136,20 @@ describe("asdlc install", () => {
     expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
     const originalWrite = fs.writeFileSync;
     fs.writeFileSync = (file, ...args) => {
-      if (String(file).includes(".asdlc-stage-")) throw new Error("simulated staged write failure");
+      if (String(file).includes(".agent-distro-stage-")) throw new Error("simulated staged write failure");
       return originalWrite(file, ...args);
     };
     try {
-      expect(install(destination, { selected: [".mcp.json", ".github/prompts/asdlc.prompt.md"] })).toBe(1);
+      expect(install(destination, { selected: [".mcp.json", ".github/prompts/agent-distro.prompt.md"] })).toBe(1);
     } finally {
       fs.writeFileSync = originalWrite;
     }
     expect(verify(destination)).toContain("Verified 1 assets");
-    expect(fs.readdirSync(path.join(destination, ".asdlc"))).toEqual(["manifest.json"]);
+    expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
   });
 
   it("plans without creating the target", () => {
-    const destination = path.join(os.tmpdir(), `asdlc-dry-run-${process.pid}-${Date.now()}`);
+    const destination = path.join(os.tmpdir(), `agent-distro-dry-run-${process.pid}-${Date.now()}`);
     expect(fs.existsSync(destination)).toBe(false);
     expect(run(destination, "--dry-run")).toContain("Would sync 7 changed assets");
     expect(fs.existsSync(destination)).toBe(false);
@@ -171,14 +171,14 @@ describe("asdlc install", () => {
     const destination = target();
     run(destination);
     expect(verify(destination)).toContain("Verified 6 assets");
-    fs.writeFileSync(path.join(destination, ".github/instructions/asdlc.instructions.md"), "changed\n");
+    fs.writeFileSync(path.join(destination, ".github/instructions/agent-distro.instructions.md"), "changed\n");
     expect(() => verify(destination)).toThrow();
   });
 
   it("rejects Windows-style traversal in an untrusted manifest", () => {
     const destination = target();
     run(destination);
-    const manifestPath = path.join(destination, ".asdlc/manifest.json");
+    const manifestPath = path.join(destination, ".agent-distro/manifest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     manifest.files = [path.win32.join("..", "outside.txt")];
     fs.writeFileSync(manifestPath, JSON.stringify(manifest));
@@ -186,15 +186,15 @@ describe("asdlc install", () => {
   });
 
   it("rejects a target that is not a directory", () => {
-    const destination = path.join(os.tmpdir(), `asdlc-file-${process.pid}-${Date.now()}`);
+    const destination = path.join(os.tmpdir(), `agent-distro-file-${process.pid}-${Date.now()}`);
     fs.writeFileSync(destination, "not a directory\n");
     expect(() => run(destination)).toThrow();
   });
 
-  it("refuses a directory where ASDLC needs to write a file", () => {
+  it("refuses a directory where Agent Distro needs to write a file", () => {
     const destination = target();
     fs.mkdirSync(path.join(destination, ".mcp.json"));
     expect(() => run(destination, "--force")).toThrow();
-    expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
   });
 });

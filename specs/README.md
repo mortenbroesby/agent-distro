@@ -1,4 +1,4 @@
-# ASDLC specifications
+# Agent Distro specifications
 
 The specification system separates executable work from history:
 

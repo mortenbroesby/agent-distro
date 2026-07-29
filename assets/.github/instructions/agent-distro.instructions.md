@@ -1,3 +1,3 @@
-# ASDLC
+# Agent Distro
 
 Follow repository conventions.

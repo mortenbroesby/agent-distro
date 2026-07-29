@@ -1,4 +1,4 @@
-# ASDLC current focus
+# Agent Distro current focus
 
 This is a short orientation point, not an exclusive queue. Read it with the
 [progress tracker](./specs/roadmap/progress.md) before starting unspecified

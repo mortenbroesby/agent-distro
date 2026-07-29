@@ -4,20 +4,20 @@
 
 **Priority:** 0
 
-**Goal:** ASDLC must never silently fail. Every anticipated failure is shown as
+**Goal:** Agent Distro must never silently fail. Every anticipated failure is shown as
 a safe, actionable diagnostic; unexpected failures are reportable without
 automatically sharing user data.
 
 ## Product boundary
 
-ASDLC remains a Node-only, Git-Bash-compatible installer for GitHub Copilot
+Agent Distro remains a Node-only, Git-Bash-compatible installer for GitHub Copilot
 assets. It is not an APM clone, package registry, or policy engine.
 
 The design borrows only the [APM](https://github.com/microsoft/apm) patterns that reduce operator uncertainty:
 explicit target selection, dry-run, reproducible state, and a clear failure
 when no target can be used. APM's dependency resolver, registry, content cache,
 lockfile, target matrix, policy engine, and multi-client deployment are out of
-scope until ASDLC needs them. APM documents `apm.yml` plus `apm.lock.yaml`,
+scope until Agent Distro needs them. APM documents `apm.yml` plus `apm.lock.yaml`,
 explicit targets, dry-run, and a non-zero exit when no target is detected;
 those are reference patterns, not requirements for this minimal installer.
 
@@ -42,10 +42,10 @@ safe summary, and recovery command; and preserve the existing non-zero exits.
 
 Acceptance criteria:
 
-- [x] Every command failure writes a stable ASDLC code and a next step.
+- [x] Every command failure writes a stable Agent Distro code and a next step.
 - [x] User-controlled paths and common credential forms are redacted from
       unexpected-error output.
-- [x] `asdlc diagnostics <target>` emits a read-only JSON snapshot that never
+- [x] `agent-distro diagnostics <target>` emits a read-only JSON snapshot that never
       includes file contents or secrets.
 - [x] Focused tests cover invalid target, conflict, malformed manifest, and an
       injected unexpected error.
@@ -67,9 +67,9 @@ Implementation detail and task evidence live in the child
 
 Acceptance criteria:
 
-- [ ] `asdlc report-issue --diagnostics-consent --message <summary>` prints a
+- [ ] `agent-distro report-issue --diagnostics-consent --message <summary>` prints a
       GitHub issue URL without network or browser activity.
-- [ ] The URL body records ASDLC version, Node version, OS/architecture, action,
+- [ ] The URL body records Agent Distro version, Node version, OS/architecture, action,
       error code, and redacted summary only.
 - [ ] Tests prove token and POSIX/Windows-path redaction.
 
@@ -111,8 +111,8 @@ Acceptance criteria:
 
 Evidence (2026-07-29): GitHub Actions run `30468852345` passed `npm ci`,
 `npm test`, and `npm run test:proof` on both `macos-latest` and
-`windows-latest`. The Windows package test asserts `asdlc.cmd` exists after a
-packed npm install and invokes ASDLC using `npm exec`.
+`windows-latest`. The Windows package test asserts `agent-distro.cmd` exists after a
+packed npm install and invokes Agent Distro using `npm exec`.
 
 ## Story 5 — Deliberate dependency adoption
 

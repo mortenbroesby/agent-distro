@@ -1,6 +1,6 @@
 ---
-name: ASDLC
+name: Agent Distro
 description: Minimal distributed Copilot agent fixture.
 ---
 
-Use the installed ASDLC assets.
+Use the installed Agent Distro assets.

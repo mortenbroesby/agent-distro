@@ -6,7 +6,7 @@
 
 **Parent:** [Reliable installation and diagnostics](./00-reliable-installation-and-diagnostics.md), Story 2
 
-**Goal:** Give a user a useful, privacy-preserving way to open an ASDLC issue
+**Goal:** Give a user a useful, privacy-preserving way to open an Agent Distro issue
 after a failure, without network activity, browser control, or hidden data
 collection.
 
@@ -42,7 +42,7 @@ contains no unredacted sensitive input.
 
 **Status:** Done
 
-Expose the encoder through `asdlc report-issue`.
+Expose the encoder through `agent-distro report-issue`.
 
 ### Tasks
 
@@ -72,7 +72,7 @@ raw diagnostics into a shell command.
 - [x] Test unexpected-error output contains only sanitized text and guidance.
 
 Acceptance: a user can discover reporting from an unexpected failure without
-ASDLC ever preparing a command containing sensitive data.
+Agent Distro ever preparing a command containing sensitive data.
 
 ## Story 4 — Packaged and cross-platform proof
 
