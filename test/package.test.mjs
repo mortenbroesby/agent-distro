@@ -18,7 +18,7 @@ it("installs the packed npm binary without source assets", async () => {
     await execa(npm, ["install", "--prefix", path.join(workspace, "consumer"), "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)], { env });
     const binary = path.join(workspace, "consumer", "node_modules", ".bin", process.platform === "win32" ? "asdlc.cmd" : "asdlc");
     const execute = (args, options) => process.platform === "win32"
-      ? execa("cmd.exe", ["/d", "/s", "/c", `${quote(binary)} ${args.map(quote).join(" ")}`], options)
+      ? execa("cmd.exe", ["/d", "/s", "/c", `call ${quote(binary)} ${args.map(quote).join(" ")}`], options)
       : execa(binary, args, options);
     expect((await execute(["--version"])).stdout).toBe("0.0.0");
     await execute(["install", path.join(workspace, "target")]);
