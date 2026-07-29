@@ -1,6 +1,6 @@
 # Interactive TUI and real-repository smoke
 
-**Status:** Done
+**Status:** Active
 
 **Priority:** 0.1
 
@@ -37,11 +37,11 @@ copy-pasting setup or teardown.
 
 ### Tasks
 
-- [ ] Pack and install Agent Distro into a disposable npm consumer once per smoke run.
-- [ ] Prove install and verify in a plain directory and a Git repository.
-- [ ] Prove root and nested-package targeting in a monorepo.
-- [ ] Prove a conflicting managed file fails safely and `--force` recovers only the target.
-- [ ] Preserve missing-target, spaces, Unicode, and native Windows `.cmd` coverage.
+- [x] Pack and install Agent Distro into a disposable npm consumer once per smoke run.
+- [x] Prove install and verify in a plain directory and a Git repository.
+- [x] Prove root and nested-package targeting in a monorepo.
+- [x] Prove a conflicting managed file fails safely and `--force` recovers only the target.
+- [x] Preserve missing-target, spaces, Unicode, and native Windows `.cmd` coverage.
 
 Acceptance: a packed consumer exercises the same installer path a user runs,
 across representative repository shapes.
