@@ -4,23 +4,37 @@ Agent Distro installs curated agent-development assets into a repository. It
 starts with no selected assets, so each installation is explicit and scoped to
 the destination you choose.
 
-## Use
+## Quick start
 
-After installing a packaged copy, run the guided installer from a terminal:
+Install Git and Node 22.23.1, then clone the repository and run one command:
 
 ```sh
-agent-distro install /path/to/repository
+git clone https://github.com/mortenbroesby/agent-distro.git
+node agent-distro/scripts/install-local.mjs /path/to/repository
 ```
 
-For automation, choose a profile or individual assets explicitly:
+The Node bootstrap works on macOS and Windows. It installs the locked
+dependencies, builds Agent Distro, then starts the normal interactive
+installer. To update later, pull the checkout and run the same command again:
 
 ```sh
-agent-distro install /path/to/repository --profile debugging
-agent-distro install /path/to/repository --asset .mcp.json
+git -C agent-distro pull --ff-only
+node agent-distro/scripts/install-local.mjs /path/to/repository
+```
+
+For automation, append explicit install options:
+
+```sh
+node agent-distro/scripts/install-local.mjs /path/to/repository --profile debugging
+node agent-distro/scripts/install-local.mjs /path/to/repository --asset .mcp.json
 ```
 
 Use `--all` only when every bundled asset is intended. The installer refuses
 to replace changed managed files unless `--force` is supplied.
+
+## Packaged use
+
+After installing a packaged copy, use the `agent-distro` command directly:
 
 ```sh
 agent-distro verify /path/to/repository
