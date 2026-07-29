@@ -10,7 +10,7 @@ import { createIssueUrl, formatFailure, install, runInteractiveInstall } from ".
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
-const localInstall = path.join(root, "scripts", "install-local.mjs");
+const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
 const commandResult = (...args) => {
   const result = spawnSync(process.execPath, [cli, ...args], { encoding: "utf8" });
@@ -26,6 +26,14 @@ const failed = (...args) => {
     return error.stderr;
   }
   throw new Error("Expected command to fail");
+};
+const failedBootstrap = (...args) => {
+  try {
+    execFileSync(process.execPath, [bootstrap, ...args], { encoding: "utf8", stdio: "pipe" });
+  } catch (error) {
+    return error.stderr;
+  }
+  throw new Error("Expected bootstrap to fail");
 };
 const run = (target, ...options) => command("install", target, "--all", ...options);
 const verify = (target) => command("doctor", target);
@@ -46,17 +54,8 @@ describe("agent-distro install", () => {
     expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "help"]);
   });
 
-  it("explains local bootstrap usage without running an install", () => {
-    expect(
-      (() => {
-        try {
-          execFileSync(process.execPath, [localInstall], { encoding: "utf8", stdio: "pipe" });
-        } catch (error) {
-          return error.stderr;
-        }
-        throw new Error("Expected bootstrap usage to fail");
-      })(),
-    ).toContain("Usage: node scripts/install-local.mjs <target>");
+  it("rejects an incomplete bootstrap doctor option", () => {
+    expect(failedBootstrap("--doctor")).toContain("Usage: node scripts/bootstrap.mjs [--doctor <target>]");
   });
 
   it("groups verification and diagnostics under doctor", () => {
