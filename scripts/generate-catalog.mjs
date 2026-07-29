@@ -33,7 +33,13 @@ for (const profile of source.profiles) {
     else if (asset.endsWith("/SKILL.md"))
       files.set(
         asset,
-        "---\nname: agent-distro-" + profile.id + "\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n",
+        "---\nname: agent-distro-" +
+          profile.id +
+          "\ndescription: " +
+          profile.description +
+          "\n---\n\n" +
+          profile.guidance +
+          "\n",
       );
     else if (asset.endsWith(".prompt.md"))
       files.set(asset, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
@@ -116,8 +122,10 @@ const pluginLinks = new Map([
 ]);
 for (const profile of source.profiles) {
   for (const asset of profile.assets) {
-    if (asset.endsWith(".agent.md")) pluginLinks.set("agents/agent-distro-" + profile.id + ".agent.md", path.join(assets, asset));
-    if (asset.endsWith("/SKILL.md")) pluginLinks.set("skills/agent-distro-" + profile.id + "/SKILL.md", path.join(assets, asset));
+    if (asset.endsWith(".agent.md"))
+      pluginLinks.set("agents/agent-distro-" + profile.id + ".agent.md", path.join(assets, asset));
+    if (asset.endsWith("/SKILL.md"))
+      pluginLinks.set("skills/agent-distro-" + profile.id + "/SKILL.md", path.join(assets, asset));
   }
 }
 const marketplace =

@@ -43,7 +43,10 @@ describe("Copilot marketplace offering", () => {
   });
 
   it("records shared plugin assets as Git symlinks", () => {
-    const listed = execFileSync("git", ["ls-files", "-s", "--", "plugins/agent-distro"], { cwd: root, encoding: "utf8" });
+    const listed = execFileSync("git", ["ls-files", "-s", "--", "plugins/agent-distro"], {
+      cwd: root,
+      encoding: "utf8",
+    });
     expect(listed).toMatch(/^120000 .+\s+plugins\/agent-distro\/\.mcp\.json$/m);
     expect(listed).toMatch(/^120000 .+\s+plugins\/agent-distro\/skills\/agent-distro-debugging\/SKILL\.md$/m);
     expect(listed).toContain("100644");

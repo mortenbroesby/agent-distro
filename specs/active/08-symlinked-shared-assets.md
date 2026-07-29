@@ -58,3 +58,16 @@ Acceptance: a stale copied plugin component fails the generated-output check.
 
 Acceptance: Git checkout and generated links work on both supported platforms,
 and later distribution targets have one content source to consume.
+
+## Story 4 — Commit-time formatting guard
+
+**Status:** Active
+
+### Tasks
+
+- [x] Install a tracked Git hook path through the existing npm `prepare` step.
+- [ ] Format and restage only the files selected for a commit on macOS and
+  Windows Git Bash.
+
+Acceptance: a developer commit cannot reintroduce an Oxfmt-only CI failure for
+its staged supported source files.
