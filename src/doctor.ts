@@ -17,7 +17,7 @@ export function verify(target: string) {
   const destination = fs.realpathSync(target);
   try {
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro", "manifest.json"), "utf8"));
-    if (manifest.tool !== "agent-distro" || manifest.version !== 1 || !Array.isArray(manifest.files)) throw new Error("invalid manifest");
+    if (manifest.tool !== "agent-distro" || manifest.version !== 1 || !Number.isInteger(manifest.catalogVersion) || !Array.isArray(manifest.files)) throw new Error("invalid manifest");
     for (const relative of manifest.files) {
       const parts = manifestParts(relative);
       if (hasSymlinkAncestor(destination, parts.join(path.sep))) throw new Error(`symlinked asset path: ${relative}`);
@@ -51,7 +51,7 @@ export function diagnostics(target: string) {
       snapshot.manifest.present = fs.existsSync(manifestPath);
       if (snapshot.manifest.present) try {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-        snapshot.manifest.valid = manifest.tool === "agent-distro" && manifest.version === 1 && Array.isArray(manifest.files);
+        snapshot.manifest.valid = manifest.tool === "agent-distro" && manifest.version === 1 && Number.isInteger(manifest.catalogVersion) && Array.isArray(manifest.files);
         snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;
       } catch { /* Diagnostics must remain available when the manifest is malformed. */ }
     }

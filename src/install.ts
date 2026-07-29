@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assetChoices, catalog, profileChoices, selectedCatalogAssets } from "./catalog.js";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 
@@ -9,27 +10,11 @@ import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const recoveryFile = ".agent-distro-recovery.json";
 
-/** Paths presented to people and accepted by non-interactive automation. */
-export const assetChoices = [
-  [".github/agents/agent-distro.agent.md", "Agent"],
-  [".github/hooks/agent-distro.json", "Hook"],
-  [".github/instructions/agent-distro.instructions.md", "Instructions"],
-  [".github/prompts/agent-distro.prompt.md", "Prompt"],
-  [".github/skills/agent-distro/SKILL.md", "Skill"],
-  [".mcp.json", "MCP configuration"],
-] as const;
+export { assetChoices, profileChoices };
 
 /** Stores transaction state under the target so recovery never needs global state. */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
-}
-
-/** Validates user-selected logical paths before they reach the filesystem. */
-function selectedAssets(selected: string[]) {
-  const choices = new Set(assetChoices.map(([value]) => value));
-  const unknown = selected.filter((value) => !choices.has(value));
-  if (unknown.length) throw new Error(`unknown asset: ${unknown.join(", ")}`);
-  return selected.map((value) => value.split("/").join(path.sep));
 }
 
 /**
@@ -78,15 +63,16 @@ export function recover(target: string) {
  * records a local journal before renames. An unchanged selection is a true
  * no-op: it creates neither a staging directory nor a recovery journal.
  */
-export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [] }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[] }) {
+export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [], profiles = [] }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[]; profiles?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
   if (fs.existsSync(recoveryPath(destination))) return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
-  const sourceFiles = selectedAssets(selected);
+  const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
   const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
   const manifest = JSON.stringify({
     tool: "agent-distro",
     version: 1,
+    catalogVersion: catalog.version,
     files: sourceFiles.map((relative) => relative.split(path.sep).join("/")),
     hashes: Object.fromEntries(sourceFiles.map((relative) => [relative.split(path.sep).join("/"), crypto.createHash("sha256").update(fs.readFileSync(path.join(assets, relative))).digest("hex")])),
   }, null, 2).concat("\n");
@@ -170,23 +156,29 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
     p.cancel("Installation cancelled.");
     return 0;
   }
-  const selected = await p.multiselect({ message: "Select assets to install", options: assetChoices.map(([value, label]) => ({ value, label, hint: value })), required: false });
+  const profiles = await p.multiselect({ message: "Select profiles", options: profileChoices.map(({ id, label, description }) => ({ value: id, label, hint: description })), required: false });
+  if (p.isCancel(profiles)) {
+    p.cancel("Installation cancelled.");
+    return 0;
+  }
+  const selected = await p.multiselect({ message: "Select individual assets", options: assetChoices.map(([value, label]) => ({ value, label, hint: value })), required: false });
   if (p.isCancel(selected)) {
     p.cancel("Installation cancelled.");
     return 0;
   }
-  if (selected.length === 0) {
+  if (profiles.length === 0 && selected.length === 0) {
     p.outro("No assets selected; nothing changed.");
     return 0;
   }
-  const confirmed = await p.confirm({ message: `Install ${selected.length} selected asset${selected.length === 1 ? "" : "s"} into ${destination}?`, initialValue: true });
+  const count = selectedCatalogAssets(selected, profiles).length;
+  const confirmed = await p.confirm({ message: `Install ${count} selected asset${count === 1 ? "" : "s"} into ${destination}?`, initialValue: true });
   if (p.isCancel(confirmed) || !confirmed) {
     p.cancel("Installation cancelled; nothing changed.");
     return 0;
   }
   const spinner = p.spinner();
   spinner.start("Installing selected assets");
-  const code = install(destination, { quiet: true, selected });
+  const code = install(destination, { quiet: true, selected, profiles });
   spinner.stop(code === 0 ? "Assets synchronized." : "Installation failed.");
   if (code === 0) p.outro("Installation complete.");
   return code;

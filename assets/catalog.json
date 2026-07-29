@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "assets": [
+    { "path": ".github/instructions/agent-distro.instructions.md", "label": "Foundation instructions" },
+    { "path": ".mcp.json", "label": "MCP configuration" },
+    { "path": ".github/agents/pull-request-review.agent.md", "label": "Pull-request review agent" },
+    { "path": ".github/skills/pull-request-review/SKILL.md", "label": "Pull-request review skill" },
+    { "path": ".github/prompts/pull-request-review.prompt.md", "label": "Pull-request review prompt" },
+    { "path": ".github/agents/debugging.agent.md", "label": "Debugging agent" },
+    { "path": ".github/skills/debugging/SKILL.md", "label": "Debugging skill" },
+    { "path": ".github/prompts/debugging.prompt.md", "label": "Debugging prompt" },
+    { "path": ".github/agents/handoff.agent.md", "label": "Handoff agent" },
+    { "path": ".github/skills/handoff/SKILL.md", "label": "Handoff skill" },
+    { "path": ".github/prompts/grill-me.prompt.md", "label": "Grill-me prompt" },
+    { "path": ".github/hooks/agent-distro.json", "label": "Hook template" }
+  ],
+  "profiles": [
+    { "id": "foundation", "label": "Foundation", "description": "Repository context and MCP configuration.", "assets": [".github/instructions/agent-distro.instructions.md", ".mcp.json"] },
+    { "id": "pull-request-review", "label": "Pull-request review", "description": "Review specialist, workflow, and reusable prompt.", "assets": [".github/agents/pull-request-review.agent.md", ".github/skills/pull-request-review/SKILL.md", ".github/prompts/pull-request-review.prompt.md"] },
+    { "id": "debugging", "label": "Debugging", "description": "Reproduction-first debugging specialist and workflow.", "assets": [".github/agents/debugging.agent.md", ".github/skills/debugging/SKILL.md", ".github/prompts/debugging.prompt.md"] },
+    { "id": "handoff", "label": "Handoff and grill me", "description": "Evidence-based handoff and adversarial readiness check.", "assets": [".github/agents/handoff.agent.md", ".github/skills/handoff/SKILL.md", ".github/prompts/grill-me.prompt.md"] },
+    { "id": "hook-template", "label": "Hook template", "description": "Optional deterministic hook configuration template.", "assets": [".github/hooks/agent-distro.json"] }
+  ]
+}

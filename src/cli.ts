@@ -1,7 +1,7 @@
 import { Command, CommanderError } from "commander";
 import { diagnostics, verify } from "./doctor.js";
 import { fail, formatFailure } from "./errors.js";
-import { assetChoices, install, interactiveInstall, recover } from "./install.js";
+import { assetChoices, install, interactiveInstall, profileChoices, recover } from "./install.js";
 import { reportIssue } from "./report-issue.js";
 import { version } from "./package.js";
 
@@ -33,23 +33,27 @@ export async function run(args: string[]) {
     .action((options) => { exitCode = reportIssue(options); });
   // No selection flags means a human is asking for the guided TTY journey.
   // Scripts must choose assets explicitly so they cannot block on prompts.
+  program.command("profiles").description("Print available versioned asset profiles").action(() => {
+    process.stdout.write(`${JSON.stringify(profileChoices)}\n`);
+  });
   program.command("install [target]")
     .description("Install into any directory; interactively select assets, or use --asset/--all for scripts")
     .option("--force", "replace changed Agent Distro assets")
     .option("--dry-run", "show changes without writing")
     .option("--asset <path...>", "asset path to install; repeatable")
+    .option("--profile <name...>", "profile to install; repeatable and composable with --asset")
     .option("--all", "install every Agent Distro asset")
     .option("--interactive", "open the selection wizard")
     .action(async (target, options) => {
-      if (options.interactive || (!options.asset && !options.all)) {
+      if (options.interactive || (!options.asset && !options.profile && !options.all)) {
         exitCode = await interactiveInstall(target);
       } else if (!target) {
         exitCode = fail("AGENT_DISTRO_E_USAGE", "A target directory is required with --asset or --all.");
-      } else if (options.asset && options.all) {
-        exitCode = fail("AGENT_DISTRO_E_USAGE", "Use either --asset or --all, not both.");
+      } else if ((options.asset || options.profile) && options.all) {
+        exitCode = fail("AGENT_DISTRO_E_USAGE", "Use --all or selected --profile/--asset values, not both.");
       } else {
         try {
-          exitCode = install(target, { ...options, selected: options.all ? assetChoices.map(([value]) => value) : options.asset });
+          exitCode = install(target, { ...options, profiles: options.profile, selected: options.all ? assetChoices.map(([value]) => value) : options.asset });
         } catch (error) {
           exitCode = fail("AGENT_DISTRO_E_USAGE", error instanceof Error ? error.message : String(error));
         }
