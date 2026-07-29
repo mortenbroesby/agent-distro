@@ -1,5 +1,5 @@
 import { Command, CommanderError } from "commander";
-import { diagnostics, verify } from "./doctor.js";
+import { registerDoctorCommand } from "./commands/doctor.js";
 import { fail, formatFailure } from "./errors.js";
 import { assetChoices, install, interactiveInstall, profileChoices, recover } from "./install.js";
 import { version } from "./package.js";
@@ -21,23 +21,14 @@ export async function run(args: string[]) {
     .showHelpAfterError()
     .exitOverride();
 
-  program
-    .command("verify <target>")
-    .description("Verify installed Agent Distro assets")
-    .action((target) => {
-      exitCode = verify(target);
-    });
+  registerDoctorCommand(program, (code) => {
+    exitCode = code;
+  });
   program
     .command("recover <target>")
     .description("Restore an interrupted Agent Distro installation")
     .action((target) => {
       exitCode = recover(target);
-    });
-  program
-    .command("diagnostics <target>")
-    .description("Print a safe read-only diagnostics snapshot")
-    .action((target) => {
-      exitCode = diagnostics(target);
     });
   program
     .command("report-issue")

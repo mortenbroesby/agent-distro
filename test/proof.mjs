@@ -12,7 +12,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-proof-"));
 const cli = path.join(root, "bin", "agent-distro.mjs");
 execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { stdio: "inherit" });
-assert.match(execFileSync(process.execPath, [cli, "verify", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);
+assert.match(execFileSync(process.execPath, [cli, "doctor", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);
 const manifest = fs.readFileSync(path.join(target, ".agent-distro", "manifest.json"));
 assert.match(
   execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging"], { encoding: "utf8" }),
@@ -30,7 +30,7 @@ assert.throws(() =>
 );
 execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging", "--force"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(asset), original);
-assert.match(execFileSync(process.execPath, [cli, "verify", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);
+assert.match(execFileSync(process.execPath, [cli, "doctor", target], { encoding: "utf8" }), /Verified [1-9]\d* assets/);
 const beforeDryRun = fs.readFileSync(path.join(target, ".agent-distro", "manifest.json"));
 execFileSync(process.execPath, [cli, "install", target, "--profile", "debugging", "--dry-run"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(path.join(target, ".agent-distro", "manifest.json")), beforeDryRun);

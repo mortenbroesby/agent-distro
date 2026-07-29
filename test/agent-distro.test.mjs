@@ -17,6 +17,8 @@ const commandResult = (...args) => {
   if (result.status !== 0) throw new Error(result.stderr);
   return result;
 };
+const commandFrom = (cwd, ...args) =>
+  execFileSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8", stdio: "pipe" });
 const failed = (...args) => {
   try {
     command(...args);
@@ -26,7 +28,7 @@ const failed = (...args) => {
   throw new Error("Expected command to fail");
 };
 const run = (target, ...options) => command("install", target, "--all", ...options);
-const verify = (target) => command("verify", target);
+const verify = (target) => command("doctor", target);
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-test-"));
 
 describe("agent-distro install", () => {
@@ -50,8 +52,19 @@ describe("agent-distro install", () => {
     ).toContain("Usage: node scripts/install-local.mjs <target>");
   });
 
+  it("groups verification and diagnostics under doctor", () => {
+    const destination = target();
+    run(destination);
+    expect(command("doctor", destination)).toContain("Verified");
+    expect(JSON.parse(command("doctor", "--diagnostics", destination))).toMatchObject({
+      target: { exists: true, directory: true },
+    });
+    expect(commandFrom(destination, "doctor")).toContain("Verified");
+    expect(failed("verify", destination)).toContain("unknown command 'verify'");
+  });
+
   it("rejects options that do not belong to a command", () => {
-    expect(failed("verify", target(), "--force")).toContain("AGENT_DISTRO_E_USAGE");
+    expect(failed("doctor", target(), "--force")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
   it("does not start the interactive wizard without a terminal", () => {
@@ -132,7 +145,7 @@ describe("agent-distro install", () => {
 
     const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
-    expect(failed("verify", destination)).toMatch(/AGENT_DISTRO_E_MANIFEST_INVALID:[\s\S]*Next:/);
+    expect(failed("doctor", destination)).toMatch(/AGENT_DISTRO_E_MANIFEST_INVALID:[\s\S]*Next:/);
   });
 
   it("redacts unexpected errors and prints a recovery action", () => {
@@ -341,7 +354,7 @@ describe("agent-distro install", () => {
       }),
     );
     expect(failed("install", destination, "--all")).toContain("AGENT_DISTRO_E_RECOVERY_REQUIRED");
-    expect(command("diagnostics", destination)).not.toContain("interrupted");
+    expect(command("doctor", "--diagnostics", destination)).not.toContain("interrupted");
     expect(command("recover", destination)).toContain("Recovered the previous Agent Distro installation");
     expect(verify(destination)).toContain("Verified 1 assets");
     expect(fs.existsSync(prompt)).toBe(false);
@@ -358,7 +371,7 @@ describe("agent-distro install", () => {
   it("prints read-only diagnostics without target paths or asset contents", () => {
     const destination = target();
     run(destination);
-    const result = JSON.parse(command("diagnostics", destination));
+    const result = JSON.parse(command("doctor", "--diagnostics", destination));
     expect(result).toMatchObject({
       version: "0.0.0",
       target: { exists: true, directory: true },

@@ -35,7 +35,7 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   // supported platforms without relying on a synthetic filesystem.
   const plain = repository.plain("target with spaces-å");
   await execute(["install", plain, "--all"]);
-  expect((await execute(["verify", plain])).stdout).toMatch(/Verified [1-9]\d* assets/);
+  expect((await execute(["doctor", plain])).stdout).toMatch(/Verified [1-9]\d* assets/);
 
   // An existing matching installation is a true no-op: no force, staging, or
   // ownership rewrite is needed when the selected profile has not changed.
@@ -51,13 +51,13 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   ).toBe(false);
   const debugging = repository.plain("debugging profile");
   await execute(["install", debugging, "--profile", "debugging"]);
-  expect((await execute(["verify", debugging])).stdout).toMatch(/Verified [1-9]\d* assets/);
+  expect((await execute(["doctor", debugging])).stdout).toMatch(/Verified [1-9]\d* assets/);
 
   // Git state is deliberately incidental: the installer targets only the exact
   // directory supplied, including a nested package within a monorepo.
   const git = await repository.git();
   await execute(["install", git, "--asset", ".mcp.json"]);
-  expect((await execute(["verify", git])).stdout).toMatch(/Verified [1-9]\d* assets/);
+  expect((await execute(["doctor", git])).stdout).toMatch(/Verified [1-9]\d* assets/);
   const monorepo = await repository.monorepo();
   await execute(["install", monorepo.package, "--asset", ".mcp.json"]);
   expect(fs.existsSync(path.join(monorepo.package, ".mcp.json"))).toBe(true);
@@ -66,7 +66,9 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   expect((await execute(["install", conflictTarget, "--asset", ".mcp.json"], { reject: false })).exitCode).toBe(1);
   await execute(["install", conflictTarget, "--asset", ".mcp.json", "--force"]);
 
-  const missing = JSON.parse((await execute(["diagnostics", path.join(workspace, "missing target")])).stdout);
+  const missing = JSON.parse(
+    (await execute(["doctor", "--diagnostics", path.join(workspace, "missing target")])).stdout,
+  );
   expect(missing).toMatchObject({ target: { exists: false, directory: false }, manifest: { present: false } });
   const reportDirectory = repository.plain("report");
   const beforeReport = fs.readdirSync(reportDirectory);
