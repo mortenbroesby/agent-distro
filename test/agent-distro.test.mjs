@@ -136,7 +136,9 @@ describe("agent-distro install", () => {
     expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
     const originalWrite = fs.writeFileSync;
     fs.writeFileSync = (file, ...args) => {
-      if (String(file).includes(".agent-distro-stage-")) throw new Error("simulated staged write failure");
+      if (String(file).includes(".agent-distro-stage-")) {
+        throw Object.assign(new Error("simulated EACCES staged write failure"), { code: "EACCES" });
+      }
       return originalWrite(file, ...args);
     };
     try {
@@ -146,6 +148,14 @@ describe("agent-distro install", () => {
     }
     expect(verify(destination)).toContain("Verified 1 assets");
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
+  });
+
+  it("refuses a symlinked managed asset path without writing through it", () => {
+    const destination = target();
+    const outside = target();
+    fs.symlinkSync(outside, path.join(destination, ".github"), process.platform === "win32" ? "junction" : "dir");
+    expect(install(destination, { selected: [".github/prompts/agent-distro.prompt.md"] })).toBe(1);
+    expect(fs.existsSync(path.join(outside, "prompts/agent-distro.prompt.md"))).toBe(false);
   });
 
   it("rolls back completed renames when a later rename fails", () => {
@@ -167,6 +177,35 @@ describe("agent-distro install", () => {
     expect(verify(destination)).toContain("Verified 1 assets");
     expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(false);
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
+  });
+
+  it("recovers a retained interrupted transaction before allowing another install", () => {
+    const destination = target();
+    expect(install(destination, { selected: [".mcp.json"] })).toBe(0);
+    const control = path.join(destination, ".agent-distro");
+    const staging = fs.mkdtempSync(path.join(control, ".agent-distro-stage-"));
+    const manifest = path.join(control, "manifest.json");
+    const backup = path.join(staging, ".backup", ".agent-distro", "manifest.json");
+    fs.mkdirSync(path.dirname(backup), { recursive: true });
+    fs.copyFileSync(manifest, backup);
+    fs.writeFileSync(manifest, "interrupted\n");
+    const prompt = path.join(destination, ".github/prompts/agent-distro.prompt.md");
+    fs.mkdirSync(path.dirname(prompt), { recursive: true });
+    fs.writeFileSync(prompt, "interrupted\n");
+    fs.writeFileSync(path.join(control, ".agent-distro-recovery.json"), JSON.stringify({
+      version: 1,
+      staging: path.basename(staging),
+      files: [
+        { relative: ".github/prompts/agent-distro.prompt.md", hadPrevious: false },
+        { relative: ".agent-distro/manifest.json", hadPrevious: true },
+      ],
+    }));
+    expect(failed("install", destination, "--all")).toContain("AGENT_DISTRO_E_RECOVERY_REQUIRED");
+    expect(command("diagnostics", destination)).not.toContain("interrupted");
+    expect(command("recover", destination)).toContain("Recovered the previous Agent Distro installation");
+    expect(verify(destination)).toContain("Verified 1 assets");
+    expect(fs.existsSync(prompt)).toBe(false);
+    expect(fs.existsSync(path.join(control, ".agent-distro-recovery.json"))).toBe(false);
   });
 
   it("plans without creating the target", () => {

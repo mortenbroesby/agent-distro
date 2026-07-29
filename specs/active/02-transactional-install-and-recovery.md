@@ -1,6 +1,6 @@
 # Transactional install and recovery
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 0
 
@@ -67,37 +67,59 @@ Windows.
 
 ## Story 3 — Explicit recovery command
 
-**Status:** Ready
+**Status:** Done
 
 ### Tasks
 
-- [ ] Persist the smallest transaction journal needed to recover an interrupted
+- [x] Persist the smallest transaction journal needed to recover an interrupted
       commit.
-- [ ] Add `agent-distro recover <target>` with the existing stderr-code/recovery
+- [x] Add `agent-distro recover <target>` with the existing stderr-code/recovery
       contract.
-- [ ] Refuse a new install while an incomplete transaction is present and point
+- [x] Refuse a new install while an incomplete transaction is present and point
       to `recover`.
-- [ ] Test recovery from a deliberately retained journal without reading asset
+- [x] Test recovery from a deliberately retained journal without reading asset
       contents into diagnostics.
 
 Acceptance: after process interruption, `recover` deterministically restores
 the previous complete state or reports that no recovery is needed.
 
+Evidence (2026-07-29): focused Vitest coverage creates a retained journal with
+a replaced manifest and newly created prompt, proves `install` refuses it,
+then proves `recover` restores the prior verified installation and leaves its
+partial asset absent. Diagnostics never emits the retained asset content.
+GitHub Actions [`verify` run 30474351788](https://github.com/mortenbroesby/agent-distro/actions/runs/30474351788)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and native
+Windows.
+
 ## Story 4 — Hostile-path proof
 
-**Status:** Ready
+**Status:** Active
 
 ### Tasks
 
-- [ ] Cover a blocked write and a rename failure through the filesystem seam.
-- [ ] Cover an existing install, an empty target, and a partial-target conflict.
-- [ ] Exercise the packaged command in the existing macOS and Windows GitHub
+- [x] Cover a blocked write and a rename failure through the filesystem seam.
+- [x] Cover an existing install, an empty target, and a partial-target conflict.
+- [x] In the packed npm test, cover spaces/Unicode, install, dry-run, conflict,
+      force, verify, and a safe missing-target diagnostics snapshot.
+- [x] Exercise the packaged command in the existing macOS and Windows GitHub
       Actions matrix.
-- [ ] Record completed hosted run URLs and only check acceptance boxes with
+- [x] Record completed hosted run URLs and only check acceptance boxes with
       evidence.
+- [x] Cover a permission-denied staged write and symlink behavior through the
+      cross-platform filesystem seam.
 
 Acceptance: the packaged command proves the recovery behavior on macOS and
 native Windows without requiring Bash.
+
+Evidence (2026-07-29): direct tests inject staged-write and rename failures,
+then verify that the prior installation remains honest. GitHub Actions
+[`verify` run 30474716547](https://github.com/mortenbroesby/agent-distro/actions/runs/30474716547)
+passed the packed npm test on macOS and native Windows, including a target with
+spaces and Unicode plus install, dry-run, conflict, force, verify, and safe
+missing-target diagnostics. GitHub Actions
+[`verify` run 30475121731](https://github.com/mortenbroesby/agent-distro/actions/runs/30475121731)
+passed the final permission-denied and native symlink/junction proof on macOS
+and Windows.
 
 ## Completion
 

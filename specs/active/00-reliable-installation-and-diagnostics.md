@@ -92,7 +92,7 @@ Acceptance criteria:
 
 ## Story 4 — Cross-platform hostile-path proof
 
-**Status:** Ready
+**Status:** Done
 
 Extend real packaged smoke coverage to macOS and native Windows for spaces,
 Unicode, read-only locations, Windows separators, symlinks, absent targets,
@@ -103,7 +103,7 @@ test asserts, then invokes through npm's own cross-platform executable runner.
 Acceptance criteria:
 
 - [x] Packaged npm install is tested on macOS and native Windows.
-- [ ] Each tested platform covers install, dry-run, conflict, force, verify,
+- [x] Each tested platform covers install, dry-run, conflict, force, verify,
       and diagnostic failure output.
 - [x] Windows results come from a completed hosted runner or user-supplied
       Windows evidence, not source-level inference. Git Bash smoke is a useful
