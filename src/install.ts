@@ -63,7 +63,7 @@ export function recover(target: string) {
  * records a local journal before renames. An unchanged selection is a true
  * no-op: it creates neither a staging directory nor a recovery journal.
  */
-export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [], profiles = [] }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[]; profiles?: string[] }) {
+export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [], profiles = [], onStep }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[]; profiles?: string[]; onStep?: (message: string) => void }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
   if (fs.existsSync(recoveryPath(destination))) return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
@@ -95,6 +95,7 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   });
   if (conflicts.length && !force) return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
+  onStep?.(changed.length === 0 ? "Validated destination; selected assets are already up to date." : `Validated destination; ${changed.length} file${changed.length === 1 ? "" : "s"} need updating.`);
   if (!quiet) console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun || changed.length === 0) return 0;
   let staging = "";
@@ -103,6 +104,7 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   try {
     // Stage first, then journal backups before the first visible rename. This
     // makes both in-process rollback and a later `recover` operation possible.
+    onStep?.("Staging changes safely.");
     fs.mkdirSync(path.join(destination, ".agent-distro"), { recursive: true });
     staging = fs.mkdtempSync(path.join(destination, ".agent-distro", ".agent-distro-stage-"));
     for (const relative of changed) {
@@ -120,6 +122,7 @@ export function install(target: string, { force = false, dryRun = false, quiet =
       replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
     }
     fs.writeFileSync(recoveryPath(destination), JSON.stringify({ version: 1, staging: path.basename(staging), files: replacements.map(({ relative, backup }) => ({ relative, hadPrevious: Boolean(backup) })) }));
+    onStep?.("Applying staged changes.");
     for (const replacement of replacements) {
       fs.mkdirSync(path.dirname(replacement.output), { recursive: true });
       fs.renameSync(path.join(staging, replacement.relative), replacement.output);
@@ -140,6 +143,7 @@ export function install(target: string, { force = false, dryRun = false, quiet =
   }
   fs.rmSync(recoveryPath(destination), { force: true });
   fs.rmSync(staging, { recursive: true, force: true });
+  onStep?.("Finalized installation.");
   return 0;
 }
 
@@ -176,10 +180,10 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
     p.cancel("Installation cancelled; nothing changed.");
     return 0;
   }
-  const spinner = p.spinner();
-  spinner.start("Installing selected assets");
-  const code = install(destination, { quiet: true, selected, profiles });
-  spinner.stop(code === 0 ? "Assets synchronized." : "Installation failed.");
+  const log = p.taskLog({ title: "Installing selected assets", limit: 8, retainLog: true });
+  const code = install(destination, { quiet: true, selected, profiles, onStep: (message) => log.message(message) });
+  if (code === 0) log.success("Assets synchronized.");
+  else log.error("Installation failed.");
   if (code === 0) p.outro("Installation complete.");
   return code;
 }
