@@ -1,6 +1,6 @@
 # Versioned asset profiles
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 1
 
@@ -69,13 +69,16 @@ imply unrelated installation.
 
 ## Story 4 — Packaged cross-platform proof
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
 - [x] Cover profile discovery, composition, catalog manifest version, and unknown profiles locally.
 - [x] Run the packed npm consumer test and direct package proof locally.
-- [ ] Record a completed macOS and Windows PR run for the catalog profile flow.
+- [x] Record a completed macOS and Windows PR run for the catalog profile flow.
 
 Acceptance: the installed npm package provides the same catalog behavior on
 macOS and native Windows.
+
+Evidence (2026-07-29): PR #14 run 30481132444 passed the packaged catalog
+profile flow on macOS and native Windows.

@@ -10,8 +10,6 @@ work.
   — establish explicit target semantics, a true no-op, and Windows Git Bash proof.
 - [Interactive TUI and real-repository smoke](./specs/active/05-interactive-tui-and-repository-smoke.md)
   — refactor the interactive journey and prove it in disposable real repositories.
-- [Versioned asset profiles epic](./specs/active/04-versioned-asset-profiles.md)
-  — install focused agentic-development workflows from a versioned catalog.
 
 Npm publication remains deferred.
 
