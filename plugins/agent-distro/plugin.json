@@ -1,0 +1,22 @@
+{
+  "name": "agent-distro",
+  "description": "Curated Copilot agents, skills, and optional MCP and hook templates for evidence-driven engineering workflows.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Morten Broesby",
+    "url": "https://github.com/mortenbroesby"
+  },
+  "homepage": "https://github.com/mortenbroesby/agent-distro",
+  "repository": "https://github.com/mortenbroesby/agent-distro",
+  "keywords": [
+    "github-copilot",
+    "agents",
+    "skills",
+    "hooks",
+    "mcp"
+  ],
+  "agents": "agents",
+  "skills": "skills",
+  "hooks": "hooks.json",
+  "mcpServers": ".mcp.json"
+}
