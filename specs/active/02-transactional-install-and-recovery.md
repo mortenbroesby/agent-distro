@@ -60,7 +60,10 @@ installation or the new complete installation, never a mix.
 Evidence (2026-07-29): focused Vitest coverage injects a failure into the
 second staged rename after the first replacement succeeds. It then verifies
 the original one-asset installation and confirms that the newly staged asset
-and staging directory are absent. `npm run test:proof` passed locally.
+and staging directory are absent. `npm run test:proof` passed locally. GitHub
+Actions [`verify` run 30473532523](https://github.com/mortenbroesby/agent-distro/actions/runs/30473532523)
+passed `npm ci`, `npm test`, and `npm run test:proof` on macOS and native
+Windows.
 
 ## Story 3 — Explicit recovery command
 
