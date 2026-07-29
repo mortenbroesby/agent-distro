@@ -91,8 +91,8 @@ Acceptance criteria:
 Extend real packaged smoke coverage to macOS and native Windows for spaces,
 Unicode, read-only locations, Windows separators, symlinks, absent targets,
 and npm `.cmd` invocation. The proof must be Node/npm based, not dependent on
-a Bash file: npm gives Windows packages `.cmd` launchers and ASDLC's package
-test invokes that launcher through `cmd.exe`.
+a Bash file: npm gives Windows packages `.cmd` launchers, which the package
+test asserts, then invokes through npm's own cross-platform executable runner.
 
 Acceptance criteria:
 

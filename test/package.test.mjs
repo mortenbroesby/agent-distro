@@ -7,7 +7,6 @@ import { expect, it } from "vitest";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const quote = (value) => `"${value.replaceAll('"', '""')}"`;
 
 it("installs the packed npm binary without source assets", async () => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-package-"));
@@ -15,11 +14,11 @@ it("installs the packed npm binary without source assets", async () => {
   try {
     await execa(npm, ["pack", "--pack-destination", workspace], { cwd: root, env });
     const archive = fs.readdirSync(workspace).find((file) => file.endsWith(".tgz"));
-    await execa(npm, ["install", "--prefix", path.join(workspace, "consumer"), "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)], { env });
-    const binary = path.join(workspace, "consumer", "node_modules", ".bin", process.platform === "win32" ? "asdlc.cmd" : "asdlc");
-    const execute = (args, options) => process.platform === "win32"
-      ? execa("cmd.exe", ["/d", "/s", "/c", `call ${quote(binary)} ${args.map(quote).join(" ")}`], options)
-      : execa(binary, args, options);
+    const consumer = path.join(workspace, "consumer");
+    await execa(npm, ["install", "--prefix", consumer, "--ignore-scripts", "--no-audit", "--no-fund", path.join(workspace, archive)], { env });
+    const binary = path.join(consumer, "node_modules", ".bin", process.platform === "win32" ? "asdlc.cmd" : "asdlc");
+    expect(fs.existsSync(binary)).toBe(true);
+    const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "asdlc", ...args], options);
     expect((await execute(["--version"])).stdout).toBe("0.0.0");
     await execute(["install", path.join(workspace, "target")]);
     expect(fs.existsSync(path.join(workspace, "target", ".asdlc", "manifest.json"))).toBe(true);
