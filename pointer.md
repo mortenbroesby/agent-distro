@@ -6,8 +6,8 @@ work.
 
 ## Current focus
 
-- [Copilot plugin marketplace offering](./specs/active/07-copilot-plugin-marketplace.md)
-  — provide a generated same-repository plugin and prove its marketplace flow.
+No active epic is selected. Choose the next item from the
+[progress tracker](./specs/roadmap/progress.md).
 
 Npm publication remains deferred.
 
