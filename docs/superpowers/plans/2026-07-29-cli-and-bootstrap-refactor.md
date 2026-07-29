@@ -16,6 +16,7 @@
 - Preserve stable failure codes, transactional safety, empty default selection, and explicit --force semantics.
 - Bootstrap never calls install; it uses a temporary tarball and reports global-install failures without privilege escalation.
 - Do not edit pinned .agents submodules.
+- Exclude the development-only .agents/** submodules from Oxfmt and Oxlint; lint and formatting must still cover repository-owned files.
 
 ---
 
@@ -200,7 +201,38 @@ Expected: PASS; isolated prefix receives the packed CLI and bootstrap never inst
 
 Run: git add README.md scripts/bootstrap.mjs scripts/install-local.mjs test/agent-distro.test.mjs test/package.test.mjs && git commit -m "feat: bootstrap packed global cli"
 
-### Task 5: Final verification and delivery
+### Task 5: Exclude pinned development skills from repository checks
+
+**Files:**
+- Modify: .oxfmtrc.json
+- Modify: .oxlintrc.json
+
+**Interfaces:**
+- Consumes: the pinned, development-only .agents/** submodules described by AGENTS.md.
+- Produces: repository-wide fmt:check and lint commands that inspect only repository-owned content.
+- Contract: assets/catalog.json, plugins/agent-distro/**, markdown, dist/**, node_modules/**, and now .agents/** retain their existing exclusion intent; no vendored skill file changes.
+
+- [ ] **Step 1: Write the failing repository-check characterization**
+
+Run: npm run fmt:check && npm run lint
+
+Expected: FAIL only on files under .agents/**, proving the current check configuration scans pinned vendor content.
+
+- [ ] **Step 2: Add the minimal paired ignore patterns**
+
+Add .agents/** to the existing ignorePatterns arrays in both Oxc configuration files. Do not change lint rules, formatter style, or the submodule contents.
+
+- [ ] **Step 3: Run repository-wide checks and verify GREEN**
+
+Run: npm run fmt:check && npm run lint
+
+Expected: both commands exit 0 while the repository-owned source and tests remain covered.
+
+- [ ] **Step 4: Commit**
+
+Run: git add .oxfmtrc.json .oxlintrc.json && git commit -m "chore: ignore pinned development skills"
+
+### Task 6: Final verification and delivery
 
 **Files:**
 - Modify: docs/superpowers/plans/2026-07-29-cli-and-bootstrap-refactor.md
