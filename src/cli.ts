@@ -63,15 +63,6 @@ function fail(code: FailureCode, message: unknown) {
   return 1;
 }
 
-function files(dir, prefix = "") {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const relative = path.join(prefix, entry.name);
-    return entry.isDirectory()
-      ? files(path.join(dir, entry.name), relative)
-      : [relative];
-  });
-}
-
 function hasSymlinkAncestor(root: string, relative: string) {
   let current = root;
   for (const part of relative.split(path.sep).slice(0, -1)) {
@@ -169,14 +160,30 @@ function reportIssue({
   return 0;
 }
 
-function install(target: string, { force = false, dryRun = false }: { force?: boolean; dryRun?: boolean }) {
+const assetChoices = [
+  [".github/agents/asdlc.agent.md", "Agent"],
+  [".github/hooks/asdlc.json", "Hook"],
+  [".github/instructions/asdlc.instructions.md", "Instructions"],
+  [".github/prompts/asdlc.prompt.md", "Prompt"],
+  [".github/skills/asdlc/SKILL.md", "Skill"],
+  [".mcp.json", "MCP configuration"],
+] as const;
+
+function selectedAssets(selected: string[]) {
+  const choices = new Set(assetChoices.map(([value]) => value));
+  const unknown = selected.filter((value) => !choices.has(value));
+  if (unknown.length) throw new Error(`unknown asset: ${unknown.join(", ")}`);
+  return selected.map((value) => value.split("/").join(path.sep));
+}
+
+function install(target: string, { force = false, dryRun = false, selected = [] }: { force?: boolean; dryRun?: boolean; selected?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
     return fail("ASDLC_E_TARGET_INVALID", "Target is not a directory.");
   }
   const destination = fs.existsSync(target)
     ? fs.realpathSync(target)
     : path.resolve(target);
-  const sourceFiles = files(assets);
+  const sourceFiles = selectedAssets(selected);
   const manifestPath = path.join(destination, ".asdlc", "manifest.json");
   const outputFiles = [...sourceFiles, ".asdlc/manifest.json"];
   const manifest = JSON.stringify(
@@ -235,7 +242,36 @@ function install(target: string, { force = false, dryRun = false }: { force?: bo
   return 0;
 }
 
-export function run(args: string[]) {
+async function interactiveInstall(target?: string) {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    return fail("ASDLC_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
+  }
+  const p = await import("@clack/prompts");
+  p.intro("ASDLC install");
+  const destination = target ?? await p.text({ message: "Install into", initialValue: process.cwd(), validate: (value) => value ? undefined : "A target directory is required." });
+  if (p.isCancel(destination)) {
+    p.cancel("Installation cancelled.");
+    return 0;
+  }
+  const selected = await p.multiselect({
+    message: "Select assets to install",
+    options: assetChoices.map(([value, label]) => ({ value, label, hint: value })),
+    required: false,
+  });
+  if (p.isCancel(selected)) {
+    p.cancel("Installation cancelled.");
+    return 0;
+  }
+  if (selected.length === 0) {
+    p.outro("No assets selected; nothing changed.");
+    return 0;
+  }
+  const code = install(destination, { selected });
+  if (code === 0) p.outro("Installation complete.");
+  return code;
+}
+
+export async function run(args: string[]) {
   let exitCode = 0;
   const program = new Command()
     .name("asdlc")
@@ -259,12 +295,31 @@ export function run(args: string[]) {
     .action((options) => {
       exitCode = reportIssue(options);
     });
-  program.command("install <target>")
-    .description("Install ASDLC assets")
+  program.command("install [target]")
+    .description("Interactively select ASDLC assets, or use --asset/--all for scripts")
     .option("--force", "replace changed ASDLC assets")
     .option("--dry-run", "show changes without writing")
-    .action((target, options) => {
-      exitCode = install(target, options);
+    .option("--asset <path...>", "asset path to install; repeatable")
+    .option("--all", "install every ASDLC asset")
+    .option("--interactive", "open the selection wizard")
+    .action(async (target, options) => {
+      if (options.interactive || (!options.asset && !options.all)) {
+        exitCode = await interactiveInstall(target);
+        return;
+      }
+      if (!target) {
+        exitCode = fail("ASDLC_E_USAGE", "A target directory is required with --asset or --all.");
+        return;
+      }
+      if (options.asset && options.all) {
+        exitCode = fail("ASDLC_E_USAGE", "Use either --asset or --all, not both.");
+        return;
+      }
+      try {
+        exitCode = install(target, { ...options, selected: options.all ? assetChoices.map(([value]) => value) : options.asset });
+      } catch (error) {
+        exitCode = fail("ASDLC_E_USAGE", error instanceof Error ? error.message : String(error));
+      }
     });
 
   if (args.length === 0) {
@@ -272,9 +327,10 @@ export function run(args: string[]) {
     return 1;
   }
   try {
-    program.parse(args, { from: "user" });
+    await program.parseAsync(args, { from: "user" });
   } catch (error) {
     if (error instanceof CommanderError) {
+      if (error.exitCode === 0) return 0;
       console.error(formatFailure("ASDLC_E_USAGE", error.message));
       return error.exitCode;
     }

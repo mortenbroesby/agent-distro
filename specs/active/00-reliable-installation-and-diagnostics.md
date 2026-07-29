@@ -27,8 +27,8 @@ those are reference patterns, not requirements for this minimal installer.
 - Normal output never contains tokens, credentials, home directories, or full
   local paths unless the user explicitly requests local diagnostics later.
 - No failure may write a partial managed asset set.
-- Automated use stays non-interactive and machine-readable; future prompts are
-  additive only.
+- Automated use stays non-interactive and machine-readable: scripts choose
+  assets with `--asset` or `--all`; the TTY wizard starts with no selection.
 - A report link is generated locally and never opens a browser or submits an
   issue automatically.
 
@@ -117,9 +117,11 @@ packed npm install and invokes ASDLC using `npm exec`.
 
 Evaluate libraries only at real boundaries and record the selected seam.
 Commander is retained for parsing and help; Execa is retained in the packaged
-proof. Candidate additions are `zod` for a user-authored manifest/config
-boundary and `@clack/prompts` only for a requested TTY wizard. Do not add a
-runtime transpiler, custom registry, or an APM-sized dependency graph.
+proof. `@clack/prompts` is retained only for the requested TTY wizard: its
+empty-by-default multiselect selects individual shipped assets, while scripts
+use Commander options. `zod` is deferred until a user-authored manifest/config
+boundary exists. Do not add a runtime transpiler, custom registry, or an
+APM-sized dependency graph.
 
 Acceptance criteria:
 
