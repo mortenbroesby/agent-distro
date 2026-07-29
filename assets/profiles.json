@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "labels": {
+    ".github/instructions/agent-distro.instructions.md": "Foundation instructions",
+    ".mcp.json": "MCP configuration",
+    ".github/agents/pull-request-review.agent.md": "Pull-request review agent",
+    ".github/skills/pull-request-review/SKILL.md": "Pull-request review skill",
+    ".github/prompts/pull-request-review.prompt.md": "Pull-request review prompt",
+    ".github/agents/debugging.agent.md": "Debugging agent",
+    ".github/skills/debugging/SKILL.md": "Debugging skill",
+    ".github/prompts/debugging.prompt.md": "Debugging prompt",
+    ".github/agents/handoff.agent.md": "Handoff agent",
+    ".github/skills/handoff/SKILL.md": "Handoff skill",
+    ".github/prompts/grill-me.prompt.md": "Grill-me prompt",
+    ".github/hooks/agent-distro.json": "Hook template"
+  },
+  "profiles": [
+    { "id": "foundation", "label": "Foundation", "description": "Repository context and MCP configuration.", "guidance": "Follow repository conventions.", "assets": [".github/instructions/agent-distro.instructions.md", ".mcp.json"] },
+    { "id": "pull-request-review", "label": "Pull-request review", "description": "Review specialist, workflow, and reusable prompt.", "guidance": "Inspect the diff and relevant callers. Report only actionable correctness, security, regression, and test-gap findings.", "assets": [".github/agents/pull-request-review.agent.md", ".github/skills/pull-request-review/SKILL.md", ".github/prompts/pull-request-review.prompt.md"] },
+    { "id": "debugging", "label": "Debugging", "description": "Reproduction-first debugging specialist and workflow.", "guidance": "Reproduce first, trace all callers of the shared boundary, isolate the root cause, and leave focused verification.", "assets": [".github/agents/debugging.agent.md", ".github/skills/debugging/SKILL.md", ".github/prompts/debugging.prompt.md"] },
+    { "id": "handoff", "label": "Handoff and grill me", "description": "Evidence-based handoff and adversarial readiness check.", "guidance": "State changed scope, verification, known gaps, and the next action. Challenge unsupported release claims.", "assets": [".github/agents/handoff.agent.md", ".github/skills/handoff/SKILL.md", ".github/prompts/grill-me.prompt.md"] },
+    { "id": "hook-template", "label": "Hook template", "description": "Optional deterministic hook configuration template.", "guidance": "Enable hooks only when a deterministic lifecycle guard is required.", "assets": [".github/hooks/agent-distro.json"] }
+  ]
+}

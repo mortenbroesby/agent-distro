@@ -48,7 +48,9 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: (message) => calls.push(["intro", message]),
       text: async () => destination,
-      multiselect: async () => [".mcp.json"],
+      multiselect: async () => calls.filter(([name]) => name === "multiselect").length === 0
+        ? (calls.push(["multiselect", "profiles"]), [])
+        : [".mcp.json"],
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
@@ -70,7 +72,7 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: () => {},
       text: async () => destination,
-      multiselect: async () => [".mcp.json"],
+      multiselect: async () => [],
       confirm: async () => false,
       isCancel: () => false,
       cancel: () => {},
@@ -138,29 +140,47 @@ describe("agent-distro install", () => {
     expect(fs.readdirSync(directory)).toEqual(before);
   });
 
-  it("installs every Copilot asset category and records ownership", () => {
+  it("installs every versioned catalog asset and records ownership", () => {
     const destination = target();
     run(destination);
-    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/pull-request-review.agent.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/debugging.agent.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/handoff.agent.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".github/hooks/agent-distro.json"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".github/instructions/agent-distro.instructions.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/skills/agent-distro/SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/prompts/grill-me.prompt.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/skills/debugging/SKILL.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toHaveLength(6);
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"))).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/), files: expect.any(Array) });
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toHaveLength(12);
   });
 
   it("installs only explicitly selected assets outside the wizard", () => {
     const destination = target();
-    command("install", destination, "--asset", ".mcp.json", ".github/prompts/agent-distro.prompt.md");
+    command("install", destination, "--asset", ".mcp.json", ".github/prompts/debugging.prompt.md");
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(true);
-    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/prompts/debugging.prompt.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/debugging.agent.md"))).toBe(false);
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8")).files).toEqual([
       ".mcp.json",
-      ".github/prompts/agent-distro.prompt.md",
+      ".github/prompts/debugging.prompt.md",
     ]);
     expect(failed("install", destination, "--asset", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
+  });
+
+  it("installs a profile, composes it with individual assets, and lists the catalog", () => {
+    const destination = target();
+    expect(JSON.parse(command("profiles"))).toEqual(expect.arrayContaining([expect.objectContaining({ id: "debugging" })]));
+    command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
+    const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
+    expect(manifest).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/) });
+    expect(manifest.files).toEqual([
+      ".mcp.json",
+      ".github/agents/debugging.agent.md",
+      ".github/skills/debugging/SKILL.md",
+      ".github/prompts/debugging.prompt.md",
+    ]);
+    expect(failed("install", destination, "--profile", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
   it("does not overwrite a changed target without --force", () => {
@@ -196,7 +216,7 @@ describe("agent-distro install", () => {
     const destination = target();
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
     expect(() => run(destination)).toThrow();
-    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/agents/pull-request-review.agent.md"))).toBe(false);
   });
 
   it("keeps the previous installation when staging a new install fails", () => {
@@ -210,7 +230,7 @@ describe("agent-distro install", () => {
       return originalWrite(file, ...args);
     };
     try {
-      expect(install(destination, { selected: [".mcp.json", ".github/prompts/agent-distro.prompt.md"] })).toBe(1);
+      expect(install(destination, { selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] })).toBe(1);
     } finally {
       fs.writeFileSync = originalWrite;
     }
@@ -222,8 +242,8 @@ describe("agent-distro install", () => {
     const destination = target();
     const outside = target();
     fs.symlinkSync(outside, path.join(destination, ".github"), process.platform === "win32" ? "junction" : "dir");
-    expect(install(destination, { selected: [".github/prompts/agent-distro.prompt.md"] })).toBe(1);
-    expect(fs.existsSync(path.join(outside, "prompts/agent-distro.prompt.md"))).toBe(false);
+    expect(install(destination, { selected: [".github/prompts/debugging.prompt.md"] })).toBe(1);
+    expect(fs.existsSync(path.join(outside, "prompts/debugging.prompt.md"))).toBe(false);
   });
 
   it("rolls back completed renames when a later rename fails", () => {
@@ -238,12 +258,12 @@ describe("agent-distro install", () => {
       return originalRename(source, output);
     };
     try {
-      expect(install(destination, { force: true, selected: [".mcp.json", ".github/prompts/agent-distro.prompt.md"] })).toBe(1);
+      expect(install(destination, { force: true, selected: [".mcp.json", ".github/prompts/debugging.prompt.md"] })).toBe(1);
     } finally {
       fs.renameSync = originalRename;
     }
     expect(verify(destination)).toContain("Verified 1 assets");
-    expect(fs.existsSync(path.join(destination, ".github/prompts/agent-distro.prompt.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/prompts/debugging.prompt.md"))).toBe(false);
     expect(fs.readdirSync(path.join(destination, ".agent-distro"))).toEqual(["manifest.json"]);
   });
 
@@ -257,14 +277,14 @@ describe("agent-distro install", () => {
     fs.mkdirSync(path.dirname(backup), { recursive: true });
     fs.copyFileSync(manifest, backup);
     fs.writeFileSync(manifest, "interrupted\n");
-    const prompt = path.join(destination, ".github/prompts/agent-distro.prompt.md");
+    const prompt = path.join(destination, ".github/prompts/debugging.prompt.md");
     fs.mkdirSync(path.dirname(prompt), { recursive: true });
     fs.writeFileSync(prompt, "interrupted\n");
     fs.writeFileSync(path.join(control, ".agent-distro-recovery.json"), JSON.stringify({
       version: 1,
       staging: path.basename(staging),
       files: [
-        { relative: ".github/prompts/agent-distro.prompt.md", hadPrevious: false },
+        { relative: ".github/prompts/debugging.prompt.md", hadPrevious: false },
         { relative: ".agent-distro/manifest.json", hadPrevious: true },
       ],
     }));
@@ -279,7 +299,7 @@ describe("agent-distro install", () => {
   it("plans without creating the target", () => {
     const destination = path.join(os.tmpdir(), `agent-distro-dry-run-${process.pid}-${Date.now()}`);
     expect(fs.existsSync(destination)).toBe(false);
-    expect(run(destination, "--dry-run")).toContain("Would sync 7 changed assets");
+    expect(run(destination, "--dry-run")).toContain("Would sync 13 changed assets");
     expect(fs.existsSync(destination)).toBe(false);
   });
 
@@ -290,7 +310,7 @@ describe("agent-distro install", () => {
     expect(result).toMatchObject({
       version: "0.0.0",
       target: { exists: true, directory: true },
-      manifest: { present: true, valid: true, assetCount: 6 },
+      manifest: { present: true, valid: true, assetCount: 12 },
     });
     expect(JSON.stringify(result)).not.toContain(destination);
   });
@@ -298,7 +318,7 @@ describe("agent-distro install", () => {
   it("verifies recorded assets and detects drift", () => {
     const destination = target();
     run(destination);
-    expect(verify(destination)).toContain("Verified 6 assets");
+    expect(verify(destination)).toContain("Verified 12 assets");
     fs.writeFileSync(path.join(destination, ".github/instructions/agent-distro.instructions.md"), "changed\n");
     expect(() => verify(destination)).toThrow();
   });
@@ -323,6 +343,6 @@ describe("agent-distro install", () => {
     const destination = target();
     fs.mkdirSync(path.join(destination, ".mcp.json"));
     expect(() => run(destination, "--force")).toThrow();
-    expect(fs.existsSync(path.join(destination, ".github/agents/agent-distro.agent.md"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, ".github/agents/pull-request-review.agent.md"))).toBe(false);
   });
 });

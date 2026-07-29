@@ -11,11 +11,17 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-proof-"));
 const cli = path.join(root, "bin", "agent-distro.mjs");
 const expected = [
-  ".github/agents/agent-distro.agent.md",
+  ".github/agents/pull-request-review.agent.md",
+  ".github/agents/debugging.agent.md",
+  ".github/agents/handoff.agent.md",
   ".github/hooks/agent-distro.json",
   ".github/instructions/agent-distro.instructions.md",
-  ".github/prompts/agent-distro.prompt.md",
-  ".github/skills/agent-distro/SKILL.md",
+  ".github/prompts/pull-request-review.prompt.md",
+  ".github/prompts/debugging.prompt.md",
+  ".github/prompts/grill-me.prompt.md",
+  ".github/skills/pull-request-review/SKILL.md",
+  ".github/skills/debugging/SKILL.md",
+  ".github/skills/handoff/SKILL.md",
   ".mcp.json",
   ".agent-distro/manifest.json",
 ];
@@ -32,4 +38,4 @@ const beforeDryRun = fs.readFileSync(path.join(target, ".agent-distro", "manifes
 execFileSync(process.execPath, [cli, "install", target, "--all", "--dry-run"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(path.join(target, ".agent-distro", "manifest.json")), beforeDryRun);
 
-console.log("Node install proof passed: six Copilot asset types synchronized safely.");
+console.log("Node install proof passed: twelve versioned assets synchronized safely.");

@@ -5,6 +5,7 @@
 | Side mission | Done | [Source documentation standard](../done/06-source-documentation-standard.md) | PR #20 passed run `30484057022` on macOS and Windows Git Bash |
 | 0 | Done | [Cross-platform core and compatibility contract](../done/04-cross-platform-core-and-compatibility.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0.1 | Done | [Interactive TUI and real-repository smoke](../done/05-interactive-tui-and-repository-smoke.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
+| 1 | Done | [Versioned asset profiles](../done/06-versioned-asset-profiles.md) | PR #14 passed macOS and Windows profile-flow verification |
 | 0 | Done | [Reliable installation and diagnostics](../done/00-reliable-installation-and-diagnostics.md) | Completed in hosted run `30475273988` on macOS and Windows |
 | 1 | Done | [Opt-in issue-report handoff](../done/01-opt-in-issue-reporting.md) | Completed in hosted run `30475273988` on macOS and Windows |
 | 1 | Done | [CLI command boundaries](../done/03-cli-command-boundaries.md) | PR #11 passed macOS and Windows verification |
