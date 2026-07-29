@@ -38,6 +38,10 @@ operation.
 Acceptance: catalog edits are normal version-controlled package changes and an
 installation records the catalog contract it used.
 
+Follow-up (2026-07-29): profiles.json is the versioned source of truth.
+scripts/generate-catalog.mjs deterministically generates catalog.json; build
+refreshes it and catalog:check rejects a stale committed artifact.
+
 ## Story 2 — Composable selection
 
 **Status:** Done
