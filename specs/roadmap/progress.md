@@ -2,7 +2,7 @@
 
 | Priority | Status | Work | Next evidence |
 | --- | --- | --- | --- |
-| 1 | Active | [Copilot plugin marketplace offering](../active/07-copilot-plugin-marketplace.md) | Local Copilot CLI marketplace installation proof |
+| 1 | Done | [Copilot plugin marketplace offering](../done/07-copilot-plugin-marketplace.md) | PR #24 passed run `30487038245` on macOS and Windows Git Bash |
 | Side mission | Done | [Source documentation standard](../done/06-source-documentation-standard.md) | PR #20 passed run `30484057022` on macOS and Windows Git Bash |
 | 0 | Done | [Cross-platform core and compatibility contract](../done/04-cross-platform-core-and-compatibility.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
 | 0.1 | Done | [Interactive TUI and real-repository smoke](../done/05-interactive-tui-and-repository-smoke.md) | PR #16 passed run `30482429529` on macOS and Windows Git Bash |
