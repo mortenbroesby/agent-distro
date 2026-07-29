@@ -6,7 +6,8 @@ work.
 
 ## Current focus
 
-- [CLI command boundaries epic](./specs/active/03-cli-command-boundaries.md)
-  — keep each supported interaction isolated while preserving the packaged CLI.
+- [Versioned npm distribution](./specs/roadmap/progress.md)
+  — select the next installer work only after reviewing the completed
+  reliability evidence.
 
 When a story changes state, update its epic and `specs/roadmap/progress.md`.

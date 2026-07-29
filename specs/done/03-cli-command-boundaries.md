@@ -1,6 +1,6 @@
 # CLI command boundaries
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 1
 
@@ -44,21 +44,17 @@ Acceptance: changing one interaction does not require editing the root entrypoin
 
 ## Story 3 — Preserve the packaged contract
 
-**Status:** Active
+**Status:** Done
 
 ### Tasks
 
 - [x] Build the new root entrypoint and confirm the bin still invokes it.
 - [x] Run the existing behavior and packaged-install proofs.
-- [ ] Record completed macOS and Windows hosted verification on the pull request.
+- [x] Record completed macOS and Windows hosted verification on the pull request.
 
 Acceptance: the public commands, output contracts, and packed npm binary remain unchanged.
 
 Evidence (2026-07-29): `npm test` passed 21 tests, including the packed npm
 consumer test; `npm run test:proof` passed the direct install, verification,
-conflict, force, and dry-run proof through `bin/agent-distro.mjs`.
-
-## Completion
-
-Move this epic to `../done/` only after all checks have evidence. Update the
-progress tracker and current-focus pointer at the same time.
+conflict, force, and dry-run proof through `bin/agent-distro.mjs`. PR #11
+passed macOS and Windows in Actions runs `30476256120` and `30476292131`.
