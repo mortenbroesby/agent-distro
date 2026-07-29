@@ -35,8 +35,7 @@ workflow the default without relying on hidden local configuration.
 
 - [x] Define the minimum PR handoff: summary, verification evidence, and known
       gaps.
-- [ ] Add a PR template only if repeated reviews show that the instruction is
-      insufficient.
+- [x] Add a PR template after an explicit user request.
 - [x] Prove an ASDLC change can be delivered from a branch without touching the
       shared checkout.
 
@@ -45,9 +44,8 @@ the branch history.
 
 Evidence (2026-07-29): this pull request is the proof: it was created and
 updated from `docs/worktree-protocol` in its own worktree. Its description
-contains the scope, verification, and the remaining known gap. A template is
-not warranted until repeated review shows that the documented handoff is
-insufficient.
+contains the scope, verification, and the remaining known gap. PR #1 added
+`.github/pull_request_template.md` after an explicit user request.
 
 ## Story 3 — GitHub `main` ruleset
 
@@ -78,18 +76,24 @@ workflow guardrails.
 
 ## Story 4 — Optional local guardrail
 
-**Status:** Ready
+**Status:** Done — not adopted
 
 ### Tasks
 
-- [ ] Assess whether a tracked pre-push hook would add protection beyond the
+- [x] Assess whether a tracked pre-push hook would add protection beyond the
       remote ruleset without blocking legitimate maintainer recovery.
-- [ ] If adopted, reject only `git push origin main` and leave all branch pushes
-      untouched.
-- [ ] Test the hook with representative command arguments.
+- [x] Decline adoption: Git does not install tracked hooks automatically, so a
+      repository hook without a separate setup mechanism would create false
+      assurance.
+- [x] Retain the worktree and pull-request instructions as the available local
+      guardrail until remote enforcement is available.
 
 Acceptance: any local guardrail is narrow, documented, and never the sole
 protection for `main`.
+
+Evidence (2026-07-29): no existing hook installer or `core.hooksPath` setup
+exists in this repository. Adding only a tracked hook would not protect fresh
+clones, so it was deliberately not adopted.
 
 ## Completion
 
