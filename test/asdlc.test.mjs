@@ -16,7 +16,12 @@ const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-test-"));
 describe("asdlc install", () => {
   it("prints standard help and its package version", () => {
     expect(command("--help")).toContain("Usage: asdlc");
-    expect(command("--version")).toBe("asdlc 0.0.0\n");
+    expect(command("install", "--help")).toContain("--dry-run");
+    expect(command("--version")).toBe("0.0.0\n");
+  });
+
+  it("rejects options that do not belong to a command", () => {
+    expect(() => command("verify", target(), "--force")).toThrow();
   });
 
   it("installs every Copilot asset category and records ownership", () => {

@@ -16,11 +16,15 @@
     "build": "tsdown src/cli.ts --format esm --out-dir dist --copy assets",
     "prepare": "npm run build",
     "prepack": "npm run build",
-    "test": "npm run build && vitest run",
+    "test": "npm run build && vitest run --no-file-parallelism",
     "test:proof": "npm run build && node test/proof.mjs"
   },
   "devDependencies": {
+    "execa": "^9.6.1",
     "tsdown": "^0.22.14",
     "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
   }
 }

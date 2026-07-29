@@ -3,6 +3,7 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Command, CommanderError } from "commander";
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 const version = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
@@ -14,10 +15,6 @@ function files(dir, prefix = "") {
       ? files(path.join(dir, entry.name), relative)
       : [relative];
   });
-}
-
-function usage() {
-  console.log("Usage: asdlc <install|verify> <target> [--dry-run] [--force]");
 }
 
 function hasSymlinkAncestor(root: string, relative: string) {
@@ -70,28 +67,7 @@ function verify(target: string) {
   }
 }
 
-export function run(args: string[]) {
-  const [command, target, ...options] = args;
-  if (command === "--help" && !target) {
-    usage();
-    return 0;
-  }
-  if (command === "--version" && !target) {
-    console.log(`asdlc ${version}`);
-    return 0;
-  }
-  if (command === "verify" && target && options.length === 0) return verify(target);
-  if (
-    command !== "install" ||
-    !target ||
-    options.some((option) => option !== "--force" && option !== "--dry-run")
-  ) {
-    usage();
-    return 1;
-  }
-
-  const force = options.includes("--force");
-  const dryRun = options.includes("--dry-run");
+function install(target: string, { force = false, dryRun = false }: { force?: boolean; dryRun?: boolean }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) {
     console.error(`Target is not a directory: ${target}`);
     return 1;
@@ -160,4 +136,37 @@ export function run(args: string[]) {
     fs.renameSync(temporary, output);
   }
   return 0;
+}
+
+export function run(args: string[]) {
+  let exitCode = 0;
+  const program = new Command()
+    .name("asdlc")
+    .description("Install and verify ASDLC assets")
+    .version(version)
+    .showHelpAfterError()
+    .exitOverride();
+
+  program.command("verify <target>").description("Verify installed ASDLC assets").action((target) => {
+    exitCode = verify(target);
+  });
+  program.command("install <target>")
+    .description("Install ASDLC assets")
+    .option("--force", "replace changed ASDLC assets")
+    .option("--dry-run", "show changes without writing")
+    .action((target, options) => {
+      exitCode = install(target, options);
+    });
+
+  if (args.length === 0) {
+    program.outputHelp();
+    return 1;
+  }
+  try {
+    program.parse(args, { from: "user" });
+  } catch (error) {
+    if (error instanceof CommanderError) return error.exitCode;
+    throw error;
+  }
+  return exitCode;
 }
