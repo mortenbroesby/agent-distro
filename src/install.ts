@@ -61,7 +61,7 @@ export function recover(target: string) {
   }
 }
 
-export function install(target: string, { force = false, dryRun = false, selected = [] }: { force?: boolean; dryRun?: boolean; selected?: string[] }) {
+export function install(target: string, { force = false, dryRun = false, quiet = false, selected = [] }: { force?: boolean; dryRun?: boolean; quiet?: boolean; selected?: string[] }) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory()) return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
   if (fs.existsSync(recoveryPath(destination))) return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
@@ -88,7 +88,7 @@ export function install(target: string, { force = false, dryRun = false, selecte
   });
   if (conflicts.length && !force) return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
   const changed = outputFiles.filter((relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative));
-  console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
+  if (!quiet) console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun || changed.length === 0) return 0;
   let staging = "";
   const replacements: { relative: string; output: string; backup?: string }[] = [];
@@ -132,9 +132,7 @@ export function install(target: string, { force = false, dryRun = false, selecte
   return 0;
 }
 
-export async function interactiveInstall(target?: string) {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
-  const p = await import("@clack/prompts");
+export async function runInteractiveInstall(target: string | undefined, p: any) {
   p.intro("Agent Distro install");
   const destination = target ?? await p.text({ message: "Install into", initialValue: process.cwd(), validate: (value) => value ? undefined : "A target directory is required." });
   if (p.isCancel(destination)) {
@@ -150,7 +148,20 @@ export async function interactiveInstall(target?: string) {
     p.outro("No assets selected; nothing changed.");
     return 0;
   }
-  const code = install(destination, { selected });
+  const confirmed = await p.confirm({ message: `Install ${selected.length} selected asset${selected.length === 1 ? "" : "s"} into ${destination}?`, initialValue: true });
+  if (p.isCancel(confirmed) || !confirmed) {
+    p.cancel("Installation cancelled; nothing changed.");
+    return 0;
+  }
+  const spinner = p.spinner();
+  spinner.start("Installing selected assets");
+  const code = install(destination, { quiet: true, selected });
+  spinner.stop(code === 0 ? "Assets synchronized." : "Installation failed.");
   if (code === 0) p.outro("Installation complete.");
   return code;
+}
+
+export async function interactiveInstall(target?: string) {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
+  return runInteractiveInstall(target, await import("@clack/prompts"));
 }

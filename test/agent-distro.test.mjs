@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createIssueUrl, formatFailure, install } from "../dist/agent-distro.mjs";
+import { createIssueUrl, formatFailure, install, runInteractiveInstall } from "../dist/agent-distro.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
@@ -38,6 +38,45 @@ describe("agent-distro install", () => {
     const destination = path.join(os.tmpdir(), `agent-distro-no-tty-${process.pid}-${Date.now()}`);
     expect(failed("install", destination)).toContain("Interactive install requires a terminal");
     expect(fs.existsSync(destination)).toBe(false);
+  });
+
+  it("runs the TUI through target, selection, confirmation, and progress", async () => {
+    const destination = target();
+    const calls = [];
+    const prompts = {
+      intro: (message) => calls.push(["intro", message]),
+      text: async () => destination,
+      multiselect: async () => [".mcp.json"],
+      confirm: async () => true,
+      isCancel: () => false,
+      cancel: (message) => calls.push(["cancel", message]),
+      spinner: () => ({ start: (message) => calls.push(["start", message]), stop: (message) => calls.push(["stop", message]) }),
+      outro: (message) => calls.push(["outro", message]),
+    };
+    expect(await runInteractiveInstall(undefined, prompts)).toBe(0);
+    expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
+    expect(calls).toEqual(expect.arrayContaining([
+      ["intro", "Agent Distro install"],
+      ["start", "Installing selected assets"],
+      ["stop", "Assets synchronized."],
+      ["outro", "Installation complete."],
+    ]));
+  });
+
+  it("cancels the TUI before writing", async () => {
+    const destination = target();
+    const prompts = {
+      intro: () => {},
+      text: async () => destination,
+      multiselect: async () => [".mcp.json"],
+      confirm: async () => false,
+      isCancel: () => false,
+      cancel: () => {},
+      spinner: () => ({ start: () => {}, stop: () => {} }),
+      outro: () => {},
+    };
+    expect(await runInteractiveInstall(undefined, prompts)).toBe(0);
+    expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(false);
   });
 
   it("prints stable codes and recovery actions for expected failures", () => {

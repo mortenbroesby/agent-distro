@@ -1,6 +1,6 @@
 # Interactive TUI and real-repository smoke
 
-**Status:** Active
+**Status:** Done
 
 **Priority:** 0.1
 
@@ -33,7 +33,7 @@ copy-pasting setup or teardown.
 
 ## Story 2 — Packaged real-world smoke matrix
 
-**Status:** Ready
+**Status:** Active
 
 ### Tasks
 
@@ -52,13 +52,17 @@ across representative repository shapes.
 
 ### Tasks
 
-- [ ] Keep Commander as the non-interactive command contract and `@clack/prompts` as the TTY implementation.
-- [ ] Refactor the wizard into explicit target, asset-selection, confirmation, progress, success, and cancellation states.
-- [ ] Keep the selection empty by default and preserve `--asset`/`--all` automation.
-- [ ] Make non-TTY invocation fail safely with a direct automated alternative.
+- [x] Keep Commander as the non-interactive command contract and `@clack/prompts` as the TTY implementation.
+- [x] Refactor the wizard into explicit target, asset-selection, confirmation, progress, success, and cancellation states.
+- [x] Keep the selection empty by default and preserve `--asset`/`--all` automation.
+- [x] Make non-TTY invocation fail safely with a direct automated alternative.
 
 Acceptance: an interactive user can understand what will change before any
 write, while scripts retain stable non-interactive behavior.
+
+Evidence: focused tests exercise the Clack adapter seam through target,
+selection, confirmation, progress, success, and cancellation without a fake
+terminal; the existing non-TTY test preserves the automated alternative.
 
 ## Story 4 — TUI and smoke evidence
 
