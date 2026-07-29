@@ -24,15 +24,17 @@ interaction:
 ```text
 agent-distro install [target]
 agent-distro recover <target>
-agent-distro doctor <target>
-agent-distro doctor --diagnostics <target>
+agent-distro doctor [target]
+agent-distro doctor --diagnostics [target]
 agent-distro profiles
 agent-distro report-issue
 ```
 
-`doctor <target>` performs the existing verification behavior. `--diagnostics`
-prints the existing sanitized diagnostic snapshot instead. The pre-v1 CLI may
-remove `verify` and `diagnostics`; no compatibility aliases are retained.
+`install` without a target remains the guided TUI flow, which prompts for a
+target. `doctor` without a target uses the current working directory. `doctor
+[target]` performs the existing verification behavior; `--diagnostics` prints
+the existing sanitized diagnostic snapshot instead. The pre-v1 CLI may remove
+`verify` and `diagnostics`; no compatibility aliases are retained.
 
 ## Bootstrap contract
 
