@@ -18,7 +18,7 @@ const failed = (...args) => {
   throw new Error("Expected command to fail");
 };
 const run = (target, ...options) =>
-  command("install", target, ...options);
+  command("install", target, "--all", ...options);
 const verify = (target) => command("verify", target);
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-test-"));
 
@@ -36,12 +36,12 @@ describe("asdlc install", () => {
   it("prints stable codes and recovery actions for expected failures", () => {
     const fileTarget = path.join(os.tmpdir(), `asdlc-file-${process.pid}-${Date.now()}`);
     fs.writeFileSync(fileTarget, "not a directory\n");
-    expect(failed("install", fileTarget)).toMatch(/ASDLC_E_TARGET_INVALID:[\s\S]*Next:/);
+    expect(failed("install", fileTarget, "--all")).toMatch(/ASDLC_E_TARGET_INVALID:[\s\S]*Next:/);
 
     const destination = target();
     run(destination);
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
-    expect(failed("install", destination)).toMatch(/ASDLC_E_CONFLICT:[\s\S]*Next:/);
+    expect(failed("install", destination, "--all")).toMatch(/ASDLC_E_CONFLICT:[\s\S]*Next:/);
 
     const manifestPath = path.join(destination, ".asdlc", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
@@ -100,6 +100,19 @@ describe("asdlc install", () => {
     expect(fs.existsSync(path.join(destination, ".github/skills/asdlc/SKILL.md"))).toBe(true);
     expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".asdlc/manifest.json"), "utf8")).files).toHaveLength(6);
+  });
+
+  it("installs only explicitly selected assets outside the wizard", () => {
+    const destination = target();
+    command("install", destination, "--asset", ".mcp.json", ".github/prompts/asdlc.prompt.md");
+    expect(fs.existsSync(path.join(destination, ".mcp.json"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/prompts/asdlc.prompt.md"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".github/agents/asdlc.agent.md"))).toBe(false);
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".asdlc/manifest.json"), "utf8")).files).toEqual([
+      ".mcp.json",
+      ".github/prompts/asdlc.prompt.md",
+    ]);
+    expect(failed("install", destination, "--asset", "unknown")).toContain("ASDLC_E_USAGE");
   });
 
   it("does not overwrite a changed target without --force", () => {

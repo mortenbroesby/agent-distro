@@ -20,7 +20,7 @@ it("installs the packed npm binary without source assets", async () => {
     expect(fs.existsSync(binary)).toBe(true);
     const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "asdlc", ...args], options);
     expect((await execute(["--version"])).stdout).toBe("0.0.0");
-    await execute(["install", path.join(workspace, "target")]);
+    await execute(["install", path.join(workspace, "target"), "--all"]);
     expect(fs.existsSync(path.join(workspace, "target", ".asdlc", "manifest.json"))).toBe(true);
     const reportDirectory = path.join(workspace, "report");
     fs.mkdirSync(reportDirectory);

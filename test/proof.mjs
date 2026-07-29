@@ -18,16 +18,16 @@ const expected = [
   ".asdlc/manifest.json",
 ];
 
-execFileSync(process.execPath, [cli, "install", target], { stdio: "inherit" });
+execFileSync(process.execPath, [cli, "install", target, "--all"], { stdio: "inherit" });
 for (const relative of expected) assert.ok(fs.existsSync(path.join(target, relative)), relative);
 execFileSync(process.execPath, [cli, "verify", target], { stdio: "inherit" });
 
 fs.writeFileSync(path.join(target, ".mcp.json"), "changed\n");
-assert.throws(() => execFileSync(process.execPath, [cli, "install", target], { stdio: "pipe" }));
-execFileSync(process.execPath, [cli, "install", target, "--force"], { stdio: "inherit" });
+assert.throws(() => execFileSync(process.execPath, [cli, "install", target, "--all"], { stdio: "pipe" }));
+execFileSync(process.execPath, [cli, "install", target, "--all", "--force"], { stdio: "inherit" });
 assert.deepEqual(JSON.parse(fs.readFileSync(path.join(target, ".mcp.json"), "utf8")), { mcpServers: {} });
 const beforeDryRun = fs.readFileSync(path.join(target, ".asdlc", "manifest.json"));
-execFileSync(process.execPath, [cli, "install", target, "--dry-run"], { stdio: "inherit" });
+execFileSync(process.execPath, [cli, "install", target, "--all", "--dry-run"], { stdio: "inherit" });
 assert.deepEqual(fs.readFileSync(path.join(target, ".asdlc", "manifest.json")), beforeDryRun);
 
 console.log("Node install proof passed: six Copilot asset types synchronized safely.");

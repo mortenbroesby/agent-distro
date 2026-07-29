@@ -25,6 +25,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "commander": "^14.0.3"
   }
 }
