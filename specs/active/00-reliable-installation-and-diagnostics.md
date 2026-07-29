@@ -75,14 +75,17 @@ Acceptance criteria:
 
 ## Story 3 — Transactional install and recovery
 
-**Status:** Ready
+**Status:** Active
 
 Prove that interrupted, permission-denied, concurrent, and rename-failed writes
 leave no partial managed state and provide a deterministic recovery command.
 
+Implementation detail and task evidence live in the child
+[transactional install and recovery epic](./02-transactional-install-and-recovery.md).
+
 Acceptance criteria:
 
-- [ ] Stage all changed files before replacing any managed destination file.
+- [x] Stage all changed files before replacing any managed destination file.
 - [ ] On failure, retain the previous complete state or remove only newly
       created staged files.
 - [ ] Tests simulate write/rename failures and verify `verify` remains honest.

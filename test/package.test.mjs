@@ -10,7 +10,8 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
 it("installs the packed npm binary without source assets", async () => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "asdlc-package-"));
-  const env = { ...process.env, NPM_CONFIG_CACHE: path.join(workspace, "cache") };
+  const cache = path.join(workspace, "cache");
+  const env = { ...process.env, NPM_CONFIG_CACHE: cache, npm_config_cache: cache };
   try {
     await execa(npm, ["pack", "--pack-destination", workspace], { cwd: root, env });
     const archive = fs.readdirSync(workspace).find((file) => file.endsWith(".tgz"));
