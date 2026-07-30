@@ -15,15 +15,19 @@ request, committed lockfile, and completed macOS/Windows verification for that
 PR head. A dependency replacement requires a demonstrated production gap and
 must remove more risk or code than it introduces.
 
+First artifact-source milestone: [PR #43](https://github.com/mortenbroesby/agent-distro/pull/43),
+exact head `e8ebd3020492b330dfeadff95f1c59e0489cb645`, passed macOS,
+Windows, and every supported packed-runtime lane.
+
 ## Story 0 — Raise the runtime floor
 
-- [ ] Change the package, bootstrap, and contributor runtime contract to Node
+- [x] Change the package, bootstrap, and contributor runtime contract to Node
   `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
-- [ ] Align version files, CI, packaging checks, and user-facing compatibility
+- [x] Align version files, CI, packaging checks, and user-facing compatibility
   errors with that single range.
-- [ ] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.22.2,
+- [x] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.22.2,
   24.15, and 26 packaged-runtime proof on macOS and Windows.
-- [ ] Give unsupported Node installations an actionable error before any
+- [x] Give unsupported Node installations an actionable error before any
   filesystem mutation.
 
 Acceptance: Agent Distro has one tested Node 22+ baseline, and its declared
@@ -32,25 +36,29 @@ unsupported early Node release.
 
 ## Story 1 — Resolve external artifact packages safely
 
-- [ ] Define the user-facing artifact package contract: `package.json`,
-  `agent-distro.manifest.json`, allowed content roots, and target compatibility.
-- [ ] Complete Story 0 before adding current `pacote`.
-- [ ] Add one internal npm-backed artifact-source module for resolution,
+- [x] Define the artifact package contract: `package.json`,
+  `agent-distro.manifest.json`, and type-specific content roots.
+- [x] Complete Story 0 before adding current `pacote`.
+- [x] Add one internal npm-backed artifact-source module for resolution,
   manifest inspection, and extraction; do not expose a public abstraction until
   a second source exists.
-- [ ] Extract into a controlled temporary directory, never `node_modules`, and
+- [x] Extract into a controlled temporary directory, never `node_modules`, and
   reject package lifecycle scripts and executable behavior.
-- [ ] Prove registry package, tag, and tarball handling; assert integrity
-  metadata, target containment, cancellation, and no-script behavior on macOS
-  and Windows.
-- [ ] Reject Git and local-directory specs before Pacote is called. Revisit them
+- [x] Prove registry package, tag, and tarball handling; assert integrity
+  metadata, content-root containment, and no-script behavior on macOS and
+  Windows.
+- [x] Reject Git and local-directory specs before Pacote is called. Revisit them
   only through a focused `@npmcli/arborist` security and cost spike.
-- [ ] Defer direct `npm-package-arg`, `npm-registry-fetch`, and `semver` unless
+- [x] Defer direct `npm-package-arg`, `npm-registry-fetch`, and `semver` unless
   their separate triggers in the spike are met.
+- [ ] Add cancellation and target compatibility only when the installation engine
+  accepts an external artifact for a selected renderer; no current caller can
+  exercise either contract safely.
 
-Acceptance: artifact packages become inspectable content containers with no
-implicit execution, no package-manager mutation, and a packed cross-platform
-proof on every supported Node lane.
+Acceptance: artifact packages are inspectable inert content containers with no
+implicit execution or package-manager mutation, with packed cross-platform
+proof on every supported Node lane. Renderer-specific compatibility and
+cancellation remain deliberately deferred until their product triggers exist.
 
 ## Story 2 — Prevent concurrent mutation
 
