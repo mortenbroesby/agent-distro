@@ -159,7 +159,9 @@ describe("agent-distro install", () => {
     const destination = target();
     run(destination);
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
-    expect(failed("install", destination, "--all")).toMatch(/AGENT_DISTRO_E_CONFLICT:[\s\S]*Next:/);
+    expect(failed("install", destination, "--all")).toMatch(
+      /AGENT_DISTRO_E_CONFLICT:[\s\S]*report-issue --diagnostics-consent/,
+    );
 
     const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
