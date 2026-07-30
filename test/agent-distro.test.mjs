@@ -6,19 +6,29 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createIssueUrl, formatFailure, install, runInteractiveInstall } from "../dist/agent-distro.mjs";
+import {
+  createIssueUrl,
+  formatFailure,
+  install,
+  providerConflicts,
+  runInteractiveInstall,
+} from "../dist/agent-distro.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
 const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
+/** Runs the packaged CLI and returns its stdout for a successful user journey. */
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
+/** Runs the packaged CLI while retaining separate streams for verbosity assertions. */
 const commandResult = (...args) => {
   const result = spawnSync(process.execPath, [cli, ...args], { encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr);
   return result;
 };
+/** Runs the packaged CLI from a target directory to prove current-directory defaults. */
 const commandFrom = (cwd, ...args) =>
   execFileSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8", stdio: "pipe" });
+/** Captures the formatted stderr contract for an expected CLI failure. */
 const failed = (...args) => {
   try {
     command(...args);
@@ -27,6 +37,7 @@ const failed = (...args) => {
   }
   throw new Error("Expected command to fail");
 };
+/** Captures a bootstrap failure without allowing the test process to terminate. */
 const failedBootstrap = (...args) => {
   try {
     execFileSync(process.execPath, [bootstrap, ...args], { encoding: "utf8", stdio: "pipe" });
@@ -35,8 +46,11 @@ const failedBootstrap = (...args) => {
   }
   throw new Error("Expected bootstrap to fail");
 };
+/** Installs every catalog provider to characterize full-distribution lifecycle behavior. */
 const run = (target, ...options) => command("install", target, "--all", ...options);
+/** Invokes the public health check after a transaction or recovery scenario. */
 const verify = (target) => command("doctor", target);
+/** Creates an isolated target, preventing one scenario from influencing another. */
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-test-"));
 
 describe("agent-distro install", () => {
@@ -259,6 +273,31 @@ describe("agent-distro install", () => {
     expect(failed("install", destination, "--profile", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
+  it("merges compatible JavaScript and .NET MCP contributions", () => {
+    const destination = target();
+    command("install", destination, "--profile", "javascript", "dotnet");
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({
+      mcpServers: { javascript: {}, dotnet: {} },
+    });
+  });
+
+  it("identifies an unmergeable shared target before the TUI writes", () => {
+    expect(
+      providerConflicts([
+        { path: ".mcp.json", target: ".mcp.json", merge: "replace", label: "Common", stack: "common" },
+        { path: ".mcp.json", target: ".mcp.json", merge: "replace", label: "Override", stack: "javascript" },
+      ]),
+    ).toEqual([
+      {
+        target: ".mcp.json",
+        providers: [
+          { path: ".mcp.json", label: "Common", stack: "common" },
+          { path: ".mcp.json", label: "Override", stack: "javascript" },
+        ],
+      },
+    ]);
+  });
+
   it("updates an existing selection and rejects an unmanaged target", () => {
     const destination = target();
     command("install", destination, "--profile", "debugging");
@@ -296,7 +335,9 @@ describe("agent-distro install", () => {
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
     expect(() => run(destination)).toThrow();
     run(destination, "--force");
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({ mcpServers: {} });
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({
+      mcpServers: { javascript: {}, dotnet: {} },
+    });
     const archive = path.join(
       destination,
       ".agent-distro",

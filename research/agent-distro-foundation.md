@@ -107,9 +107,12 @@ require a selection-model redesign.
 **Decision:** Merge compatible contributions from selected stacks that target
 the same managed path. A true content conflict stops the operation.
 
-**Implication:** The catalog needs explicit merge behavior for any asset type
-that can share a target path. Agent Distro must not silently choose one stack's
-content over another's.
+**Implication:** Each provider records a source identity, target path, and
+merge rule. The first supported rule is recursive JSON-object merge: distinct
+keys combine at every object depth; equal scalar values agree and divergent
+values are unmergeable.
+Other formats are unmergeable until they declare a rule. Agent Distro must not
+silently choose one provider's content over another's.
 
 ## 9. Conflict recovery
 
