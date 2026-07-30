@@ -6,11 +6,11 @@
 
 **Architecture:** cli.ts becomes only Commander composition and error handling. Command modules own their own Commander syntax, the transactional installer remains in install.ts, and Clack moves to interactive-install.ts. bootstrap.mjs builds a temporary npm tarball, globally installs it, and invokes the installed binary without modifying a target repository.
 
-**Tech Stack:** Node 22.23.1, Commander, @clack/prompts, npm CLI, Vitest, Oxfmt, Oxlint.
+**Tech Stack:** Node >=20.12.0 <27 runtime, tsdown on Node ^22.18.0 or >=24.11.0 <27 for checkout builds, Commander, @clack/prompts, npm CLI, Vitest, Oxfmt, Oxlint.
 
 ## Global Constraints
 
-- Require Node >=22.23.1 <23; add no dependency.
+- Preserve the packed CLI's Node >=20.12.0 <27 runtime support; checkout builds require Node ^22.18.0 or >=24.11.0 <27 for tsdown. Add no dependency.
 - Keep install, recover, profiles, and report-issue; replace verify and diagnostics with doctor [target] and doctor --diagnostics [target].
 - install without a target prompts in the TUI; doctor without a target verifies process.cwd().
 - Preserve stable failure codes, transactional safety, empty default selection, and explicit --force semantics.
@@ -157,7 +157,6 @@ Run: git add src/agent-distro.ts src/commands/install.ts src/install.ts src/inte
 **Files:**
 - Delete: scripts/install-local.mjs
 - Create: scripts/bootstrap.mjs
-- Modify: README.md
 - Modify: test/agent-distro.test.mjs
 - Modify: test/package.test.mjs
 
@@ -187,9 +186,9 @@ Run: npx vitest run test/agent-distro.test.mjs test/package.test.mjs --no-file-p
 
 Expected: FAIL because bootstrap.mjs is absent.
 
-- [x] **Step 3: Implement bootstrap and quick start**
+- [x] **Step 3: Implement bootstrap**
 
-Use fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-bootstrap-")) plus try/finally. Run npm ci, parse the one-item JSON result from npm pack --json --pack-destination, globally install the archive, and invoke the global binary. Accept only no arguments or --doctor <target>. Replace README's clone-local installer with node scripts/bootstrap.mjs and document explicit later install and doctor calls.
+Use fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-bootstrap-")) plus try/finally. Run npm ci, parse the one-item JSON result from npm pack --json --pack-destination, globally install the archive without package lifecycle scripts, and invoke the global binary. Accept only no arguments or --doctor <target>.
 
 - [x] **Step 4: Run focused bootstrap tests and proof**
 
@@ -199,7 +198,7 @@ Expected: PASS; isolated prefix receives the packed CLI and bootstrap never inst
 
 - [x] **Step 5: Commit**
 
-Run: git add README.md scripts/bootstrap.mjs scripts/install-local.mjs test/agent-distro.test.mjs test/package.test.mjs && git commit -m "feat: bootstrap packed global cli"
+Run: git add scripts/bootstrap.mjs scripts/install-local.mjs test/agent-distro.test.mjs test/package.test.mjs && git commit -m "feat: bootstrap packed global cli"
 
 ### Task 5: Exclude pinned development skills from repository checks
 
@@ -249,7 +248,7 @@ Keep incomplete tasks unchecked.
 
 Run: npm run fmt:check && npm run lint && npm test && npm run test:proof && npm pack --dry-run --json && git diff --check
 
-Expected: every command exits 0; package includes CLI, assets, and README but not development-only skills.
+Expected: every command exits 0; package includes CLI and assets but not development-only skills or a root README.
 
 - [ ] **Step 3: Rebase and push**
 

@@ -38,8 +38,9 @@ the existing sanitized diagnostic snapshot instead. The pre-v1 CLI may remove
 
 ## Bootstrap contract
 
-`scripts/bootstrap.mjs` is runnable with Node 22.23.1 or newer within Node 22.
-With no arguments, it:
+`scripts/bootstrap.mjs` builds from the checkout on Node `^22.18.0` or
+`>=24.11.0 <27`, matching tsdown's build-only requirement. The packed CLI
+remains runnable on Node `>=20.12.0 <27`. With no arguments, the bootstrap:
 
 1. Runs `npm ci` in the checkout.
 2. Runs `npm pack --json --pack-destination <temporary-directory>`.
