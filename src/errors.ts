@@ -9,6 +9,7 @@ export type FailureCode =
   | "AGENT_DISTRO_E_DESTINATION_UNSAFE"
   | "AGENT_DISTRO_E_CONFLICT"
   | "AGENT_DISTRO_E_RECOVERY_REQUIRED"
+  | "AGENT_DISTRO_E_LOCKED"
   | "AGENT_DISTRO_E_MANIFEST_INVALID"
   | "AGENT_DISTRO_E_ASSET_DRIFT"
   | "AGENT_DISTRO_E_USAGE"
@@ -20,6 +21,7 @@ const nextSteps: Record<FailureCode, string> = {
   AGENT_DISTRO_E_CONFLICT:
     'Review changed files, then rerun with --force if replacement is intended. If unexpected, run agent-distro report-issue --diagnostics-consent --message "describe the conflict".',
   AGENT_DISTRO_E_RECOVERY_REQUIRED: "Run agent-distro recover <target>, then retry the install.",
+  AGENT_DISTRO_E_LOCKED: "Another Agent Distro operation is active for this target. Wait for it to finish, then retry.",
   AGENT_DISTRO_E_MANIFEST_INVALID: "Reinstall Agent Distro assets with --force, then run doctor again.",
   AGENT_DISTRO_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
   AGENT_DISTRO_E_USAGE: "Run agent-distro --help for valid commands and options.",

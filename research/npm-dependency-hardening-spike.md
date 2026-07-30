@@ -2,8 +2,10 @@
 
 ## Status
 
-Proposed — planning only. No package, lockfile, runtime, or workflow change is
-part of this spike.
+Implemented for the Node 22+ baseline, dependency-admission policy, and the
+first focused cross-platform state-hardening increment. npm artifact
+distribution is explicitly out of scope, so every npm-package resolver
+candidate remains deferred.
 
 ## Decision
 
@@ -11,17 +13,13 @@ Keep the present dependency choices. They are mainstream, actively maintained,
 and narrowly used. Do not add a library merely to replace Node APIs or the
 installer's deliberately explicit transaction and path-safety logic.
 
-The first approved scope trigger is external artifact packages: a user selects
-an npm-style package specification and Agent Distro resolves it as content,
-outside `node_modules`. That feature warrants a dedicated package-resolution
-dependency spike. Concurrent installation is a separate safety trigger for a
-lockfile spike.
+External artifact packages are not an approved distribution channel. Do not add
+an npm-package resolver merely to preserve a hypothetical future option.
+Concurrent installation is a separate safety trigger for a lockfile spike.
 
-Agent Distro's next runtime contract is Node
-`^22.22.2 || ^24.15.0 || >=26.0.0 <27`. This intentionally drops Node 20 and
-aligns the package with current npm-maintained resolution tooling. It must be
-implemented as its own package/CI compatibility change before an artifact
-resolver is added; this spike changes documentation only.
+Agent Distro supports Node 22, 24, and 26. This intentionally drops Node 20
+while accepting early Node 22 releases. Package, bootstrap, launcher, CI, and
+packed-runtime proof use that same range.
 
 Open small, independently verified upgrade spikes for `commander` and
 test-only `execa`. Keep `tsdown`, `oxfmt`, and `oxlint` on a monitored update
@@ -53,9 +51,8 @@ vulnerabilities: 0 critical, high, moderate, low, and informational findings.
 | `oxfmt` | `0.61.0`, dev-only formatter | 35.9M monthly downloads; current release is `0.61.0` (2026-07-27) | Keep, but monitor as a pre-1.0 native-binding tool. |
 | `oxlint` | `1.76.0`, dev-only linter | 49.7M monthly downloads; current release is `1.76.0` (2026-07-27) | Keep. It is stable-major and already current. |
 
-The locked graph contains 8 production, 203 development, and 111 optional
-dependencies (210 total). Direct packages have registry URLs and integrity
-hashes. None of the seven direct packages declares an install script. Oxfmt and
+The committed lockfile pins every registry tarball with integrity metadata.
+None of the direct runtime packages declares an install script. Oxfmt and
 Oxlint deliberately resolve platform-specific optional native bindings; the
 existing macOS and Windows CI lanes are the correct protection for that boundary.
 
@@ -74,43 +71,28 @@ existing macOS and Windows CI lanes are the correct protection for that boundary
 
 ## Artifact-package distribution decision
 
-### `pacote`: approved only for the artifact-package milestone
+### npm artifact resolvers: rejected for the current product
 
-`pacote` is npm's package downloader and exposes the operations this product
-needs: manifest inspection and extraction of npm registry, tag, tarball, Git,
-and local specifications. Its current adoption is strong (54.2M monthly
-downloads), and it is a better foundation than reproducing npm's package-spec,
-registry, cache, and integrity behavior.
-
-Current `pacote@22` requires Node `^22.22.2 || ^24.15.0 || >=26`, matching the
-new runtime contract. Do not soften this contract to generic “Node 22+”: early
-22 releases still cannot run the current package. Pacote brings a substantial
-npm-internal dependency graph, including
-`npm-package-arg`, `npm-registry-fetch`, cache, tar, integrity, Git, and script
-helpers. The spike must prove that resolving and extracting an artifact never
-runs package lifecycle scripts or arbitrary package executables.
-
-Keep the npm-specific implementation behind one internal `artifact-source`
-module with `resolve`, `manifest`, and `extract` operations. Do not introduce a
-public interface or a second resolver until another source genuinely exists.
-The installation engine continues to own the Agent Distro manifest, allowed
-artifact types, target rendering, preview, approval, conflict policy,
-ownership, rollback, and governance.
+`pacote` would be a strong technical choice for npm-distributed artifacts, but
+Agent Distro does not use npm as an artifact-distribution channel. Do not add
+it or its companion resolver packages until that product decision changes.
 
 ### Related distribution candidates
 
 | Candidate | Current evidence | Decision |
 | --- | --- | --- |
-| `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Do not add directly in the first pacote milestone: pacote already owns it. Add only if UI must classify a spec before a resolver call. |
-| `npm-registry-fetch` | Already transitive through current pacote | Defer. Use pacote unless a concrete authenticated registry/search feature needs lower-level control. |
-| `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
+| `pacote` | 13.9M weekly downloads; 80 KB published unpacked; npm-maintained | Defer. Npm is not an Agent Distro artifact channel. |
+| `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Defer. No npm package specs are accepted. |
+| `npm-registry-fetch` | Mainstream npm registry client | Defer. No registry feature exists. |
+| `@npmcli/arborist` | 5.8M weekly downloads; 599 KB published unpacked; npm-maintained | Defer. No local/Git artifact-package workflow exists. |
+| `semver` | 3.396B monthly downloads; Node >=10 | Adopted. Validates the package version and each newly written manifest records that SemVer value. |
 
 ## Cross-platform operations and state candidates
 
 | Candidate | Current evidence | Decision |
 | --- | --- | --- |
-| `proper-lockfile` | 79.2M monthly downloads; small lock/retry dependency graph | Approved for a focused concurrency spike. Lock the exact target installation and managed global state, release in `finally`, use a bounded wait, and prove competing processes cannot interleave. Do not introduce a global lock. |
-| `env-paths` | 347.9M monthly downloads; Node >=20 | Defer. It is the preferred choice if a new cache/config/log location is introduced, but it must not silently migrate the deliberate `~/.agent-distro/repo` managed-checkout contract. |
+| `proper-lockfile` | 79.2M monthly downloads; small lock/retry dependency graph | Adopted for the exact target installation. It has bounded retries and releases in `finally`; locking the managed global checkout remains a separate follow-up. |
+| `env-paths` | 347.9M monthly downloads; Node >=20 | Adopted for new managed-checkout locations. `AGENT_DISTRO_HOME` remains authoritative and an existing `~/.agent-distro/repo` checkout remains in place. |
 | `fast-glob` | 596.2M monthly downloads | Defer. Artifact manifests should be authoritative. Add only when the manifest deliberately supports glob patterns or discovery across multiple roots. |
 | `write-file-atomic` | 387.2M monthly downloads; current v8 matches the new Node runtime contract | Do not add now. The installer already stages every visible replacement and journals multi-file rollback; a single-file helper would not replace that transaction. Reconsider only after a demonstrated journal-write corruption case. |
 | `tempy`, `cpy`, `rimraf` | `fs.mkdtemp`, `fs.cp`, and `fs.rm` cover the current use | Do not add. |
@@ -123,7 +105,7 @@ ownership, rollback, and governance.
 | `ink` / `@inkjs/ui` | Ink has 18.6M monthly downloads and requires Node >=22 | Do not add. A persistent full-screen application is outside the installation-wizard scope; Node compatibility is no longer the deciding concern. |
 | `oclif` | 1.4M monthly downloads | Do not add. Commander and the npm global package meet the current command and update needs; evaluate only for a deliberate standalone-binary/plugin-platform migration. |
 | `execa` | Already present as a dev-only test dependency | Keep runtime bootstrap on Node child-process APIs. Add a small process helper backed by Execa only when several production integrations need cancellation, timeouts, and structured errors; do not add a wrapper for the current few calls. |
-| `which` | 1.303B monthly downloads; newest v7 matches the new Node runtime contract | Defer until `doctor` actually probes Git, GitHub CLI, or Copilot CLI. Use the current major and test Windows PATH behavior. |
+| `which` | 1.303B monthly downloads; newest v7 matches the new Node runtime contract | Adopted by `doctor` to report Git, GitHub CLI, and Copilot CLI discovery with Windows-safe PATH handling. |
 | `open` | 486.7M monthly downloads; Node >=20 | Defer. The current report command prints a reviewable URL; adopt only for an explicit, consented `--open` action and validate the destination before opening it. |
 
 ## Supply-chain hardening gap
@@ -153,11 +135,32 @@ Add a dependency only when all apply:
 - A concrete production requirement or defect cannot be met safely with Node,
   an existing dependency, or the existing small local helper.
 - The candidate has a stable non-prerelease release, clear ownership and license,
-  meaningful adoption, and support for Node `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
+  meaningful adoption, and support for Node 22, 24, and 26.
 - Its lockfile and lifecycle-script impact are reviewed before execution.
 - A packed macOS and Windows proof demonstrates the added behavior.
 - The proposal identifies the code removed or risk reduced; convenience alone is
   not enough.
+
+## Dependency admission evidence
+
+Record the following in the dependency PR and this spike before adding a direct
+runtime dependency:
+
+1. A concrete user or product workflow that needs it now, plus the Node or
+   existing-code alternative that cannot meet the requirement safely.
+2. Stable release, clear owner/license, and at least 1M npm downloads in the
+   preceding week. A lower-volume exception needs a first-party/platform owner
+   and an explicit review rationale; all-time downloads alone are insufficient.
+3. Published unpacked size and the lockfile delta: direct and total package
+   count, production/optional package count, lifecycle scripts, and native
+   bindings. Measure the shipped impact with `npm pack --dry-run`; do not use a
+   package's own size as a proxy for its transitive graph.
+4. Native lockfile audit and signature/provenance evidence after `npm ci`, plus
+   a packed macOS and Windows proof for the exact PR head.
+
+There is no universal byte cap: a substantial, established dependency is
+appropriate when it replaces a security-sensitive protocol or platform-specific
+implementation. A smaller library without a current use case is still rejected.
 
 ## Sources
 
@@ -166,7 +169,7 @@ Add a dependency only when all apply:
 - [npm install and lockfile behavior](https://docs.npmjs.com/cli/install/)
 - [tsdown documentation](https://tsdown.dev/guide/)
 - [Oxc project documentation](https://oxc.rs/)
-- Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-month/<package>`
+- Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-week/<package>` and `https://api.npmjs.org/downloads/point/last-month/<package>`
 - Registry metadata, queried 2026-07-30: `npm view <package> version time --json`
 
 ## Review cadence

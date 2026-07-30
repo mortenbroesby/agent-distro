@@ -17,45 +17,31 @@ must remove more risk or code than it introduces.
 
 ## Story 0 — Raise the runtime floor
 
-- [ ] Change the package, bootstrap, and contributor runtime contract to Node
-  `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
-- [ ] Align version files, CI, packaging checks, and user-facing compatibility
+- [x] Change the package, bootstrap, and contributor runtime contract to Node
+  22, 24, or 26.
+- [x] Align version files, CI, packaging checks, and user-facing compatibility
   errors with that single range.
-- [ ] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.22.2,
-  24.15, and 26 packaged-runtime proof on macOS and Windows.
-- [ ] Give unsupported Node installations an actionable error before any
+- [x] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.0,
+  24, and 26 packaged-runtime proof on macOS and Windows.
+- [x] Give unsupported Node installations an actionable error before any
   filesystem mutation.
 
-Acceptance: Agent Distro has one tested Node 22+ baseline, and its declared
-range admits the latest maintained npm resolver tooling without accepting an
-unsupported early Node release.
+Acceptance: Agent Distro has a tested Node 22+ baseline across supported even
+Node majors and accepts early Node 22 releases without supporting Node 20.
 
-## Story 1 — Resolve external artifact packages safely
+## Decision — npm artifact distribution
 
-- [ ] Define the user-facing artifact package contract: `package.json`,
-  `agent-distro.manifest.json`, allowed content roots, and target compatibility.
-- [ ] Complete Story 0 before adding current `pacote`.
-- [ ] Add one internal npm-backed artifact-source module for resolution,
-  manifest inspection, and extraction; do not expose a public abstraction until
-  a second source exists.
-- [ ] Extract into a controlled temporary directory, never `node_modules`, and
-  reject package lifecycle scripts and executable behavior.
-- [ ] Prove registry package, tag, tarball URL, Git source, and local directory
-  handling; assert integrity metadata, target containment, cancellation, and
-  no-script behavior on macOS and Windows.
-- [ ] Defer direct `npm-package-arg`, `npm-registry-fetch`, and `semver` unless
-  their separate triggers in the spike are met.
-
-Acceptance: artifact packages become inspectable content containers with no
-implicit execution, no package-manager mutation, and a packed cross-platform
-proof on every supported Node lane.
+Agent Distro does not distribute artifacts through npm packages. Therefore
+`pacote`, `npm-package-arg`, `npm-registry-fetch`, `@npmcli/arborist`, and the
+associated resolver are intentionally out of scope. Reopen this decision only
+if npm becomes an approved artifact-distribution channel.
 
 ## Story 2 — Prevent concurrent mutation
 
-- [ ] Add a focused `proper-lockfile` spike for exact target and managed-global
-  state paths.
-- [ ] Use bounded acquisition and `finally`-based release; stale-lock recovery
-  must be explicit and visible to the user.
+- [x] Add `proper-lockfile` for exact target-installation paths.
+- [x] Use bounded acquisition and `finally`-based release; contention reports
+  an actionable error without mutating managed files.
+- [ ] Lock the managed global checkout during bootstrap and upgrade.
 - [ ] Prove competing installs, update versus install, interruption, and lock
   cleanup on macOS and Windows.
 - [ ] Do not introduce a process-wide/global lock or lock individual files.
@@ -98,7 +84,7 @@ evidence; rejected upgrades are documented with a review date.
   release notes, lockfile change, install scripts, and optional native bindings.
 - [ ] Keep `tsdown` on non-prerelease releases only unless an approved defect
   requires a beta and the beta is explicitly pinned.
-- [ ] Verify each accepted tool update through Node 22.22.2, 24.15, and 26
+- [ ] Verify each accepted tool update through Node 22.0, 24, and 26
   packaged-runtime lanes on macOS and Windows.
 - [ ] Do not replace tsdown/Oxc tooling unless the evidence shows a concrete
   support, security, or cross-platform failure.

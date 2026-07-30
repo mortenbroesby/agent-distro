@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import envPaths from "env-paths";
 import { fileURLToPath } from "node:url";
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,13 +19,16 @@ const npmCli =
     ? (process.env.npm_execpath ??
       path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"))
     : undefined;
-const [major, minor] = process.versions.node.split(".").map(Number);
+const [major] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
+const legacyHome = path.join(os.homedir(), ".agent-distro");
 let home = process.env.AGENT_DISTRO_HOME
   ? path.resolve(process.env.AGENT_DISTRO_HOME)
-  : path.join(os.homedir(), ".agent-distro");
+  : fs.existsSync(path.join(legacyHome, "repo"))
+    ? legacyHome
+    : envPaths("agent-distro", { suffix: "" }).data;
 let doctorTarget;
 
 /** Prints the supported bootstrap invocation without mutating local state. */
@@ -102,10 +106,8 @@ function managedRoot() {
  */
 function main() {
   if (!parseArgs()) return 1;
-  if (!((major === 22 && minor >= 18) || (major >= 24 && major < 27 && (major > 24 || minor >= 11)))) {
-    console.error(
-      "Building Agent Distro from this checkout requires Node ^22.18.0 or >=24.11.0 <27 (tsdown build requirement). The packed CLI supports Node >=20.12.0 <27.",
-    );
+  if (!(major === 22 || major === 24 || major === 26)) {
+    console.error("Agent Distro requires Node 22, 24, or 26. Upgrade Node before bootstrapping.");
     return 1;
   }
 

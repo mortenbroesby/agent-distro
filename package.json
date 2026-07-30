@@ -15,7 +15,7 @@
     "assets:generate": "node scripts/generate-catalog.mjs",
     "assets:check": "node scripts/generate-catalog.mjs --check",
     "agents:check": "node scripts/check-agent-surface.mjs",
-    "build": "npm run assets:generate && tsdown src/agent-distro.ts --format esm --target node20.12 --out-dir dist --copy assets",
+    "build": "npm run assets:generate && tsdown src/agent-distro.ts --format esm --target node22 --out-dir dist --copy assets",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
@@ -28,9 +28,16 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "commander": "^14.0.3"
+    "commander": "^14.0.3",
+    "env-paths": "4.0.0",
+    "proper-lockfile": "4.1.2",
+    "semver": "7.8.5",
+    "which": "7.0.0"
   },
   "devDependencies": {
+    "@types/proper-lockfile": "4.1.4",
+    "@types/semver": "7.7.1",
+    "@types/which": "3.0.4",
     "execa": "^9.6.1",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
@@ -38,6 +45,6 @@
     "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=20.12.0 <27"
+    "node": "^22.0.0 || ^24.0.0 || ^26.0.0"
   }
 }

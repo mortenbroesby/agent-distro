@@ -8,11 +8,15 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import envPaths from "env-paths";
 
 const args = process.argv.slice(3);
+const legacyHome = path.join(os.homedir(), ".agent-distro");
 let home = process.env.AGENT_DISTRO_HOME
   ? path.resolve(process.env.AGENT_DISTRO_HOME)
-  : path.join(os.homedir(), ".agent-distro");
+  : fs.existsSync(path.join(legacyHome, "repo"))
+    ? legacyHome
+    : envPaths("agent-distro", { suffix: "" }).data;
 
 if (args.length === 2 && args[0] === "--home") home = path.resolve(args[1]);
 else if (args.length !== 0) {

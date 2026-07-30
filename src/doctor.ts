@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { valid } from "semver";
+import which from "which";
 import { fail } from "./errors.js";
+import { managedHome } from "./global-path.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 import { version } from "./package.js";
 
@@ -26,6 +28,8 @@ export function verify(target: string) {
       manifest.tool !== "agent-distro" ||
       ![1, 2].includes(manifest.version) ||
       typeof manifest.catalogVersion !== "string" ||
+      (manifest.agentDistroVersion !== undefined &&
+        (typeof manifest.agentDistroVersion !== "string" || !valid(manifest.agentDistroVersion))) ||
       !Array.isArray(manifest.files)
     )
       throw new Error("invalid manifest");
@@ -58,12 +62,13 @@ export function verify(target: string) {
  * verification failure code. Normal absence is information, not damage.
  */
 export function doctor(target: string) {
-  const home = process.env.AGENT_DISTRO_HOME
-    ? path.resolve(process.env.AGENT_DISTRO_HOME)
-    : path.join(os.homedir(), ".agent-distro");
+  const home = managedHome();
   const managed = fs.existsSync(path.join(home, "repo", ".git"));
   console.log(
     `Global CLI: ${version} on Node ${process.versions.node}; managed checkout: ${managed ? "present" : "not found"}.`,
+  );
+  console.log(
+    `Tools: git ${which.sync("git", { nothrow: true }) ? "found" : "missing"}; gh ${which.sync("gh", { nothrow: true }) ? "found" : "missing"}; copilot ${which.sync("copilot", { nothrow: true }) ? "found" : "missing"}.`,
   );
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
     console.log("No Agent Distro installation found for this target.");
@@ -90,13 +95,16 @@ export function doctor(target: string) {
 export function diagnostics(target: string) {
   // Diagnostics are intentionally read-only and resilient: this is the escape
   // hatch used when a manifest is too malformed for normal verification.
-  const home = process.env.AGENT_DISTRO_HOME
-    ? path.resolve(process.env.AGENT_DISTRO_HOME)
-    : path.join(os.homedir(), ".agent-distro");
+  const home = managedHome();
   const snapshot = {
     version,
     runtime: { node: process.versions.node, platform: process.platform, arch: process.arch },
     global: { managedCheckout: fs.existsSync(path.join(home, "repo", ".git")) },
+    tools: {
+      git: Boolean(which.sync("git", { nothrow: true })),
+      gh: Boolean(which.sync("gh", { nothrow: true })),
+      copilot: Boolean(which.sync("copilot", { nothrow: true })),
+    },
     target: { exists: fs.existsSync(target), directory: false },
     manifest: { present: false, valid: false, assetCount: 0 },
   };
@@ -112,6 +120,8 @@ export function diagnostics(target: string) {
             manifest.tool === "agent-distro" &&
             [1, 2].includes(manifest.version) &&
             typeof manifest.catalogVersion === "string" &&
+            (manifest.agentDistroVersion === undefined ||
+              (typeof manifest.agentDistroVersion === "string" && Boolean(valid(manifest.agentDistroVersion)))) &&
             Array.isArray(manifest.files);
           snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;
         } catch {

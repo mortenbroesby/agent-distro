@@ -10,6 +10,7 @@ import { test } from "./support/repository-fixture.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
+const binary = path.join(root, "bin", "agent-distro.mjs");
 
 /**
  * Runs bootstrap while presenting a synthetic Node version to its version gate.
@@ -29,6 +30,24 @@ const bootstrapAsNode = (version) =>
       env: { ...process.env, PATH: "", npm_execpath: path.join(root, "missing-npm-cli.js") },
       reject: false,
     },
+  );
+
+/**
+ * Runs the packaged binary with a synthetic Node version before command parsing.
+ *
+ * @param {string} version - Node version to expose to the bin launcher.
+ * @param {string[]} [args] - Command arguments to prove are never dispatched.
+ * @returns {ReturnType<typeof execa>} A non-throwing child-process result promise.
+ */
+const binaryAsNode = (version, args = ["install", "ignored"]) =>
+  execa(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `Object.defineProperty(process.versions, "node", { value: ${JSON.stringify(version)} }); process.argv = [process.execPath, ${JSON.stringify(binary)}, ...${JSON.stringify(args)}]; await import(${JSON.stringify(pathToFileURL(binary).href)});`,
+    ],
+    { reject: false },
   );
 
 test("bootstraps the packed global binary without installing assets", async ({ repository }) => {
@@ -79,20 +98,30 @@ test("cleans its temporary package after a failed global install", async ({ repo
 
 test("declares and builds for the lowest supported Node runtime", () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-  expect(packageJson.engines.node).toBe(">=20.12.0 <27");
-  expect(packageJson.scripts.build).toContain("--target node20.12");
+  expect(packageJson.engines.node).toBe("^22.0.0 || ^24.0.0 || ^26.0.0");
+  expect(packageJson.scripts.build).toContain("--target node22");
   expect(fs.existsSync(path.join(root, "README.md"))).toBe(false);
 });
 
 test("distinguishes checkout build Nodes from packed runtime support", async () => {
-  const buildError =
-    "Building Agent Distro from this checkout requires Node ^22.18.0 or >=24.11.0 <27 (tsdown build requirement). The packed CLI supports Node >=20.12.0 <27.";
-  for (const version of ["20.12.0", "22.17.9", "23.11.0", "24.10.9", "27.0.0"]) {
+  const buildError = "Agent Distro requires Node 22, 24, or 26. Upgrade Node before bootstrapping.";
+  for (const version of ["20.12.0", "23.11.0", "25.0.0", "27.0.0"]) {
     expect((await bootstrapAsNode(version)).stderr).toContain(buildError);
   }
-  for (const version of ["22.18.0", "24.11.0", "26.0.0"]) {
+  for (const version of ["22.0.0", "24.0.0", "26.0.0"]) {
     expect((await bootstrapAsNode(version)).stderr).not.toContain(buildError);
   }
+});
+
+test("rejects an unsupported packed runtime before command execution", async ({ repository }) => {
+  const target = repository.plain("unsupported Node target");
+  const rejected = await binaryAsNode("20.12.0", ["install", target, "--asset", ".mcp.json"]);
+  expect(rejected.exitCode).toBe(1);
+  expect(rejected.stderr).toContain(
+    "Agent Distro requires Node 22, 24, or 26. Upgrade Node before running Agent Distro.",
+  );
+  expect(fs.existsSync(path.join(target, ".agent-distro"))).toBe(false);
+  expect(fs.existsSync(path.join(target, ".mcp.json"))).toBe(false);
 });
 
 test("installs the packed npm binary into real repository shapes", async ({ repository }) => {
@@ -109,7 +138,6 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   );
   const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "agent-distro", ...args], options);
   expect((await execute(["--version"])).stdout).toBe("0.0.0");
-
   // Spaces and Unicode make launcher and path handling failures visible on both
   // supported platforms without relying on a synthetic filesystem.
   const plain = repository.plain("target with spaces-å");

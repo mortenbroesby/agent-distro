@@ -6,11 +6,11 @@
 
 **Architecture:** cli.ts becomes only Commander composition and error handling. Command modules own their own Commander syntax, the transactional installer remains in install.ts, and Clack moves to interactive-install.ts. bootstrap.mjs builds a temporary npm tarball, globally installs it, and invokes the installed binary without modifying a target repository.
 
-**Tech Stack:** Node >=20.12.0 <27 runtime, tsdown on Node ^22.18.0 or >=24.11.0 <27 for checkout builds, Commander, @clack/prompts, npm CLI, Vitest, Oxfmt, Oxlint.
+**Tech Stack:** Node 22, 24, or 26 runtime, tsdown on Node 22 for checkout builds, Commander, @clack/prompts, npm CLI, Vitest, Oxfmt, Oxlint.
 
 ## Global Constraints
 
-- Preserve the packed CLI's Node >=20.12.0 <27 runtime support; checkout builds require Node ^22.18.0 or >=24.11.0 <27 for tsdown. Add no dependency.
+- Support the packed CLI and checkout builds on Node 22, 24, or 26. Add no dependency.
 - Keep install, recover, profiles, and report-issue; replace verify and diagnostics with doctor [target] and doctor --diagnostics [target].
 - install without a target prompts in the TUI; doctor without a target verifies process.cwd().
 - Preserve stable failure codes, transactional safety, empty default selection, and explicit --force semantics.
