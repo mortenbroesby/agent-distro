@@ -59,4 +59,11 @@ and customize the eligible assets.
 **Implication:** Stack membership is first-class catalog metadata and should be
 reflected in the source layout. Profiles and individual asset choices are
 scoped per stack, rather than being one global selection. The treatment of
-cross-stack assets remains to be decided.
+cross-stack assets uses an explicit Common stack.
+
+## 7. Shared assets
+
+**Decision:** Shared assets belong to a separately selectable **Common** stack.
+
+**Implication:** Common is not installed implicitly. Its profiles and assets
+follow the same explicit selection model as technology-specific stacks.
