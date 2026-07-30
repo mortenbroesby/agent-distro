@@ -2,25 +2,25 @@
 
 ## Agent development skills
 
-This repository uses pinned [Obra Superpowers](.agents/skills/superpowers) and
-[Addy Osmani Agent Skills](.agents/skills/agent-skills) submodules for
-development-only skills and agents. They are not part of the `agent-distro`
-package or its distributable assets.
+This repository carries a small, curated set of development-only skills in
+[`.agents/skills`](.agents/skills/README.md). They improve Agent Distro's own
+maintenance; they are not package assets and must not be copied into `assets/`
+or the Copilot plugin.
 
-Before implementing, debugging, planning, reviewing, or finishing a branch,
-use the matching skill when your agent supports repository-local skill
-discovery. Start with `using-superpowers` or `using-agent-skills`, then use the
-specific workflow for the task. This agreement and direct user instructions
-take priority over any conflicting upstream skill instruction.
+Use the matching local skill before debugging, implementing, reviewing, or
+finishing a branch when your agent supports project-local skill discovery:
 
-After cloning, initialize the skills once:
+- `systematic-debugging` for failures and unexpected behavior.
+- `test-driven-development` for behavior changes and bug fixes.
+- `using-git-worktrees` before isolated feature work.
+- `verification-before-completion` before commits, PRs, or success claims.
+- `code-review-and-quality` before merging a change.
+- `documentation-and-adrs` for durable technical decisions.
 
-```sh
-git submodule update --init --recursive
-```
-
-Keep the submodule pinned. Update it intentionally in its own reviewed change;
-do not edit its vendored files from this repository.
+Direct user instructions and this agreement take priority if copied upstream
+guidance conflicts. The copies are intentionally minimal snapshots: update a
+selected skill deliberately with its provenance and license, rather than
+reintroducing an upstream repository as a submodule.
 
 ## Concurrent worktrees
 
