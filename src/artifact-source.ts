@@ -22,6 +22,7 @@ const lifecycleScripts = new Set([
   "postpublish",
 ]);
 const artifactTypes = new Set(["agent", "skill", "instruction", "hook", "mcp"]);
+const artifactRoots = { agent: "agents", skill: "skills", instruction: "instructions", hook: "hooks", mcp: "mcp" };
 
 /**
  * Restricts the initial resolver to forms Pacote can consume without an extra
@@ -116,13 +117,14 @@ function readArtifactManifest(root: string): ArtifactManifest {
     if (!asset || typeof asset !== "object") throw new Error("artifact package has an invalid asset declaration");
     const { path: assetPath, type } = asset as { path?: unknown; type?: unknown };
     const safePath = manifestParts(assetPath).join("/");
-    if (!artifactTypes.has(String(type)) || paths.has(safePath))
+    const assetType = String(type) as ArtifactAsset["type"];
+    if (!artifactTypes.has(assetType) || paths.has(safePath) || manifestParts(safePath)[0] !== artifactRoots[assetType])
       throw new Error("artifact package has an invalid asset declaration");
     const source = path.join(root, ...manifestParts(safePath));
     if (!fs.existsSync(source) || !fs.lstatSync(source).isFile())
       throw new Error("artifact package references a missing asset");
     paths.add(safePath);
-    return { path: safePath, type: type as ArtifactAsset["type"] };
+    return { path: safePath, type: assetType };
   });
   return { schemaVersion: 1, assets };
 }

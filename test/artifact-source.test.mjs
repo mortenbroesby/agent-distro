@@ -21,16 +21,18 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
  *
  * @param {string} directory - Empty directory that receives package files.
  * @param {{scripts?: Record<string, string>}} [packageOptions] - Optional package metadata for rejection tests.
+ * @param {object} [artifactManifest] - Optional manifest for containment-rejection tests.
  */
-function writeArtifactPackage(directory, packageOptions = {}) {
+function writeArtifactPackage(
+  directory,
+  packageOptions = {},
+  artifactManifest = { schemaVersion: 1, assets: [{ path: "skills/example/SKILL.md", type: "skill" }] },
+) {
   fs.writeFileSync(
     path.join(directory, "package.json"),
     JSON.stringify({ name: "fixture-agent-distro-artifact", version: "1.0.0", ...packageOptions }),
   );
-  fs.writeFileSync(
-    path.join(directory, "agent-distro.manifest.json"),
-    JSON.stringify({ schemaVersion: 1, assets: [{ path: "skills/example/SKILL.md", type: "skill" }] }),
-  );
+  fs.writeFileSync(path.join(directory, "agent-distro.manifest.json"), JSON.stringify(artifactManifest));
   fs.mkdirSync(path.join(directory, "skills", "example"), { recursive: true });
   fs.writeFileSync(path.join(directory, "skills", "example", "SKILL.md"), "# Example\n");
 }
@@ -111,6 +113,19 @@ test("extracts a tarball artifact into caller-owned staging", async () => {
     expect(fs.readFileSync(path.join(workspace, "staging", "skills", "example", "SKILL.md"), "utf8")).toBe(
       "# Example\n",
     );
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("rejects an asset outside its declared content root", async () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-artifact-"));
+  try {
+    writeArtifactPackage(workspace, {}, { schemaVersion: 1, assets: [{ path: "agents/example.md", type: "skill" }] });
+    await expect(
+      extractArtifact(`file:${await packArtifact(workspace)}`, path.join(workspace, "staging")),
+    ).rejects.toThrow("invalid asset declaration");
+    expect(fs.existsSync(path.join(workspace, "staging"))).toBe(false);
   } finally {
     fs.rmSync(workspace, { recursive: true, force: true });
   }
