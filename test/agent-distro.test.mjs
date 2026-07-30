@@ -260,6 +260,12 @@ describe("agent-distro install", () => {
     expect(failed("update", target(), "--profile", "debugging")).toContain("run install first");
   });
 
+  it("refuses deselection until it can archive displaced assets", () => {
+    const destination = target();
+    run(destination);
+    expect(failed("update", destination, "--asset", ".mcp.json")).toContain("AGENT_DISTRO_E_ARCHIVE_REQUIRED");
+  });
+
   it("does not overwrite a changed target without --force", () => {
     const destination = target();
     run(destination);

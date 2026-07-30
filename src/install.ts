@@ -128,6 +128,24 @@ export function install(
   if (fs.existsSync(recoveryPath(destination)))
     return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
   const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
+  const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const previous = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const removed = Array.isArray(previous.files)
+        ? previous.files.filter(
+            (file: unknown) => typeof file === "string" && !sourceFiles.includes(file.split("/").join(path.sep)),
+          )
+        : [];
+      if (removed.length)
+        return fail(
+          "AGENT_DISTRO_E_ARCHIVE_REQUIRED",
+          "This update would remove managed assets; archival support is required first.",
+        );
+    } catch {
+      return fail("AGENT_DISTRO_E_MANIFEST_INVALID", "invalid manifest");
+    }
+  }
   const selection = {
     stacks: [
       ...new Set(
