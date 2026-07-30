@@ -47,7 +47,7 @@ vulnerabilities: 0 critical, high, moderate, low, and informational findings.
 | --- | --- | --- | --- |
 | `@clack/prompts` | `1.7.0`, runtime TUI adapter in `src/interactive-install.ts` | 67.0M monthly downloads; current stable release is `1.7.0` (2026-07-03) | Keep. It is the purpose-built terminal UX dependency and has no alpha version in the resolved graph. |
 | `commander` | `14.0.3`, runtime command parser in `src/cli.ts` and command registrars | 1.849B monthly downloads; latest is `15.0.0` (2026-05-29) | Keep; do not replace. Create a focused major-upgrade spike because the current range intentionally excludes 15. |
-| `pacote` | `22.0.0`, runtime artifact resolver in `src/artifact-source.ts` | 54.2M monthly downloads; current stable release is `22.0.0` | Adopted for registry/tag/tarball artifacts only. It adds 93 locked packages; lifecycle scripts are disabled and artifact packages declaring lifecycle hooks are rejected. |
+| `pacote` | `22.0.0`, runtime artifact resolver in `src/artifact-source.ts` | 13.9M weekly / 54.2M monthly downloads; 80 KB published unpacked size; npm-maintained | Adopted for registry/tag/tarball artifacts only. It adds 93 locked packages; lifecycle scripts are disabled and artifact packages declaring lifecycle hooks are rejected. |
 | `execa` | `9.6.1`, dev-only test fixture process runner | 590.6M monthly downloads; latest is `10.0.0` (2026-07-17) | Keep; do not move runtime scripts to it. Consider a focused test-only major-upgrade spike. |
 | `tsdown` | `0.22.14`, dev-only ESM package build | 12.8M monthly downloads; `0.22.14` is the current stable release, while `0.23.0-beta.1` is a separate prerelease | Keep at the locked stable line. It is pre-1.0, so review minor upgrades as potentially breaking and require packed Windows/macOS proof. |
 | `vitest` | `4.1.10`, dev-only test runner | 334.2M monthly downloads; `4.1.10` is current stable, with a separate 5.0 beta line | Keep. No update or replacement is justified now. |
@@ -115,7 +115,7 @@ ownership, rollback, and governance.
 | --- | --- | --- |
 | `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Do not add directly in the first pacote milestone: pacote already owns it. Add only if UI must classify a spec before a resolver call. |
 | `npm-registry-fetch` | Already transitive through current pacote | Defer. Use pacote unless a concrete authenticated registry/search feature needs lower-level control. |
-| `@npmcli/arborist` | Required by Pacote only for Git and directory package creation | Defer. The first resolver accepts registry/tag/tarball sources; add only through a dedicated local/Git-source security spike. |
+| `@npmcli/arborist` | 5.8M weekly downloads; 599 KB published unpacked size; npm-maintained | Defer. It is mainstream enough, but the first resolver has no current local/Git authoring requirement. Add only through a dedicated local/Git-source security spike. |
 | `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
 
 ## Cross-platform operations and state candidates
@@ -172,6 +172,27 @@ Add a dependency only when all apply:
 - The proposal identifies the code removed or risk reduced; convenience alone is
   not enough.
 
+## Dependency admission evidence
+
+Record the following in the dependency PR and this spike before adding a direct
+runtime dependency:
+
+1. A concrete user or product workflow that needs it now, plus the Node or
+   existing-code alternative that cannot meet the requirement safely.
+2. Stable release, clear owner/license, and at least 1M npm downloads in the
+   preceding week. A lower-volume exception needs a first-party/platform owner
+   and an explicit review rationale; all-time downloads alone are insufficient.
+3. Published unpacked size and the lockfile delta: direct and total package
+   count, production/optional package count, lifecycle scripts, and native
+   bindings. Measure the shipped impact with `npm pack --dry-run`; do not use a
+   package's own size as a proxy for its transitive graph.
+4. Native lockfile audit and signature/provenance evidence after `npm ci`, plus
+   a packed macOS and Windows proof for the exact PR head.
+
+There is no universal byte cap: a substantial, established dependency is
+appropriate when it replaces a security-sensitive protocol or platform-specific
+implementation. A smaller library without a current use case is still rejected.
+
 ## Sources
 
 - [npm audit documentation](https://docs.npmjs.com/cli/v8/commands/npm-audit/)
@@ -180,7 +201,7 @@ Add a dependency only when all apply:
 - [pacote API](https://www.npmjs.com/package/pacote?activeTab=readme)
 - [tsdown documentation](https://tsdown.dev/guide/)
 - [Oxc project documentation](https://oxc.rs/)
-- Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-month/<package>`
+- Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-week/<package>` and `https://api.npmjs.org/downloads/point/last-month/<package>`
 - Registry metadata, queried 2026-07-30: `npm view <package> version time --json`
 
 ## Review cadence
