@@ -30,4 +30,5 @@ state. `asdlc upgrade` updates the globally installed ASDLC CLI itself.
 **Implication:** `update` is never used for the CLI. The target mutation path
 can share one implementation; the distinct commands communicate first-time
 installation versus an existing managed target. The exact selection behavior
-of `update` remains to be decided.
+of `update` is prefilled from recorded target state, so the user can keep or
+adjust it intentionally.
