@@ -2,6 +2,7 @@
 
 | Priority | Status | Work | Next evidence |
 | --- | --- | --- | --- |
+| 0 | Active | [Astrograph pattern adoption](../active/10-astrograph-pattern-adoption.md) | Hosted macOS and Windows checks for the contributor-surface contract |
 | 0 | Done | [Reliable runtime and observable installation](../done/09-reliable-runtime-and-observability.md) | PR #31 passed run `30493076277`: packed CLI runs on Node 20, 22, 24, and 26 on macOS and Windows |
 | 1 | Active | [Symlinked shared distribution assets](../active/08-symlinked-shared-assets.md) | Git symlink and real Copilot smoke on both platforms |
 | 1 | Done | [Copilot plugin marketplace offering](../done/07-copilot-plugin-marketplace.md) | PR #24 passed run `30487038245` on macOS and Windows Git Bash |
