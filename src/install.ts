@@ -260,12 +260,15 @@ export function install(
   if (fs.existsSync(recoveryPath(destination)))
     return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
   const selectedEntries = selectedCatalogEntries(selected, profiles);
-  let contents: Map<string, Buffer>;
+  let resolvedContents: Map<string, Buffer>;
   try {
-    contents = resolveContributions(selectedEntries, providerChoices, force);
+    resolvedContents = resolveContributions(selectedEntries, providerChoices, force);
   } catch (error) {
     return fail("AGENT_DISTRO_E_CONFLICT", error instanceof Error ? error.message : String(error));
   }
+  const contents = new Map(
+    [...resolvedContents].map(([target, content]) => [target.split("/").join(path.sep), content]),
+  );
   const sourceFiles = [...contents.keys()].map((asset) => asset.split("/").join(path.sep));
   let previous: ManagedManifest | undefined;
   try {
