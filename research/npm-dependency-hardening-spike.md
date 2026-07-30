@@ -2,8 +2,9 @@
 
 ## Status
 
-Proposed — planning only. No package, lockfile, runtime, or workflow change is
-part of this spike.
+Implemented for the first artifact-source milestone on PR #43. The package,
+lockfile, Node baseline, and resolver changed only for that approved scope;
+every other candidate remains deferred until its documented trigger is met.
 
 ## Decision
 
@@ -17,11 +18,10 @@ outside `node_modules`. That feature warrants a dedicated package-resolution
 dependency spike. Concurrent installation is a separate safety trigger for a
 lockfile spike.
 
-Agent Distro's next runtime contract is Node
+Agent Distro's runtime contract is Node
 `^22.22.2 || ^24.15.0 || >=26.0.0 <27`. This intentionally drops Node 20 and
-aligns the package with current npm-maintained resolution tooling. It must be
-implemented as its own package/CI compatibility change before an artifact
-resolver is added; this spike changes documentation only.
+aligns the package with current npm-maintained resolution tooling. Package,
+bootstrap, launcher, CI, and packed-runtime proof use that same range.
 
 Open small, independently verified upgrade spikes for `commander` and
 test-only `execa`. Keep `tsdown`, `oxfmt`, and `oxlint` on a monitored update
@@ -82,6 +82,11 @@ needs: manifest inspection and extraction of npm registry, tag, and tarball
 specifications. Its current adoption is strong (54.2M monthly downloads), and
 it is a better foundation than reproducing npm's package-spec, registry, cache,
 and integrity behavior.
+
+The resolver accepts an explicitly supplied registry for package and tag
+resolution. Its in-process test registry proves metadata resolution, tag
+selection, tarball extraction, and the SHA-512 integrity value returned to the
+caller without relying on a public registry during tests.
 
 Current `pacote@22` requires Node `^22.22.2 || ^24.15.0 || >=26`, matching the
 new runtime contract. Do not soften this contract to generic “Node 22+”: early

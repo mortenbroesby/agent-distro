@@ -53,6 +53,9 @@ export type ResolvedArtifact = {
   root: string;
 };
 
+/** Optional Pacote configuration required to resolve an approved npm registry. */
+export type ArtifactSourceOptions = { registry?: string };
+
 /** Untrusted package metadata returned by Pacote before runtime validation. */
 type PackageMetadata = {
   name?: unknown;
@@ -152,19 +155,25 @@ function assertOrdinaryFiles(directory: string): void {
  *
  * @param spec - npm-compatible package specification selected by the user.
  * @param destination - Nonexistent directory reserved for this extraction.
+ * @param options - Optional approved npm registry configuration.
  * @returns Provenance metadata, validated artifact manifest, and extraction root.
  * @throws {Error} When source metadata, package content, or destination safety is invalid.
  */
-export async function extractArtifact(spec: string, destination: string): Promise<ResolvedArtifact> {
+export async function extractArtifact(
+  spec: string,
+  destination: string,
+  options: ArtifactSourceOptions = {},
+): Promise<ResolvedArtifact> {
   if (typeof spec !== "string" || !spec.trim()) throw new Error("artifact package spec is required");
   assertSupportedSpec(spec);
   const root = path.resolve(destination);
   if (fs.existsSync(root)) throw new Error("artifact extraction destination must not exist");
   // Pacote resolves npm-compatible specs and extracts them without node_modules.
   // Source: https://www.npmjs.com/package/pacote?activeTab=readme
-  const packageManifest = validatePackageManifest(await pacote.manifest(spec, { ignoreScripts: true }));
+  const pacoteOptions = { ignoreScripts: true, ...options };
+  const packageManifest = validatePackageManifest(await pacote.manifest(spec, pacoteOptions));
   try {
-    await pacote.extract(spec, root, { ignoreScripts: true });
+    await pacote.extract(spec, root, pacoteOptions);
     assertOrdinaryFiles(root);
     return { package: packageManifest, manifest: readArtifactManifest(root), root };
   } catch (error) {

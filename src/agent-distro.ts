@@ -7,7 +7,7 @@
 export { run } from "./cli.js";
 export { extractArtifact } from "./artifact-source.js";
 export { formatFailure } from "./errors.js";
-export type { ArtifactAsset, ArtifactManifest, ResolvedArtifact } from "./artifact-source.js";
+export type { ArtifactAsset, ArtifactManifest, ArtifactSourceOptions, ResolvedArtifact } from "./artifact-source.js";
 export { install, providerConflicts } from "./install.js";
 export type { InstallOptions, InstallProgress, ProviderConflict } from "./install.js";
 export { interactiveInstall, runInteractiveInstall } from "./interactive-install.js";
