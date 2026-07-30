@@ -112,3 +112,12 @@ managed local checkout and lets the user opt into choosing another location.
 
 **Implication:** The existing bootstrap implementation will be replaced by the
 new Node-based flow. `asdlc upgrade` uses the selected checkout location.
+
+## 13. First installation
+
+**Decision:** First-time users clone ASDLC, enter that checkout, and run
+`bin/asdlc bootstrap`. Bootstrap does not clone ASDLC automatically.
+
+**Implication:** Reuse the Node packed-artifact bootstrap pattern: package the
+current checkout, install the global CLI, and prove it. Do not retain the
+second runtime clone or shell-profile mutation from the legacy bootstrap.
