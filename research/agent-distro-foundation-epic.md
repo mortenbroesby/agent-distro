@@ -197,6 +197,9 @@ base, and has passing exact-head hosted checks.
   Story-level commits and this epic preserve review boundaries. A multi-PR
   sequence is **deferred** until the user asks to split PR #39; the safe current
   behavior is a draft PR with required checks before merge.
+- PR #40 completes Story 4 after PR #39 merged. Its exact head `84e94b7`
+  passed workflow run `30558365520`: macOS, Windows, and every packed runtime
+  lane (Node 20.12, 22.18, 24.11, and 26) are green.
 
 ## Open decisions
 
