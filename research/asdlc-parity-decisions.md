@@ -76,3 +76,14 @@ the same managed path. A true content conflict stops the operation.
 **Implication:** The catalog needs explicit merge behavior for any asset type
 that can share a target path. ASDLC must not silently choose one stack's
 content over another's.
+
+## 9. Conflict recovery
+
+**Decision:** In the interactive flow, an unmergeable conflict offers the
+user a provider choice before any write. `--force` permits installation or
+update to replace conflicting content, first moving the displaced content to
+`.asdlc/.archive/`. Fatal errors always provide an opt-in bug-report path.
+
+**Implication:** Conflict resolution, archive entries, and failure reporting
+must remain transactional. Non-interactive conflict behavior remains to be
+defined; it cannot wait for a prompt.
