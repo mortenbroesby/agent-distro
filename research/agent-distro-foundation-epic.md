@@ -17,7 +17,7 @@ missing decision.
 
 - [x] Identify the Agent Distro remote and base branch for the implementation stack.
 - [x] Create an isolated Git worktree from that base; preserve the ASDLC reference snapshot unchanged.
-- [ ] Record the exact current command, asset, manifest, and test baseline.
+- [x] Record the exact current command, asset, manifest, and test baseline.
 - [ ] Decide the remaining migration questions required by Stories 1–3.
 
 Acceptance: a clean, Git-backed Agent Distro worktree exists with a verified baseline
@@ -32,6 +32,11 @@ and an approved first implementation slice.
 - Agent Distro has an isolated implementation worktree at
   `/private/tmp/agent-distro-massive-refactor` on
   `agent/cli-bootstrap-refactor`. No ASDLC source-snapshot change has been made.
+- The current CLI provides `doctor`, `recover`, `report-issue`, `profiles`, and
+  `install`; it writes version-1 manifests under `.agent-distro/`, ships a
+  generated asset catalog, and has transactional replacement/recovery.
+- Node 22.23.1 baseline verification passed: `npm test` and `npm run
+  test:proof`; the latter includes a packed-install lifecycle proof.
 
 ## Story 1 — Agent Distro runtime and bootstrap contract
 
