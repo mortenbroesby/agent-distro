@@ -77,9 +77,13 @@ export function doctor(target: string) {
 export function diagnostics(target: string) {
   // Diagnostics are intentionally read-only and resilient: this is the escape
   // hatch used when a manifest is too malformed for normal verification.
+  const home = process.env.AGENT_DISTRO_HOME
+    ? path.resolve(process.env.AGENT_DISTRO_HOME)
+    : path.join(os.homedir(), ".agent-distro");
   const snapshot = {
     version,
     runtime: { node: process.versions.node, platform: process.platform, arch: process.arch },
+    global: { managedCheckout: fs.existsSync(path.join(home, "repo", ".git")) },
     target: { exists: fs.existsSync(target), directory: false },
     manifest: { present: false, valid: false, assetCount: 0 },
   };
