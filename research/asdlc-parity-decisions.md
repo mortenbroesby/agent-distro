@@ -49,3 +49,14 @@ retention and restoration behavior remain to be defined.
 **Implication:** ASDLC is opt-in by default. Profiles, categories, stacks, and
 individual assets are explicit user choices rather than implicit baseline
 installation.
+
+## 6. Stack-first selection
+
+**Decision:** Installation starts by selecting stacks. ASDLC then presents only
+assets available to each selected stack; for every stack, users select profiles
+and customize the eligible assets.
+
+**Implication:** Stack membership is first-class catalog metadata and should be
+reflected in the source layout. Profiles and individual asset choices are
+scoped per stack, rather than being one global selection. The treatment of
+cross-stack assets remains to be decided.
