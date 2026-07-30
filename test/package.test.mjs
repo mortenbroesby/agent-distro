@@ -139,6 +139,10 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   );
   const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "agent-distro", ...args], options);
   expect((await execute(["--version"])).stdout).toBe("0.0.0");
+  const library = await import(
+    pathToFileURL(path.join(consumer, "node_modules", "agent-distro", "dist", "agent-distro.mjs")).href
+  );
+  expect(typeof library.extractArtifact).toBe("function");
 
   // Spaces and Unicode make launcher and path handling failures visible on both
   // supported platforms without relying on a synthetic filesystem.

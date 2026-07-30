@@ -40,9 +40,11 @@ unsupported early Node release.
   a second source exists.
 - [ ] Extract into a controlled temporary directory, never `node_modules`, and
   reject package lifecycle scripts and executable behavior.
-- [ ] Prove registry package, tag, tarball URL, Git source, and local directory
-  handling; assert integrity metadata, target containment, cancellation, and
-  no-script behavior on macOS and Windows.
+- [ ] Prove registry package, tag, and tarball handling; assert integrity
+  metadata, target containment, cancellation, and no-script behavior on macOS
+  and Windows.
+- [ ] Reject Git and local-directory specs before Pacote is called. Revisit them
+  only through a focused `@npmcli/arborist` security and cost spike.
 - [ ] Defer direct `npm-package-arg`, `npm-registry-fetch`, and `semver` unless
   their separate triggers in the spike are met.
 

@@ -47,15 +47,16 @@ vulnerabilities: 0 critical, high, moderate, low, and informational findings.
 | --- | --- | --- | --- |
 | `@clack/prompts` | `1.7.0`, runtime TUI adapter in `src/interactive-install.ts` | 67.0M monthly downloads; current stable release is `1.7.0` (2026-07-03) | Keep. It is the purpose-built terminal UX dependency and has no alpha version in the resolved graph. |
 | `commander` | `14.0.3`, runtime command parser in `src/cli.ts` and command registrars | 1.849B monthly downloads; latest is `15.0.0` (2026-05-29) | Keep; do not replace. Create a focused major-upgrade spike because the current range intentionally excludes 15. |
+| `pacote` | `22.0.0`, runtime artifact resolver in `src/artifact-source.ts` | 54.2M monthly downloads; current stable release is `22.0.0` | Adopted for registry/tag/tarball artifacts only. It adds 93 locked packages; lifecycle scripts are disabled and artifact packages declaring lifecycle hooks are rejected. |
 | `execa` | `9.6.1`, dev-only test fixture process runner | 590.6M monthly downloads; latest is `10.0.0` (2026-07-17) | Keep; do not move runtime scripts to it. Consider a focused test-only major-upgrade spike. |
 | `tsdown` | `0.22.14`, dev-only ESM package build | 12.8M monthly downloads; `0.22.14` is the current stable release, while `0.23.0-beta.1` is a separate prerelease | Keep at the locked stable line. It is pre-1.0, so review minor upgrades as potentially breaking and require packed Windows/macOS proof. |
 | `vitest` | `4.1.10`, dev-only test runner | 334.2M monthly downloads; `4.1.10` is current stable, with a separate 5.0 beta line | Keep. No update or replacement is justified now. |
 | `oxfmt` | `0.61.0`, dev-only formatter | 35.9M monthly downloads; current release is `0.61.0` (2026-07-27) | Keep, but monitor as a pre-1.0 native-binding tool. |
 | `oxlint` | `1.76.0`, dev-only linter | 49.7M monthly downloads; current release is `1.76.0` (2026-07-27) | Keep. It is stable-major and already current. |
 
-The locked graph contains 8 production, 203 development, and 111 optional
-dependencies (210 total). Direct packages have registry URLs and integrity
-hashes. None of the seven direct packages declares an install script. Oxfmt and
+The locked graph contains 101 production, 200 development, and 113 optional
+dependencies (302 total). Direct packages have registry URLs and integrity
+hashes. None of the eight direct packages declares an install lifecycle script. Oxfmt and
 Oxlint deliberately resolve platform-specific optional native bindings; the
 existing macOS and Windows CI lanes are the correct protection for that boundary.
 
@@ -77,10 +78,10 @@ existing macOS and Windows CI lanes are the correct protection for that boundary
 ### `pacote`: approved only for the artifact-package milestone
 
 `pacote` is npm's package downloader and exposes the operations this product
-needs: manifest inspection and extraction of npm registry, tag, tarball, Git,
-and local specifications. Its current adoption is strong (54.2M monthly
-downloads), and it is a better foundation than reproducing npm's package-spec,
-registry, cache, and integrity behavior.
+needs: manifest inspection and extraction of npm registry, tag, and tarball
+specifications. Its current adoption is strong (54.2M monthly downloads), and
+it is a better foundation than reproducing npm's package-spec, registry, cache,
+and integrity behavior.
 
 Current `pacote@22` requires Node `^22.22.2 || ^24.15.0 || >=26`, matching the
 new runtime contract. Do not soften this contract to generic “Node 22+”: early
@@ -88,11 +89,22 @@ new runtime contract. Do not soften this contract to generic “Node 22+”: ear
 npm-internal dependency graph, including
 `npm-package-arg`, `npm-registry-fetch`, cache, tar, integrity, Git, and script
 helpers. The spike must prove that resolving and extracting an artifact never
-runs package lifecycle scripts or arbitrary package executables.
+runs package lifecycle scripts or arbitrary package executables. The initial
+implementation passes `ignoreScripts: true`, rejects packages that declare a
+lifecycle script, and validates every extracted manifest path before a renderer
+can read it.
 
-Keep the npm-specific implementation behind one internal `artifact-source`
-module with `resolve`, `manifest`, and `extract` operations. Do not introduce a
-public interface or a second resolver until another source genuinely exists.
+Pacote's directory and Git fetchers need an `Arborist` constructor to build a
+tarball. Defer those source forms instead of adding that additional npm-internal
+tree now: reject them before Pacote is called, with an actionable message. A
+future dedicated spike may add `@npmcli/arborist` only after a cross-platform
+proof demonstrates its script-disabled behavior and its transitive cost is
+worth the local/Git authoring workflow.
+
+Keep the npm-specific implementation in one `artifact-source` module. Its
+single `extractArtifact` operation is exported for programmatic consumers; do
+not introduce a source interface or second resolver until another source
+genuinely exists.
 The installation engine continues to own the Agent Distro manifest, allowed
 artifact types, target rendering, preview, approval, conflict policy,
 ownership, rollback, and governance.
@@ -103,6 +115,7 @@ ownership, rollback, and governance.
 | --- | --- | --- |
 | `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Do not add directly in the first pacote milestone: pacote already owns it. Add only if UI must classify a spec before a resolver call. |
 | `npm-registry-fetch` | Already transitive through current pacote | Defer. Use pacote unless a concrete authenticated registry/search feature needs lower-level control. |
+| `@npmcli/arborist` | Required by Pacote only for Git and directory package creation | Defer. The first resolver accepts registry/tag/tarball sources; add only through a dedicated local/Git-source security spike. |
 | `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
 
 ## Cross-platform operations and state candidates
@@ -164,6 +177,7 @@ Add a dependency only when all apply:
 - [npm audit documentation](https://docs.npmjs.com/cli/v8/commands/npm-audit/)
 - [npm lockfile documentation](https://docs.npmjs.com/cli/v6/configuring-npm/package-lock-json/?v=true)
 - [npm install and lockfile behavior](https://docs.npmjs.com/cli/install/)
+- [pacote API](https://www.npmjs.com/package/pacote?activeTab=readme)
 - [tsdown documentation](https://tsdown.dev/guide/)
 - [Oxc project documentation](https://oxc.rs/)
 - Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-month/<package>`
