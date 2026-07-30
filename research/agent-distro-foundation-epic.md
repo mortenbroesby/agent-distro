@@ -40,15 +40,26 @@ and an approved first implementation slice.
 
 ## Story 1 — Agent Distro runtime and bootstrap contract
 
-- [ ] Keep the public package and command as `agent-distro`.
+- [x] Keep the public package and command as `agent-distro`.
 - [ ] Replace legacy parallel launch paths with one Node runtime.
-- [ ] Implement clone-then-bootstrap using a managed runtime at `~/.agent-distro/repo`
+- [x] Implement clone-then-bootstrap using a managed runtime at `~/.agent-distro/repo`
   by default, with an explicit alternate location.
-- [ ] Implement `agent-distro upgrade` against that managed checkout.
+- [x] Implement `agent-distro upgrade` against that managed checkout.
 - [ ] Prove packed global installation and upgrade on macOS and Windows.
 
 Acceptance: the global CLI runs the managed Node runtime, bootstrap and upgrade
 are cross-platform, and no legacy runtime remains on the normal command path.
+
+### Story 1 evidence — 2026-07-30
+
+- `bin/agent-distro bootstrap` creates a Git-backed managed checkout at
+  `~/.agent-distro/repo`; `--home <directory>` provides an explicit alternate
+  location. It then runs the packaged global CLI without installing assets.
+- `agent-distro upgrade` fast-forwards that managed checkout and reuses the
+  bootstrap pack/install path, avoiding a second installer implementation.
+- The package-facing test covers bootstrap and upgrade against an isolated
+  global prefix; `npm test` and `npm run test:proof` pass locally on Node
+  22.23.1. Hosted macOS and Windows exact-head proof is still required.
 
 ## Story 2 — Stack-first catalog and selection
 
