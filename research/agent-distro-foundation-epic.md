@@ -52,7 +52,7 @@ and an approved first implementation slice.
 - [x] Implement clone-then-bootstrap using a managed runtime at `~/.agent-distro/repo`
   by default, with an explicit alternate location.
 - [x] Implement `agent-distro upgrade` against that managed checkout.
-- [ ] Prove packed global installation and upgrade on macOS and Windows.
+- [x] Prove packed global installation and upgrade on macOS and Windows.
 
 Acceptance: the global CLI runs the managed Node runtime, bootstrap and upgrade
 are cross-platform, and no legacy runtime remains on the normal command path.
@@ -65,8 +65,10 @@ are cross-platform, and no legacy runtime remains on the normal command path.
 - `agent-distro upgrade` fast-forwards that managed checkout and reuses the
   bootstrap pack/install path, avoiding a second installer implementation.
 - The package-facing test covers bootstrap and upgrade against an isolated
-  global prefix; `npm test` and `npm run test:proof` pass locally on Node
-  22.23.1. Hosted macOS and Windows exact-head proof is still required.
+  global prefix, including detached managed checkouts. `npm test` and `npm run
+  test:proof` pass locally on Node 22.23.1. Workflow run `30554171608` passed
+  its macOS and Windows aggregate jobs plus the packed runtime matrix for Node
+  20.12, 22.18, 24.11, and 26 on exact head `6233a21`.
 
 ## Story 2 — Stack-first catalog and selection
 
@@ -169,7 +171,7 @@ absolute paths in JSON, and its exit semantics are documented and tested.
   coverage as each foundation story changes them.
 - [x] Add formatting, linting, editor/runtime configuration, and repository
   instructions appropriate to Agent Distro.
-- [ ] Require macOS and Windows verification for the exact PR head.
+- [x] Require macOS and Windows verification for the exact PR head.
 - [ ] Split the work into the approved pull-request sequence and
   publish each story with evidence.
 
@@ -183,7 +185,8 @@ base, and has passing exact-head hosted checks.
   `.npmrc`, `.nvmrc`, `.tool-versions`, and `AGENTS.md` establish the checked-in
   development baseline.
 - The `verify` workflow runs the full suite and packed runtime proof on macOS
-  and Windows. Exact-head results remain pending for PR #39.
+  and Windows. Workflow run `30554171608` passed macOS, Windows, and all eight
+  packed runtime lanes for exact head `6233a21`.
 - The requested delivery shape is one long-running PR, not one PR per story.
   Story-level commits and this epic preserve review boundaries. A multi-PR
   sequence is **deferred** until the user asks to split PR #39; the safe current
