@@ -20,3 +20,14 @@ may contain an archive and future state needed to manage an installation.
 fixed contracts. New state may be versioned and migrated. Compatibility with
 an existing installation is a deliberate legacy-support path, rather than a
 reason to retain the current implementation unchanged.
+
+## 3. Command meanings
+
+**Decision:** `asdlc install` and `asdlc update` both change selected assets
+in a target repository. `install` warns when the target already has ASDLC
+state. `asdlc upgrade` updates the globally installed ASDLC CLI itself.
+
+**Implication:** `update` is never used for the CLI. The target mutation path
+can share one implementation; the distinct commands communicate first-time
+installation versus an existing managed target. The exact selection behavior
+of `update` remains to be decided.
