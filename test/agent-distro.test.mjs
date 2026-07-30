@@ -55,7 +55,9 @@ describe("agent-distro install", () => {
   });
 
   it("rejects an incomplete bootstrap doctor option", () => {
-    expect(failedBootstrap("--doctor")).toContain("Usage: node scripts/bootstrap.mjs [--doctor <target>]");
+    expect(failedBootstrap("--doctor")).toContain(
+      "Usage: bin/agent-distro bootstrap [--home <directory>] [--doctor [target]]",
+    );
   });
 
   it("groups verification and diagnostics under doctor", () => {
