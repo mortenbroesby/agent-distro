@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
@@ -20,7 +21,7 @@ export function verify(target: string) {
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro", "manifest.json"), "utf8"));
     if (
       manifest.tool !== "agent-distro" ||
-      manifest.version !== 1 ||
+      ![1, 2].includes(manifest.version) ||
       typeof manifest.catalogVersion !== "string" ||
       !Array.isArray(manifest.files)
     )
@@ -46,6 +47,27 @@ export function verify(target: string) {
   }
 }
 
+/** Reports an unmanaged directory without treating normal absence as damage. */
+export function doctor(target: string) {
+  const home = process.env.AGENT_DISTRO_HOME
+    ? path.resolve(process.env.AGENT_DISTRO_HOME)
+    : path.join(os.homedir(), ".agent-distro");
+  const managed = fs.existsSync(path.join(home, "repo", ".git"));
+  console.log(
+    `Global CLI: ${version} on Node ${process.versions.node}; managed checkout: ${managed ? "present" : "not found"}.`,
+  );
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+    console.log("No Agent Distro installation found for this target.");
+    return 0;
+  }
+  const manifestPath = path.join(fs.realpathSync(target), ".agent-distro", "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    console.log("No Agent Distro installation found for this target.");
+    return 0;
+  }
+  return verify(target);
+}
+
 /**
  * Prints a sanitized, read-only environment and manifest snapshot.
  *
@@ -55,9 +77,13 @@ export function verify(target: string) {
 export function diagnostics(target: string) {
   // Diagnostics are intentionally read-only and resilient: this is the escape
   // hatch used when a manifest is too malformed for normal verification.
+  const home = process.env.AGENT_DISTRO_HOME
+    ? path.resolve(process.env.AGENT_DISTRO_HOME)
+    : path.join(os.homedir(), ".agent-distro");
   const snapshot = {
     version,
     runtime: { node: process.versions.node, platform: process.platform, arch: process.arch },
+    global: { managedCheckout: fs.existsSync(path.join(home, "repo", ".git")) },
     target: { exists: fs.existsSync(target), directory: false },
     manifest: { present: false, valid: false, assetCount: 0 },
   };
@@ -71,7 +97,7 @@ export function diagnostics(target: string) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
           snapshot.manifest.valid =
             manifest.tool === "agent-distro" &&
-            manifest.version === 1 &&
+            [1, 2].includes(manifest.version) &&
             typeof manifest.catalogVersion === "string" &&
             Array.isArray(manifest.files);
           snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;

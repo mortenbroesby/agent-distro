@@ -1,5 +1,6 @@
 // Interactive prompt orchestration stays separate from the filesystem installer.
-import { assetChoices, profileChoices, selectedCatalogAssets } from "./catalog.js";
+import { catalog, profileChoices, selectedCatalogAssets, stackChoices } from "./catalog.js";
+import type { ManagedSelection } from "./install.js";
 import { fail } from "./errors.js";
 import { install } from "./install.js";
 
@@ -9,7 +10,7 @@ import { install } from "./install.js";
  * Injection keeps the UX testable without emulating a terminal while the real
  * wrapper below imports the production prompt library only for TTY use.
  */
-export async function runInteractiveInstall(target: string | undefined, p: any) {
+export async function runInteractiveInstall(target: string | undefined, p: any, initial?: ManagedSelection) {
   p.intro("Agent Distro install");
   const destination =
     target ??
@@ -22,9 +23,23 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
     p.cancel("Installation cancelled.");
     return 0;
   }
+  const stacks = await p.multiselect({
+    message: "Select stacks",
+    options: stackChoices.map(({ id, label, description }) => ({ value: id, label, hint: description })),
+    initialValues: initial?.stacks,
+    required: false,
+  });
+  if (p.isCancel(stacks)) {
+    p.cancel("Installation cancelled.");
+    return 0;
+  }
+  const selectedStacks = new Set(stacks);
   const profiles = await p.multiselect({
     message: "Select profiles",
-    options: profileChoices.map(({ id, label, description }) => ({ value: id, label, hint: description })),
+    options: profileChoices
+      .filter((profile) => selectedStacks.has(profile.stack))
+      .map(({ id, label, description }) => ({ value: id, label, hint: description })),
+    initialValues: initial?.profiles,
     required: false,
   });
   if (p.isCancel(profiles)) {
@@ -33,7 +48,10 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
   }
   const selected = await p.multiselect({
     message: "Select individual assets",
-    options: assetChoices.map(([value, label]) => ({ value, label, hint: value })),
+    options: catalog.assets
+      .filter((asset) => selectedStacks.has(asset.stack))
+      .map(({ path, label }) => ({ value: path, label, hint: path })),
+    initialValues: initial?.assets,
     required: false,
   });
   if (p.isCancel(selected)) {
@@ -62,8 +80,8 @@ export async function runInteractiveInstall(target: string | undefined, p: any) 
 }
 
 /** Opens the real interactive UI only when both standard streams are terminals. */
-export async function interactiveInstall(target?: string) {
+export async function interactiveInstall(target?: string, initial?: ManagedSelection) {
   if (!process.stdin.isTTY || !process.stdout.isTTY)
     return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");
-  return runInteractiveInstall(target, await import("@clack/prompts"));
+  return runInteractiveInstall(target, await import("@clack/prompts"), initial);
 }

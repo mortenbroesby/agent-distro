@@ -4,11 +4,13 @@ import { fileURLToPath } from "node:url";
 import { manifestParts } from "./managed-path.js";
 
 /** Versioned content definitions shared by the installer, TUI, and plugin generator. */
-export type Profile = { id: string; label: string; description: string; assets: string[] };
+export type Stack = { id: string; label: string; description: string };
+export type Profile = { id: string; stack: string; label: string; description: string; assets: string[] };
 type Catalog = {
   schemaVersion: number;
   version: string;
-  assets: { path: string; label: string }[];
+  stacks: Stack[];
+  assets: { path: string; label: string; stack: string }[];
   profiles: Profile[];
 };
 
@@ -18,15 +20,29 @@ const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets")
 function loadCatalog(): Catalog {
   const catalog = JSON.parse(fs.readFileSync(path.join(assets, "catalog.json"), "utf8"));
   if (
-    catalog.schemaVersion !== 1 ||
+    catalog.schemaVersion !== 2 ||
     typeof catalog.version !== "string" ||
+    !Array.isArray(catalog.stacks) ||
     !Array.isArray(catalog.assets) ||
     !Array.isArray(catalog.profiles)
   )
     throw new Error("invalid asset catalog");
+  const stacks = new Set<string>();
+  for (const stack of catalog.stacks) {
+    if (typeof stack?.id !== "string" || typeof stack?.label !== "string" || typeof stack?.description !== "string")
+      throw new Error("invalid asset catalog");
+    if (stacks.has(stack.id)) throw new Error("invalid asset catalog");
+    stacks.add(stack.id);
+  }
   const paths = new Set<string>();
   for (const asset of catalog.assets) {
-    if (typeof asset?.path !== "string" || typeof asset?.label !== "string" || paths.has(asset.path))
+    if (
+      typeof asset?.path !== "string" ||
+      typeof asset?.label !== "string" ||
+      typeof asset?.stack !== "string" ||
+      !stacks.has(asset.stack) ||
+      paths.has(asset.path)
+    )
       throw new Error("invalid asset catalog");
     manifestParts(asset.path);
     paths.add(asset.path);
@@ -34,6 +50,8 @@ function loadCatalog(): Catalog {
   for (const profile of catalog.profiles) {
     if (
       typeof profile?.id !== "string" ||
+      typeof profile?.stack !== "string" ||
+      !stacks.has(profile.stack) ||
       typeof profile?.label !== "string" ||
       typeof profile?.description !== "string" ||
       !Array.isArray(profile?.assets) ||
@@ -48,8 +66,15 @@ function loadCatalog(): Catalog {
 export const catalog = loadCatalog();
 /** Individual asset choices for command flags and interactive selection. */
 export const assetChoices = catalog.assets.map(({ path, label }) => [path, label] as const);
+/** Stack choices for the first step of interactive installation. */
+export const stackChoices = catalog.stacks;
 /** Profile choices for the interactive selection flow. */
-export const profileChoices = catalog.profiles.map(({ id, label, description }) => ({ id, label, description }));
+export const profileChoices = catalog.profiles.map(({ id, stack, label, description }) => ({
+  id,
+  stack,
+  label,
+  description,
+}));
 
 /** Merges selected profiles and individual assets while preserving catalog order. */
 export function selectedCatalogAssets(selected: string[], profiles: string[] = []) {

@@ -51,23 +51,33 @@ describe("agent-distro install", () => {
     const commands = command("--help")
       .split("\n")
       .flatMap((line) => line.match(/^  ([a-z-]+)(?:\s|$)/)?.[1] ?? []);
-    expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "help"]);
+    expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "update", "help"]);
   });
 
   it("rejects an incomplete bootstrap doctor option", () => {
-    expect(failedBootstrap("--doctor")).toContain("Usage: node scripts/bootstrap.mjs [--doctor <target>]");
+    expect(failedBootstrap("--doctor")).toContain(
+      "Usage: bin/agent-distro bootstrap [--home <directory>] [--doctor [target]]",
+    );
   });
 
   it("groups verification and diagnostics under doctor", () => {
     const destination = target();
     run(destination);
-    expect(command("doctor", destination)).toContain("Verified");
+    expect(command("doctor", destination)).toMatch(/Global CLI:.*\nVerified/);
     expect(JSON.parse(command("doctor", "--diagnostics", destination))).toMatchObject({
       target: { exists: true, directory: true },
+    });
+    expect(JSON.parse(command("doctor", "--json", destination))).toMatchObject({
+      global: { managedCheckout: expect.any(Boolean) },
+      manifest: { valid: true },
     });
     expect(commandFrom(destination, "doctor")).toContain("Verified");
     expect(failed("verify", destination)).toContain("unknown command 'verify'");
     expect(failed("diagnostics", destination)).toContain("unknown command 'diagnostics'");
+  });
+
+  it("treats an unmanaged directory as an informational doctor result", () => {
+    expect(command("doctor", target())).toContain("No Agent Distro installation found");
   });
 
   it("rejects options that do not belong to a command", () => {
@@ -95,10 +105,11 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: (message) => calls.push(["intro", message]),
       text: async () => destination,
-      multiselect: async () =>
-        calls.filter(([name]) => name === "multiselect").length === 0
-          ? (calls.push(["multiselect", "profiles"]), [])
-          : [".mcp.json"],
+      multiselect: async () => {
+        const count = calls.filter(([name]) => name === "multiselect").length;
+        calls.push(["multiselect", count]);
+        return count === 0 ? ["common"] : count === 1 ? [] : [".mcp.json"];
+      },
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
@@ -148,7 +159,9 @@ describe("agent-distro install", () => {
     const destination = target();
     run(destination);
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
-    expect(failed("install", destination, "--all")).toMatch(/AGENT_DISTRO_E_CONFLICT:[\s\S]*Next:/);
+    expect(failed("install", destination, "--all")).toMatch(
+      /AGENT_DISTRO_E_CONFLICT:[\s\S]*report-issue --diagnostics-consent/,
+    );
 
     const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
     fs.writeFileSync(manifestPath, "not json\n");
@@ -227,11 +240,16 @@ describe("agent-distro install", () => {
   it("installs a profile, composes it with individual assets, and lists the catalog", () => {
     const destination = target();
     expect(JSON.parse(command("profiles"))).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: "debugging" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ id: "debugging", stack: "common" }),
+        expect.objectContaining({ id: "javascript", stack: "javascript" }),
+        expect.objectContaining({ id: "dotnet", stack: "dotnet" }),
+      ]),
     );
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
     expect(manifest).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/) });
+    expect(manifest).toMatchObject({ version: 2, selection: { stacks: ["common"], profiles: ["debugging"] } });
     expect(manifest.files).toEqual([
       ".mcp.json",
       ".github/agents/debugging.agent.md",
@@ -241,6 +259,37 @@ describe("agent-distro install", () => {
     expect(failed("install", destination, "--profile", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
+  it("updates an existing selection and rejects an unmanaged target", () => {
+    const destination = target();
+    command("install", destination, "--profile", "debugging");
+    expect(command("update", destination, "--profile", "debugging")).toContain("Synced 0 changed assets");
+    expect(failed("update", target(), "--profile", "debugging")).toContain("run install first");
+  });
+
+  it("migrates a version-1 manifest on the next safe update", () => {
+    const destination = target();
+    command("install", destination, "--asset", ".mcp.json");
+    const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.version = 1;
+    delete manifest.selection;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    expect(command("update", destination, "--asset", ".mcp.json")).toContain("Synced 1 changed assets");
+    expect(JSON.parse(fs.readFileSync(manifestPath, "utf8"))).toMatchObject({ version: 2 });
+  });
+
+  it("archives deselected managed assets with a user-inspectable record", () => {
+    const destination = target();
+    run(destination);
+    expect(command("update", destination, "--asset", ".mcp.json")).toContain("Archived");
+    const archives = fs.readdirSync(path.join(destination, ".agent-distro", ".archive"));
+    expect(archives).toHaveLength(1);
+    const archive = path.join(destination, ".agent-distro", ".archive", archives[0]);
+    expect(fs.existsSync(path.join(archive, ".github/agents/pull-request-review.agent.md"))).toBe(true);
+    expect(fs.readFileSync(path.join(archive, "README.md"), "utf8")).toContain("pull-request-review.agent.md");
+    expect(fs.existsSync(path.join(destination, ".github/agents/pull-request-review.agent.md"))).toBe(false);
+  });
+
   it("does not overwrite a changed target without --force", () => {
     const destination = target();
     run(destination);
@@ -248,6 +297,13 @@ describe("agent-distro install", () => {
     expect(() => run(destination)).toThrow();
     run(destination, "--force");
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({ mcpServers: {} });
+    const archive = path.join(
+      destination,
+      ".agent-distro",
+      ".archive",
+      fs.readdirSync(path.join(destination, ".agent-distro", ".archive"))[0],
+    );
+    expect(fs.readFileSync(path.join(archive, ".mcp.json"), "utf8")).toBe("changed\n");
   });
 
   it("does not create transactional state for an unchanged install", () => {

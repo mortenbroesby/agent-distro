@@ -12,7 +12,8 @@ export type FailureCode =
 const nextSteps: Record<FailureCode, string> = {
   AGENT_DISTRO_E_TARGET_INVALID: "Pass an existing directory as <target>.",
   AGENT_DISTRO_E_DESTINATION_UNSAFE: "Choose a target without symlinked or directory conflicts.",
-  AGENT_DISTRO_E_CONFLICT: "Review changed files, then rerun with --force if replacement is intended.",
+  AGENT_DISTRO_E_CONFLICT:
+    'Review changed files, then rerun with --force if replacement is intended. If unexpected, run agent-distro report-issue --diagnostics-consent --message "describe the conflict".',
   AGENT_DISTRO_E_RECOVERY_REQUIRED: "Run agent-distro recover <target>, then retry the install.",
   AGENT_DISTRO_E_MANIFEST_INVALID: "Reinstall Agent Distro assets with --force, then run doctor again.",
   AGENT_DISTRO_E_ASSET_DRIFT: "Review managed assets, then rerun install with --force if replacement is intended.",
