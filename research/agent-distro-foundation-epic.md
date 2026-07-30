@@ -48,7 +48,7 @@ and an approved first implementation slice.
 ## Story 1 — Agent Distro runtime and bootstrap contract
 
 - [x] Keep the public package and command as `agent-distro`.
-- [ ] Replace legacy parallel launch paths with one Node runtime.
+- [x] Replace legacy parallel launch paths with one Node runtime.
 - [x] Implement clone-then-bootstrap using a managed runtime at `~/.agent-distro/repo`
   by default, with an explicit alternate location.
 - [x] Implement `agent-distro upgrade` against that managed checkout.
@@ -62,6 +62,9 @@ are cross-platform, and no legacy runtime remains on the normal command path.
 - `bin/agent-distro bootstrap` creates a Git-backed managed checkout at
   `~/.agent-distro/repo`; `--home <directory>` provides an explicit alternate
   location. It then runs the packaged global CLI without installing assets.
+- Both source and package launchers are Node entrypoints; `bootstrap` and
+  `upgrade` are the only pre-build intercepts, so normal commands share the
+  compiled runtime.
 - `agent-distro upgrade` fast-forwards that managed checkout and reuses the
   bootstrap pack/install path, avoiding a second installer implementation.
 - The package-facing test covers bootstrap and upgrade against an isolated
