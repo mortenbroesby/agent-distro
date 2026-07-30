@@ -240,7 +240,11 @@ describe("agent-distro install", () => {
   it("installs a profile, composes it with individual assets, and lists the catalog", () => {
     const destination = target();
     expect(JSON.parse(command("profiles"))).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: "debugging", stack: "common" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ id: "debugging", stack: "common" }),
+        expect.objectContaining({ id: "javascript", stack: "javascript" }),
+        expect.objectContaining({ id: "dotnet", stack: "dotnet" }),
+      ]),
     );
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));

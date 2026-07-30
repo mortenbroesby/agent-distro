@@ -5,12 +5,24 @@
       "id": "common",
       "label": "Common",
       "description": "Workflow assets that apply to every technology stack."
+    },
+    {
+      "id": "javascript",
+      "label": "JavaScript",
+      "description": "JavaScript and TypeScript repository practices."
+    },
+    {
+      "id": "dotnet",
+      "label": ".NET",
+      "description": ".NET and C# repository practices."
     }
   ],
   "labels": {
     ".github/instructions/agent-distro.instructions.md": "Foundation instructions",
     ".github/instructions/safe-changes.instructions.md": "Safe-change instructions",
     ".github/instructions/verification.instructions.md": "Verification instructions",
+    ".github/instructions/javascript.instructions.md": "JavaScript instructions",
+    ".github/instructions/dotnet.instructions.md": ".NET instructions",
     ".mcp.json": "MCP configuration",
     ".github/agents/pull-request-review.agent.md": "Pull-request review agent",
     ".github/skills/pull-request-review/SKILL.md": "Pull-request review skill",
@@ -26,6 +38,22 @@
     ".github/hooks/verification-reminder.json": "Verification-reminder hook"
   },
   "profiles": [
+    {
+      "id": "javascript",
+      "stack": "javascript",
+      "label": "JavaScript development",
+      "description": "Node.js, package-manager, and TypeScript change guidance.",
+      "guidance": "Use the repository's declared package manager and Node version. Inspect package scripts before changing dependencies, preserve lockfile consistency, and run the narrowest relevant typecheck, lint, and test commands.",
+      "assets": [".github/instructions/javascript.instructions.md"]
+    },
+    {
+      "id": "dotnet",
+      "stack": "dotnet",
+      "label": ".NET development",
+      "description": "C#, SDK, project, and test guidance.",
+      "guidance": "Use the repository's pinned .NET SDK and inspect solution and project files before changing dependencies. Keep package references consistent, run dotnet build and the smallest relevant dotnet test command, and report target-framework impact.",
+      "assets": [".github/instructions/dotnet.instructions.md"]
+    },
     {
       "id": "foundation",
       "stack": "common",
