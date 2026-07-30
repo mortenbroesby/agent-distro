@@ -1,7 +1,29 @@
-# ASDLC parity decisions
+# ASDLC parity and migration brief
 
-This record resolves product decisions before moving Agent Distro foundations
-into the ASDLC codebase.
+This is the committed record of the parity discussion between Agent Distro and
+the richer ASDLC source snapshot. It resolves product decisions before moving
+Agent Distro foundations into the ASDLC codebase.
+
+## Goal
+
+Create an ASDLC integration branch for a later stacked pull-request sequence.
+ASDLC remains the public product. Agent Distro supplies proven installer,
+packaging, TUI, catalog, and safety patterns; it is not a rename target or a
+separate competing CLI.
+
+## Current comparison
+
+| Area | Agent Distro today | ASDLC migration target |
+| --- | --- | --- |
+| Public command | `agent-distro` | `asdlc` |
+| Selection | Global profiles and assets | Stack-first profiles and assets |
+| Target state | `.agent-distro/` | `.asdlc/` |
+| Mutation safety | Transaction and recovery journal | Transaction plus archive-on-deselection/conflict |
+| Runtime | Packed global CLI from a checkout | Managed copy at `~/.asdlc/repo`, then packed global CLI |
+| Diagnostics | Target doctor and JSON diagnostics | One doctor report for global and target state, with JSON |
+
+The rich reference is `f1it-asdlc-main`; it is a source snapshot rather than
+a Git checkout. The archived `f1it-asdlc` rewrite is not the feature baseline.
 
 ## 1. Public identity
 
@@ -143,3 +165,46 @@ report alongside the normal human-readable doctor output.
 
 **Implication:** The JSON contract is read-only and safe for scripts and CI;
 it must not expose repository contents, secrets, or absolute paths.
+
+## Required Agent Distro adaptations
+
+1. Keep the proven Node/Commander/Clack structure, but expose it as `asdlc`
+   and write target state under `.asdlc/`.
+2. Replace the global profile model with a stack-first catalog: Common and
+   technology stacks each own profiles and eligible assets.
+3. Add target-state migration, prefilled `update`, archive records, compatible
+   target-path merges, interactive conflict choice, and force-with-archive.
+4. Replace the bootstrap contract with the managed-copy model at
+   `~/.asdlc/repo`, while retaining the packed global artifact proof.
+5. Extend doctor into global plus target sections and preserve a path-safe JSON
+   interface.
+6. Carry forward transactional filesystem safety, recovery, package smoke
+   tests, cross-platform verification, and the opt-in TUI.
+
+## Questions intentionally still open
+
+1. What exit status should doctor use when global or target checks find actual
+   damage, as distinct from an unmanaged current directory?
+2. Which concrete profiles exist for Common and each technology stack, and
+   which existing ASDLC assets survive the catalog curation?
+3. What source-folder and catalog metadata layout best expresses stack,
+   profile, category, target path, and merge behavior without duplication?
+4. Which target-path formats are mergeable, and what is each format's explicit
+   merge rule?
+5. How long are `.asdlc/.archive/` entries retained, and what restoration
+   command or workflow—if any—is required?
+6. Which legacy `.asdlc` manifests and managed-file records must migrate, and
+   what happens when their source selection cannot be reconstructed?
+7. Which final commands are retained beyond `bootstrap`, `install`, `update`,
+   `upgrade`, and `doctor`—especially recovery, profile listing, validation,
+   and issue reporting?
+8. Should shell PATH integration remain part of bootstrap, or should the
+   package manager's global bin location be the only supported launcher path?
+9. What Git remote and base branch will host the ASDLC integration stack, given
+   that `f1it-asdlc-main` is currently only a source snapshot?
+
+## Delivery boundary
+
+Do not begin the ASDLC implementation until the open questions needed by its
+first slice are settled and the intended ASDLC Git base is available. This
+brief is updated and committed whenever a decision changes.
