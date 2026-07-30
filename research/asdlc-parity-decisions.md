@@ -32,3 +32,12 @@ can share one implementation; the distinct commands communicate first-time
 installation versus an existing managed target. The exact selection behavior
 of `update` is prefilled from recorded target state, so the user can keep or
 adjust it intentionally.
+
+## 4. Deselected assets
+
+**Decision:** When an installation or update deselects an ASDLC-managed asset,
+move it to `.asdlc/.archive/` rather than deleting it.
+
+**Implication:** Maintain a Markdown archive record inside `.asdlc/` for user
+inspection and report archived assets during installation or update. Archive
+retention and restoration behavior remain to be defined.
