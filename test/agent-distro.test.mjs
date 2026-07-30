@@ -63,7 +63,7 @@ describe("agent-distro install", () => {
   it("groups verification and diagnostics under doctor", () => {
     const destination = target();
     run(destination);
-    expect(command("doctor", destination)).toContain("Verified");
+    expect(command("doctor", destination)).toMatch(/Global CLI:.*\nVerified/);
     expect(JSON.parse(command("doctor", "--diagnostics", destination))).toMatchObject({
       target: { exists: true, directory: true },
     });

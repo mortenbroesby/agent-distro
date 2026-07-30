@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
@@ -48,6 +49,13 @@ export function verify(target: string) {
 
 /** Reports an unmanaged directory without treating normal absence as damage. */
 export function doctor(target: string) {
+  const home = process.env.AGENT_DISTRO_HOME
+    ? path.resolve(process.env.AGENT_DISTRO_HOME)
+    : path.join(os.homedir(), ".agent-distro");
+  const managed = fs.existsSync(path.join(home, "repo", ".git"));
+  console.log(
+    `Global CLI: ${version} on Node ${process.versions.node}; managed checkout: ${managed ? "present" : "not found"}.`,
+  );
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
     console.log("No Agent Distro installation found for this target.");
     return 0;
