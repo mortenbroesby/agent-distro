@@ -20,8 +20,14 @@ else if (args.length !== 0) {
     console.error(`No managed Agent Distro checkout found at ${root}. Run bin/agent-distro bootstrap first.`);
     process.exitCode = 1;
   } else {
-    const pull = spawnSync("git", ["-C", root, "pull", "--ff-only"], { stdio: "inherit" });
-    if (pull.error || pull.status !== 0) process.exitCode = 1;
+    // Bootstrap can clone a detached CI checkout. Fetching the remote HEAD and
+    // fast-forwarding FETCH_HEAD works for both detached and branch checkouts.
+    const fetch = spawnSync("git", ["-C", root, "fetch", "origin", "HEAD"], { stdio: "inherit" });
+    const merge =
+      fetch.error || fetch.status !== 0
+        ? undefined
+        : spawnSync("git", ["-C", root, "merge", "--ff-only", "FETCH_HEAD"], { stdio: "inherit" });
+    if (!merge || merge.error || merge.status !== 0) process.exitCode = 1;
     else {
       const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
       const result = spawnSync(process.execPath, [bootstrap, "--home", home], { stdio: "inherit" });
