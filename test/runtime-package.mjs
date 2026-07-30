@@ -36,7 +36,7 @@ try {
   fs.mkdirSync(target, { recursive: true });
   runNpm(["install", "--prefix", consumer, "--ignore-scripts", "--no-audit", "--no-fund", archive]);
   runNpm(["exec", "--prefix", consumer, "--", "agent-distro", "install", target, "--profile", "debugging"]);
-  const verified = runNpm(["exec", "--prefix", consumer, "--", "agent-distro", "verify", target]);
+  const verified = runNpm(["exec", "--prefix", consumer, "--", "agent-distro", "doctor", target]);
   assert.match(verified, /Verified [1-9]\d* assets/);
 } finally {
   fs.rmSync(workspace, { recursive: true, force: true });
