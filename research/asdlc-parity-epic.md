@@ -22,6 +22,18 @@ missing Git-backed ASDLC base.
 Acceptance: a clean, Git-backed ASDLC worktree exists with a verified baseline
 and an approved first implementation slice.
 
+### Story 0 evidence — 2026-07-30
+
+- The rich reference at `/Users/macbook/personal/external/f1it-asdlc-main` is
+  a Git-less source snapshot. It exposes `doctor`, `bootstrap`, `install`,
+  `update`, `validate`, and `self-update`; it has 33 test files, 6
+  `managed-assets` files, and 75 `.github` assets.
+- Its documented canonical remote is
+  `danskebank@danskebank.ghe.com:main/f1it-asdlc.git`.
+- This host currently cannot reach that remote: SSH requires an unverified
+  host key and HTTPS has no configured enterprise credential. No integration
+  worktree or source-snapshot change has been made.
+
 ## Story 1 — Public runtime and bootstrap contract
 
 - [ ] Keep the public package and command as `asdlc`.
