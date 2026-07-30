@@ -87,3 +87,12 @@ update to replace conflicting content, first moving the displaced content to
 **Implication:** Conflict resolution, archive entries, and failure reporting
 must remain transactional. Non-interactive conflict behavior remains to be
 defined; it cannot wait for a prompt.
+
+## 10. Non-interactive conflicts
+
+**Decision:** A non-interactive unmergeable conflict fails unless `--force` is
+supplied. Its user-facing message explains the force option and provides the
+opt-in bug-report path.
+
+**Implication:** Scripts never receive an automatic provider choice. `--force`
+uses the same archive-before-replacement behavior as the interactive flow.
