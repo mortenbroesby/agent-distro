@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-// Minimal npm bin launcher: delegates all behavior to the built library and
-// converts an unexpected boundary failure into the stable CLI error format.
+/**
+ * Minimal npm bin launcher. It delegates to the built library and converts an
+ * unexpected boundary failure into the stable CLI error format. Upgrade stays
+ * separate because it intentionally operates on the managed source checkout.
+ */
 if (process.argv[2] === "upgrade") {
   await import("../scripts/upgrade.mjs");
 } else {

@@ -1,4 +1,9 @@
-/** Stable, user-facing failure categories used by the CLI and diagnostics. */
+/**
+ * Stable, user-facing failure categories shared by the CLI and diagnostics.
+ *
+ * Codes are intentionally machine-readable while their associated recovery
+ * guidance remains safe for users to copy into a terminal or bug report.
+ */
 export type FailureCode =
   | "AGENT_DISTRO_E_TARGET_INVALID"
   | "AGENT_DISTRO_E_DESTINATION_UNSAFE"
@@ -22,7 +27,15 @@ const nextSteps: Record<FailureCode, string> = {
     'Run agent-distro doctor --diagnostics <target>; if it persists, run agent-distro report-issue --diagnostics-consent --message "describe the failure".',
 };
 
-/** Removes common credentials and local paths before text reaches the terminal or issue URL. */
+/**
+ * Removes common credentials and local paths before text reaches a terminal or
+ * locally generated issue URL.
+ *
+ * @param value - Untrusted error detail from a command, library, or filesystem.
+ * @returns A one-line, length-bounded diagnostic that is safe to display.
+ * @remarks Sanitization is deliberately conservative. It favors redaction over
+ * preserving complete original text because this value can later be shared.
+ */
 export function sanitize(value: unknown) {
   return String(value)
     .replace(/(?:ghp|github_pat|npm)_[A-Za-z0-9_-]+/g, "[redacted]")
@@ -32,12 +45,24 @@ export function sanitize(value: unknown) {
     .slice(0, 500);
 }
 
-/** Formats a stable failure code with a safe, actionable recovery step. */
+/**
+ * Formats one stable failure category with a sanitized actionable next step.
+ *
+ * @param code - Failure category that selects recovery guidance.
+ * @param message - Untrusted diagnostic detail to sanitize before display.
+ * @returns Human-readable stderr text with no trailing side effect.
+ */
 export function formatFailure(code: FailureCode, message: unknown) {
   return `${code}: ${sanitize(message)}\nNext: ${nextSteps[code]}`;
 }
 
-/** Writes a formatted failure to stderr and returns the conventional failure exit code. */
+/**
+ * Writes a formatted failure to stderr and returns the conventional exit code.
+ *
+ * @param code - Stable failure category.
+ * @param message - Untrusted detail that must not reach stderr unsanitized.
+ * @returns Always `1`, letting Commander adapters remain free of `process.exit`.
+ */
 export function fail(code: FailureCode, message: unknown) {
   console.error(formatFailure(code, message));
   return 1;

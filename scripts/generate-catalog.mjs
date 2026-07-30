@@ -19,6 +19,9 @@ const source = JSON.parse(fs.readFileSync(path.join(assets, "profiles.json"), "u
  * Source profiles use a string when source and target paths are identical and
  * replacement is intentional. Object entries make a shared target and merge
  * policy explicit before the generated catalog reaches the installer.
+ *
+ * @param {string | Record<string, unknown>} rawAsset - Authored short or full asset entry.
+ * @returns {Record<string, unknown>} Complete generated asset contract.
  */
 function normalizeAsset(rawAsset) {
   return typeof rawAsset === "string" ? { path: rawAsset, target: rawAsset, merge: "replace" } : rawAsset;
@@ -30,6 +33,11 @@ function normalizeAsset(rawAsset) {
  * This function is deliberately pure: the caller owns the output map, while
  * this renderer makes format-specific content and unsupported file types
  * obvious in one exhaustive decision.
+ *
+ * @param {Record<string, unknown>} asset - Validated generated asset contract.
+ * @param {{ id: string, label: string, description: string, guidance: string }} profile - Authored profile.
+ * @returns {string} Generated UTF-8 asset content.
+ * @throws {Error} When no supported generated file type matches.
  */
 function renderAsset(asset, profile) {
   if (asset.path.endsWith(".agent.md"))

@@ -7,7 +7,20 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+/**
+ * Reads a UTF-8 file relative to the repository root.
+ *
+ * @param {string} relative - Repository-relative file path.
+ * @returns {string} File contents.
+ */
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+
+/**
+ * Reads a symlink using POSIX separators for cross-platform assertions.
+ *
+ * @param {string} file - Absolute symlink path.
+ * @returns {string} Normalized link destination.
+ */
 const readLink = (file) => fs.readlinkSync(file).replaceAll(path.sep, "/");
 
 describe("Copilot marketplace offering", () => {

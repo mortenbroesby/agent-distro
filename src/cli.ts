@@ -12,6 +12,11 @@ import { version } from "./package.js";
  * Keeping process exit outside this function lets tests and package launchers
  * reuse the exact command contract while callers decide how to handle the
  * resulting exit code.
+ *
+ * @param args - User-supplied CLI arguments without the Node executable path.
+ * @returns The command result code without calling `process.exit`.
+ * @throws {Error} Unexpected programmer or runtime errors after expected usage
+ * errors have been converted into the standard safe failure contract.
  */
 export async function run(args: string[]) {
   let exitCode = 0;
@@ -22,6 +27,8 @@ export async function run(args: string[]) {
     .showHelpAfterError()
     .exitOverride();
 
+  // Each command reports a numeric result through this single callback. That
+  // keeps registration modules composable and makes CLI behavior testable.
   registerDoctorCommand(program, (code) => {
     exitCode = code;
   });

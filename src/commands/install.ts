@@ -3,7 +3,12 @@ import { fail } from "../errors.js";
 import { assetChoices, install, readManagedSelection, recover } from "../install.js";
 import { interactiveInstall } from "../interactive-install.js";
 
-/** Registers recovery without owning process exit. */
+/**
+ * Registers recovery without allowing the command adapter to terminate Node.
+ *
+ * @param program - Commander program that owns parsing and user-facing help.
+ * @param setExitCode - Receives the recovery result for the shared CLI runner.
+ */
 export function registerRecoveryCommand(program: Command, setExitCode: (code: number) => void): void {
   program
     .command("recover <target>")
@@ -13,7 +18,15 @@ export function registerRecoveryCommand(program: Command, setExitCode: (code: nu
     });
 }
 
-/** Registers installation without owning process exit. */
+/**
+ * Registers the install and update command family without owning process exit.
+ *
+ * @param program - Commander program that owns parsing and user-facing help.
+ * @param setExitCode - Receives each asynchronous command result.
+ * @remarks Both commands delegate filesystem safety to `install`. This adapter
+ * only distinguishes interactive human intent from explicit script intent and
+ * chooses whether an existing persisted selection should be prefilled.
+ */
 export function registerInstallCommand(program: Command, setExitCode: (code: number) => void): void {
   // No selection flags means a human is asking for the guided TTY journey.
   // Scripts must choose assets explicitly so they cannot block on prompts.
@@ -28,6 +41,8 @@ export function registerInstallCommand(program: Command, setExitCode: (code: num
     .option("--all", "install every Agent Distro asset")
     .option("--interactive", "open the selection wizard")
     .action(async (target, options) => {
+      // This warning is advisory. The core installer remains responsible for
+      // manifest validation, so malformed state still takes the safe path.
       if (target) {
         try {
           if (readManagedSelection(target))
@@ -72,6 +87,8 @@ export function registerInstallCommand(program: Command, setExitCode: (code: num
       const destination = target ?? process.cwd();
       let initial;
       try {
+        // Update is meaningful only for a known target. Reading selection first
+        // also supplies the TUI defaults without trusting arbitrary files.
         initial = readManagedSelection(destination);
       } catch (error) {
         setExitCode(fail("AGENT_DISTRO_E_MANIFEST_INVALID", error instanceof Error ? error.message : String(error)));
@@ -87,6 +104,8 @@ export function registerInstallCommand(program: Command, setExitCode: (code: num
         setExitCode(fail("AGENT_DISTRO_E_USAGE", "Use --all or selected --profile/--asset values, not both."));
       } else {
         try {
+          // Explicit flags replace the corresponding persisted dimension;
+          // omitted flags retain it, so a scripted update is predictable.
           setExitCode(
             install(destination, {
               force: options.force,

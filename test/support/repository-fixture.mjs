@@ -4,7 +4,12 @@ import path from "node:path";
 import { execa } from "execa";
 import { test as baseTest } from "vitest";
 
-/** Creates a local Git repository with identity only; no network remote exists. */
+/**
+ * Creates a local Git repository with an identity only; no network remote exists.
+ *
+ * @param {string} directory - Existing directory to initialize as a repository.
+ * @returns {Promise<void>} Resolves after Git can create commits if a test needs them.
+ */
 async function gitRepository(directory) {
   await execa("git", ["init", "--quiet"], { cwd: directory });
   await execa("git", ["config", "user.name", "Agent Distro fixture"], { cwd: directory });
@@ -19,6 +24,8 @@ async function gitRepository(directory) {
  * filesystems would miss those boundaries, so cleanup is registered with Vitest.
  */
 export const test = baseTest.extend("repository", async ({}, { onCleanup }) => {
+  // A real temporary directory preserves platform path behavior that an
+  // in-memory filesystem would hide from installer and launcher tests.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-fixture-å "));
   onCleanup(() => fs.rmSync(root, { recursive: true, force: true }));
 

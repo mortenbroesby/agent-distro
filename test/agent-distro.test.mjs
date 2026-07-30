@@ -17,18 +17,39 @@ import {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
 const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
-/** Runs the packaged CLI and returns its stdout for a successful user journey. */
+/**
+ * Runs the packaged CLI and returns stdout for a successful user journey.
+ *
+ * @param {...string} args - CLI arguments after the executable name.
+ * @returns {string} Captured standard output.
+ */
 const command = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", stdio: "pipe" });
-/** Runs the packaged CLI while retaining separate streams for verbosity assertions. */
+/**
+ * Runs the packaged CLI while retaining separate streams for verbosity assertions.
+ *
+ * @param {...string} args - CLI arguments after the executable name.
+ * @returns {import("node:child_process").SpawnSyncReturns<string>} Successful process result.
+ */
 const commandResult = (...args) => {
   const result = spawnSync(process.execPath, [cli, ...args], { encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr);
   return result;
 };
-/** Runs the packaged CLI from a target directory to prove current-directory defaults. */
+/**
+ * Runs the packaged CLI from a target directory to prove current-directory defaults.
+ *
+ * @param {string} cwd - Working directory for the invocation.
+ * @param {...string} args - CLI arguments after the executable name.
+ * @returns {string} Captured standard output.
+ */
 const commandFrom = (cwd, ...args) =>
   execFileSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8", stdio: "pipe" });
-/** Captures the formatted stderr contract for an expected CLI failure. */
+/**
+ * Captures the formatted stderr contract for an expected CLI failure.
+ *
+ * @param {...string} args - CLI arguments expected to fail.
+ * @returns {string} Captured standard error.
+ */
 const failed = (...args) => {
   try {
     command(...args);
@@ -37,7 +58,12 @@ const failed = (...args) => {
   }
   throw new Error("Expected command to fail");
 };
-/** Captures a bootstrap failure without allowing the test process to terminate. */
+/**
+ * Captures a bootstrap failure without allowing the test process to terminate.
+ *
+ * @param {...string} args - Bootstrap arguments expected to fail.
+ * @returns {string} Captured standard error.
+ */
 const failedBootstrap = (...args) => {
   try {
     execFileSync(process.execPath, [bootstrap, ...args], { encoding: "utf8", stdio: "pipe" });
@@ -46,11 +72,26 @@ const failedBootstrap = (...args) => {
   }
   throw new Error("Expected bootstrap to fail");
 };
-/** Installs every catalog provider to characterize full-distribution lifecycle behavior. */
+/**
+ * Installs every catalog provider to characterize full-distribution lifecycle behavior.
+ *
+ * @param {string} target - Target directory for the installation.
+ * @param {...string} options - Additional install flags.
+ * @returns {string} Captured standard output.
+ */
 const run = (target, ...options) => command("install", target, "--all", ...options);
-/** Invokes the public health check after a transaction or recovery scenario. */
+/**
+ * Invokes the public health check after a transaction or recovery scenario.
+ *
+ * @param {string} target - Target directory to verify.
+ * @returns {string} Captured standard output.
+ */
 const verify = (target) => command("doctor", target);
-/** Creates an isolated target, preventing one scenario from influencing another. */
+/**
+ * Creates an isolated target, preventing one scenario from influencing another.
+ *
+ * @returns {string} Newly created temporary directory.
+ */
 const target = () => fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-test-"));
 
 describe("agent-distro install", () => {
