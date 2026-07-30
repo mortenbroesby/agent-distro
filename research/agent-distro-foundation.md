@@ -60,9 +60,10 @@ adjust it intentionally.
 **Decision:** When an installation or update deselects an Agent Distro-managed
 asset, move it to `.agent-distro/.archive/` rather than deleting it.
 
-**Implication:** Maintain a Markdown archive record inside `.agent-distro/` for user
-inspection and report archived assets during installation or update. Archive
-retention and restoration behavior remain to be defined.
+**Implication:** Each mutation writes a transaction-specific Markdown record at
+`.agent-distro/.archive/<id>/README.md` alongside the retained files and reports
+the archive location. Entries are retained until the user removes them; there is
+no restore command in this foundation, so users can inspect or copy them back.
 
 ## 5. New-install defaults
 
@@ -169,6 +170,12 @@ of one doctor report. The report must make it clear when the current directory
 is not an Agent Distro-managed repository, but that condition still exits
 successfully.
 
+**Exit decision:** Absence of a managed checkout or target installation is
+informational and exits zero. A present target manifest with malformed or
+drifted managed content exits nonzero. The running global CLI has no separate
+verifiable damage state in this foundation; its managed-checkout presence is
+reported without turning a usable command into a failure.
+
 ## 15. Programmatic doctor
 
 **Decision:** `agent-distro doctor --json` emits a stable, path-safe machine-readable
@@ -188,7 +195,18 @@ it must not expose repository contents, secrets, or absolute paths.
 4. Replace the bootstrap contract with the managed-copy model at
    `~/.agent-distro/repo`, while retaining the packed global artifact proof.
 5. Extend doctor into global plus target sections and preserve a path-safe JSON
-   interface.
+interface.
+
+## 16. Legacy state migration
+
+**Decision:** Version-1 manifests remain readable. Their recorded files are
+matched to the current catalog to prefill a safe update; on the next successful
+mutation Agent Distro writes a version-2 manifest. Files no longer represented
+by the catalog are not silently retained as selections: they are archived with
+the same transaction.
+
+**Implication:** A legacy manifest never needs a destructive in-place rewrite.
+Malformed manifests fail safely and require explicit repair before mutation.
 6. Carry forward transactional filesystem safety, recovery, package smoke
    tests, cross-platform verification, and the opt-in TUI.
 
@@ -198,16 +216,12 @@ it must not expose repository contents, secrets, or absolute paths.
    damage, as distinct from an unmanaged current directory?
 2. Which target-path formats are mergeable, and what is each format's explicit
    merge rule?
-3. How long are `.agent-distro/.archive/` entries retained, and what restoration
-   command or workflow—if any—is required?
-4. Which legacy `.agent-distro` manifests and managed-file records must migrate, and
-   what happens when their source selection cannot be reconstructed?
-5. Which final commands are retained beyond `bootstrap`, `install`, `update`,
+3. Which final commands are retained beyond `bootstrap`, `install`, `update`,
    `upgrade`, and `doctor`—especially recovery, profile listing, validation,
    and issue reporting?
-6. Should shell PATH integration remain part of bootstrap, or should the
+4. Should shell PATH integration remain part of bootstrap, or should the
    package manager's global bin location be the only supported launcher path?
-7. Which Agent Distro branch and PR sequence should carry the completed
+5. Which Agent Distro branch and PR sequence should carry the completed
    foundation?
 
 ## Delivery boundary

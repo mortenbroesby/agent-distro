@@ -25,7 +25,7 @@ and the condition that would reopen it. A deferred item is not checked off.
 - [x] Identify the Agent Distro remote and base branch for the implementation stack.
 - [x] Create an isolated Git worktree from that base; preserve the ASDLC reference snapshot unchanged.
 - [x] Record the exact current command, asset, manifest, and test baseline.
-- [ ] Decide the remaining design questions required by Story 3.
+- [x] Decide the remaining design questions required by Story 3.
 
 Acceptance: a clean, Git-backed Agent Distro worktree exists with a verified baseline
 and an approved first implementation slice.
@@ -93,17 +93,29 @@ explicit, and the catalog generation/checks are deterministic.
 
 ## Story 3 — Target state and safe mutation
 
-- [ ] Preserve `.agent-distro/` as the target-local management area and define its
+- [x] Preserve `.agent-distro/` as the target-local management area and define its
   versioned state schema.
-- [ ] Implement legacy-state detection and the approved migration path.
-- [ ] Warn when `install` finds existing Agent Distro state; prefill `update` from it.
-- [ ] Make deselection archive files under `.agent-distro/.archive/` and write the
+- [x] Implement legacy-state detection and the approved migration path.
+- [x] Warn when `install` finds existing Agent Distro state; prefill `update` from it.
+- [x] Make deselection archive files under `.agent-distro/.archive/` and write the
   user-inspectable Markdown archive record.
-- [ ] Implement transactional staging, rollback, and recovery for writes and
+- [x] Implement transactional staging, rollback, and recovery for writes and
   archives.
 
 Acceptance: install/update never leave partial state, legacy handling is
 tested, and every archived asset is visible to the user.
+
+### Story 3 evidence — 2026-07-30
+
+- Version-2 manifests record catalog version and the selected stacks, profiles,
+  and individual assets. Version-1 manifests are read safely; catalog-known
+  files prefill updates and the next successful mutation writes version 2.
+- Existing installs warn through `install`; `update` loads the recorded selection.
+  Deselected assets and `--force` replacements are copied to a unique
+  `.agent-distro/.archive/<id>/` directory with a `README.md` record.
+- The existing transaction journal now covers replacement and removal operations;
+  rollback/recovery restore prior files before staging is removed. Focused installer
+  coverage verifies deselection archive, force archive, rollback, and recovery.
 
 ## Story 4 — Shared paths and conflicts
 
@@ -111,25 +123,45 @@ tested, and every archived asset is visible to the user.
 - [ ] Merge compatible contributions from selected stacks.
 - [ ] Offer an interactive provider choice for unmergeable conflicts before
   writing.
-- [ ] In scripts, fail conflicts without `--force`; with force, archive the
+- [x] In scripts, fail conflicts without `--force`; with force, archive the
   displaced content before replacement.
-- [ ] Provide an opt-in bug-report path for fatal errors and force-required
+- [x] Provide an opt-in bug-report path for fatal errors and force-required
   conflicts.
 
 Acceptance: merge, choice, force, archive, and non-interactive failure paths
 all have focused tests and no path silently chooses a conflicting provider.
 
+### Story 4 current safe boundary
+
+The current catalog rejects duplicate target paths, so it has no shared-path
+providers to merge or choose between. This is a **deferred** catalog capability:
+the safe behavior is an explicit conflict before any write; it reopens when a
+second stack introduces a same-path asset together with a declared merge rule.
+Non-interactive conflicts already fail unless `--force`; force archives the
+displaced source asset, and the error text includes the opt-in issue-report path.
+
 ## Story 5 — Doctor and diagnostics
 
-- [ ] Report global CLI and managed-runtime state in every `agent-distro doctor` run.
-- [ ] Report target `.agent-distro/` state when the current directory or explicit
+- [x] Report global CLI and managed-runtime state in every `agent-distro doctor` run.
+- [x] Report target `.agent-distro/` state when the current directory or explicit
   target is a repository.
-- [ ] Treat an unmanaged current directory as a successful informational result.
-- [ ] Add a stable, path-safe `agent-distro doctor --json` contract.
-- [ ] Decide and test exit status for actual global or target damage.
+- [x] Treat an unmanaged current directory as a successful informational result.
+- [x] Add a stable, path-safe `agent-distro doctor --json` contract.
+- [x] Decide and test exit status for actual global or target damage.
 
 Acceptance: doctor is useful to humans and CI, exposes neither secrets nor
 absolute paths in JSON, and its exit semantics are documented and tested.
+
+### Story 5 evidence — 2026-07-30
+
+- Human doctor output always starts with the CLI/runtime and managed-checkout
+  state, then reports either target verification or the informational unmanaged
+  result. The target defaults to the current directory.
+- `doctor --json` and `--diagnostics` emit the same path-safe snapshot with
+  runtime, global, target, and manifest sections. Tests cover both aliases and
+  prove no target path leaks into JSON.
+- Missing global checkout and unmanaged target are successful informational
+  results; malformed target state and managed-file drift exit nonzero.
 
 ## Story 6 — Delivery discipline
 

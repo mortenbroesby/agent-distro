@@ -33,14 +33,16 @@ export type InstallOptions = {
 
 export type ManagedSelection = { stacks: string[]; profiles: string[]; assets: string[] };
 
-/** Reads current or legacy ownership metadata without trusting its paths. */
-export function readManagedSelection(target: string): ManagedSelection | undefined {
+type ManagedManifest = { version: 1 | 2; files: string[]; selection?: ManagedSelection };
+
+/** Parses only the manifest fields needed to retain managed content safely. */
+function readManagedManifest(target: string): ManagedManifest | undefined {
   const manifestPath = path.join(target, ".agent-distro", "manifest.json");
   if (!fs.existsSync(manifestPath)) return undefined;
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   if (manifest.tool !== "agent-distro" || ![1, 2].includes(manifest.version) || !Array.isArray(manifest.files))
     throw new Error("invalid manifest");
-  const assets = manifest.files.map((file: unknown) => manifestParts(file).join("/"));
+  const files = manifest.files.map((file: unknown) => manifestParts(file).join("/"));
   if (manifest.version === 2) {
     const selection = manifest.selection;
     if (
@@ -50,12 +52,33 @@ export function readManagedSelection(target: string): ManagedSelection | undefin
       )
     )
       throw new Error("invalid manifest");
-    return selection;
+    return { version: 2, files, selection };
   }
+  return { version: 1, files };
+}
+
+/** Reads current or legacy ownership metadata without trusting its paths. */
+export function readManagedSelection(target: string): ManagedSelection | undefined {
+  const manifest = readManagedManifest(target);
+  if (!manifest) return undefined;
+  if (manifest.selection)
+    return {
+      stacks: manifest.selection.stacks.filter((stack) => catalog.stacks.some(({ id }) => id === stack)),
+      profiles: manifest.selection.profiles.filter((profile) => catalog.profiles.some(({ id }) => id === profile)),
+      assets: manifest.selection.assets.filter((asset) => catalog.assets.some(({ path }) => path === asset)),
+    };
+  const assets = manifest.files;
+  const selected = assets.filter((file) => catalog.assets.some((asset) => asset.path === file));
   const stacks = [
-    ...new Set(assets.map((file) => catalog.assets.find((asset) => asset.path === file)?.stack).filter(Boolean)),
+    ...new Set(selected.map((file) => catalog.assets.find((asset) => asset.path === file)?.stack).filter(Boolean)),
   ];
-  return { stacks, profiles: [], assets };
+  return { stacks, profiles: [], assets: selected };
+}
+
+function archiveRecord(files: string[]) {
+  return `# Agent Distro archive\n\nArchived ${new Date().toISOString()} during an install or update.\n\n${files
+    .map((file) => `- \`${file}\``)
+    .join("\n")}\n`;
 }
 
 /** Stores transaction state under the target so recovery never needs global state. */
@@ -128,24 +151,14 @@ export function install(
   if (fs.existsSync(recoveryPath(destination)))
     return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
   const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
-  const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
-  if (fs.existsSync(manifestPath)) {
-    try {
-      const previous = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-      const removed = Array.isArray(previous.files)
-        ? previous.files.filter(
-            (file: unknown) => typeof file === "string" && !sourceFiles.includes(file.split("/").join(path.sep)),
-          )
-        : [];
-      if (removed.length)
-        return fail(
-          "AGENT_DISTRO_E_ARCHIVE_REQUIRED",
-          "This update would remove managed assets; archival support is required first.",
-        );
-    } catch {
-      return fail("AGENT_DISTRO_E_MANIFEST_INVALID", "invalid manifest");
-    }
+  let previous: ManagedManifest | undefined;
+  try {
+    previous = readManagedManifest(destination);
+  } catch {
+    return fail("AGENT_DISTRO_E_MANIFEST_INVALID", "invalid manifest");
   }
+  const previousFiles = (previous?.files ?? []).map((file) => file.split("/").join(path.sep));
+  const removed = previousFiles.filter((file) => !sourceFiles.includes(file));
   const selection = {
     stacks: [
       ...new Set(
@@ -156,6 +169,8 @@ export function install(
     assets: [...new Set(selected)],
   };
   const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
+  const removedExisting = removed.filter((relative) => fs.existsSync(path.join(destination, relative)));
+  const managedFiles = [...new Set([...outputFiles, ...removedExisting])];
   const manifest = JSON.stringify(
     {
       tool: "agent-distro",
@@ -180,10 +195,10 @@ export function install(
   contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
   // Never traverse a symlinked ancestor: even a valid relative path could then
   // write outside the explicitly chosen target.
-  const unsafe = outputFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
+  const unsafe = managedFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
   if (unsafe.length)
     return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);
-  const directories = outputFiles.filter((relative) => {
+  const directories = managedFiles.filter((relative) => {
     const output = path.join(destination, relative);
     return fs.existsSync(output) && !fs.lstatSync(output).isFile();
   });
@@ -193,12 +208,29 @@ export function install(
   // partially updated target. --force is the explicit opt-in to replacement.
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
-    return fs.existsSync(output) && !contents.get(relative).equals(fs.readFileSync(output));
+    return (
+      fs.existsSync(output) &&
+      !contents.get(relative).equals(fs.readFileSync(output)) &&
+      !(relative === ".agent-distro/manifest.json" && previous)
+    );
   });
   if (conflicts.length && !force)
     return fail("AGENT_DISTRO_E_CONFLICT", `Refusing to overwrite: ${conflicts.join(", ")}`);
+  const archived = [
+    ...new Set([...removedExisting, ...conflicts.filter((relative) => sourceFiles.includes(relative))]),
+  ];
+  const archiveId = archived.length ? `${Date.now()}-${crypto.randomBytes(4).toString("hex")}` : undefined;
+  if (archiveId) {
+    const archiveRoot = path.join(destination, ".agent-distro", ".archive");
+    if (hasSymlinkAncestor(destination, path.join(".agent-distro", ".archive", archiveId, "README.md")))
+      return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", "Refusing symlinked Agent Distro archive path.");
+    if (fs.existsSync(archiveRoot) && !fs.lstatSync(archiveRoot).isDirectory())
+      return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", "Refusing non-directory Agent Distro archive path.");
+  }
   const changed = outputFiles.filter(
-    (relative) => !fs.existsSync(path.join(destination, relative)) || conflicts.includes(relative),
+    (relative) =>
+      !fs.existsSync(path.join(destination, relative)) ||
+      !contents.get(relative).equals(fs.readFileSync(path.join(destination, relative))),
   );
   onStep?.(
     changed.length === 0
@@ -208,7 +240,7 @@ export function install(
   if (!quiet) console.log(`${dryRun ? "Would sync" : "Synced"} ${changed.length} changed assets to ${destination}`);
   if (dryRun || changed.length === 0) return 0;
   let staging = "";
-  const replacements: { relative: string; output: string; backup?: string }[] = [];
+  const replacements: { relative: string; output: string; backup?: string; remove?: true }[] = [];
   const committed: typeof replacements = [];
   try {
     // Stage first, then journal backups before the first visible rename. This
@@ -230,6 +262,25 @@ export function install(
       }
       replacements.push({ relative, output, backup: fs.existsSync(output) ? backup : undefined });
     }
+    for (const relative of removedExisting) {
+      const output = path.join(destination, relative);
+      const backup = path.join(staging, ".backup", relative);
+      fs.mkdirSync(path.dirname(backup), { recursive: true });
+      fs.copyFileSync(output, backup);
+      replacements.push({ relative, output, backup, remove: true });
+    }
+    if (archiveId) {
+      const archive = path.join(staging, ".archive");
+      for (const relative of archived) {
+        const archivedFile = path.join(archive, relative);
+        fs.mkdirSync(path.dirname(archivedFile), { recursive: true });
+        fs.copyFileSync(path.join(staging, ".backup", relative), archivedFile);
+      }
+      fs.writeFileSync(
+        path.join(archive, "README.md"),
+        archiveRecord(archived.map((file) => file.split(path.sep).join("/"))),
+      );
+    }
     fs.writeFileSync(
       recoveryPath(destination),
       JSON.stringify({
@@ -240,9 +291,16 @@ export function install(
     );
     onStep?.("Applying staged changes.");
     for (const replacement of replacements) {
-      fs.mkdirSync(path.dirname(replacement.output), { recursive: true });
-      fs.renameSync(path.join(staging, replacement.relative), replacement.output);
+      if (replacement.remove) fs.rmSync(replacement.output);
+      else {
+        fs.mkdirSync(path.dirname(replacement.output), { recursive: true });
+        fs.renameSync(path.join(staging, replacement.relative), replacement.output);
+      }
       committed.push(replacement);
+    }
+    if (archiveId) {
+      fs.mkdirSync(path.join(destination, ".agent-distro", ".archive"), { recursive: true });
+      fs.renameSync(path.join(staging, ".archive"), path.join(destination, ".agent-distro", ".archive", archiveId));
     }
   } catch (error) {
     // Only committed renames need rollback; uncommitted staged files are safe
@@ -261,6 +319,11 @@ export function install(
   }
   fs.rmSync(recoveryPath(destination), { force: true });
   fs.rmSync(staging, { recursive: true, force: true });
+  if (archiveId) {
+    const message = `Archived ${archived.length} displaced asset${archived.length === 1 ? "" : "s"} under .agent-distro/.archive/${archiveId}.`;
+    if (!quiet) console.log(message);
+    onStep?.(message);
+  }
   onStep?.("Finalized installation.");
   return 0;
 }

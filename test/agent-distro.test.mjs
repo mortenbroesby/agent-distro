@@ -260,10 +260,28 @@ describe("agent-distro install", () => {
     expect(failed("update", target(), "--profile", "debugging")).toContain("run install first");
   });
 
-  it("refuses deselection until it can archive displaced assets", () => {
+  it("migrates a version-1 manifest on the next safe update", () => {
+    const destination = target();
+    command("install", destination, "--asset", ".mcp.json");
+    const manifestPath = path.join(destination, ".agent-distro", "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.version = 1;
+    delete manifest.selection;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+    expect(command("update", destination, "--asset", ".mcp.json")).toContain("Synced 1 changed assets");
+    expect(JSON.parse(fs.readFileSync(manifestPath, "utf8"))).toMatchObject({ version: 2 });
+  });
+
+  it("archives deselected managed assets with a user-inspectable record", () => {
     const destination = target();
     run(destination);
-    expect(failed("update", destination, "--asset", ".mcp.json")).toContain("AGENT_DISTRO_E_ARCHIVE_REQUIRED");
+    expect(command("update", destination, "--asset", ".mcp.json")).toContain("Archived");
+    const archives = fs.readdirSync(path.join(destination, ".agent-distro", ".archive"));
+    expect(archives).toHaveLength(1);
+    const archive = path.join(destination, ".agent-distro", ".archive", archives[0]);
+    expect(fs.existsSync(path.join(archive, ".github/agents/pull-request-review.agent.md"))).toBe(true);
+    expect(fs.readFileSync(path.join(archive, "README.md"), "utf8")).toContain("pull-request-review.agent.md");
+    expect(fs.existsSync(path.join(destination, ".github/agents/pull-request-review.agent.md"))).toBe(false);
   });
 
   it("does not overwrite a changed target without --force", () => {
@@ -273,6 +291,13 @@ describe("agent-distro install", () => {
     expect(() => run(destination)).toThrow();
     run(destination, "--force");
     expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({ mcpServers: {} });
+    const archive = path.join(
+      destination,
+      ".agent-distro",
+      ".archive",
+      fs.readdirSync(path.join(destination, ".agent-distro", ".archive"))[0],
+    );
+    expect(fs.readFileSync(path.join(archive, ".mcp.json"), "utf8")).toBe("changed\n");
   });
 
   it("does not create transactional state for an unchanged install", () => {

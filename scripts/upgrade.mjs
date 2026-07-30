@@ -4,7 +4,6 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(3);
 let home = process.env.AGENT_DISTRO_HOME
