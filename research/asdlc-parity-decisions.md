@@ -96,3 +96,11 @@ opt-in bug-report path.
 
 **Implication:** Scripts never receive an automatic provider choice. `--force`
 uses the same archive-before-replacement behavior as the interactive flow.
+
+## 11. CLI upgrade source
+
+**Decision:** For now, `asdlc upgrade` updates a locally cloned ASDLC checkout,
+then repacks and reinstalls the global CLI.
+
+**Implication:** Npm publication is deferred. Upgrade must make the checkout
+location and any Git/update failure visible to the user.
