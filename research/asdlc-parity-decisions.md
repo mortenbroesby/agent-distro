@@ -67,3 +67,12 @@ cross-stack assets uses an explicit Common stack.
 
 **Implication:** Common is not installed implicitly. Its profiles and assets
 follow the same explicit selection model as technology-specific stacks.
+
+## 8. Shared target paths
+
+**Decision:** Merge compatible contributions from selected stacks that target
+the same managed path. A true content conflict stops the operation.
+
+**Implication:** The catalog needs explicit merge behavior for any asset type
+that can share a target path. ASDLC must not silently choose one stack's
+content over another's.
