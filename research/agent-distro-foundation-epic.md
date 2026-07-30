@@ -13,6 +13,13 @@ Complete stories in order. Check a task only when its acceptance criteria have
 direct evidence. Do not begin a story blocked by an unresolved decision or a
 missing decision.
 
+## Long-running delivery rule
+
+Keep this epic and PR #39 active until the Q&A has reached a near conclusion.
+When an item is too uncertain or disproportionately costly for this foundation,
+record it here as **deferred** with its reason, the safe behavior that remains,
+and the condition that would reopen it. A deferred item is not checked off.
+
 ## Story 0 — Establish the Agent Distro base
 
 - [x] Identify the Agent Distro remote and base branch for the implementation stack.
