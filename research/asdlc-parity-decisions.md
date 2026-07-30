@@ -41,3 +41,11 @@ move it to `.asdlc/.archive/` rather than deleting it.
 **Implication:** Maintain a Markdown archive record inside `.asdlc/` for user
 inspection and report archived assets during installation or update. Archive
 retention and restoration behavior remain to be defined.
+
+## 5. New-install defaults
+
+**Decision:** A new `asdlc install` starts with no assets selected.
+
+**Implication:** ASDLC is opt-in by default. Profiles, categories, stacks, and
+individual assets are explicit user choices rather than implicit baseline
+installation.
