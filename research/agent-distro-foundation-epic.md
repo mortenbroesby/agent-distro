@@ -165,9 +165,9 @@ absolute paths in JSON, and its exit semantics are documented and tested.
 
 ## Story 6 — Delivery discipline
 
-- [ ] Maintain package, catalog, transaction, and cross-platform smoke
+- [x] Maintain package, catalog, transaction, and cross-platform smoke
   coverage as each foundation story changes them.
-- [ ] Add formatting, linting, editor/runtime configuration, and repository
+- [x] Add formatting, linting, editor/runtime configuration, and repository
   instructions appropriate to Agent Distro.
 - [ ] Require macOS and Windows verification for the exact PR head.
 - [ ] Split the work into the approved pull-request sequence and
@@ -175,6 +175,19 @@ absolute paths in JSON, and its exit semantics are documented and tested.
 
 Acceptance: each delivered story is independently reviewable, rebased on its
 base, and has passing exact-head hosted checks.
+
+### Story 6 evidence — 2026-07-30
+
+- `npm test`, `test:proof`, pack inspection, catalog verification, formatter,
+  and linter cover the package and transaction paths locally. `.editorconfig`,
+  `.npmrc`, `.nvmrc`, `.tool-versions`, and `AGENTS.md` establish the checked-in
+  development baseline.
+- The `verify` workflow runs the full suite and packed runtime proof on macOS
+  and Windows. Exact-head results remain pending for PR #39.
+- The requested delivery shape is one long-running PR, not one PR per story.
+  Story-level commits and this epic preserve review boundaries. A multi-PR
+  sequence is **deferred** until the user asks to split PR #39; the safe current
+  behavior is a draft PR with required checks before merge.
 
 ## Open decisions
 
