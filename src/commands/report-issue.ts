@@ -1,7 +1,14 @@
 import { Command } from "commander";
 import { reportIssue } from "../report-issue.js";
 
-/** Registers the local, consent-gated issue URL command. */
+/**
+ * Registers the local, consent-gated issue URL command.
+ *
+ * @param program - Commander program that owns user-facing help and parsing.
+ * @param setExitCode - Receives the result without terminating the process.
+ * @remarks The handler delegates only URL construction; it never performs a
+ * network request or opens a browser on the user's behalf.
+ */
 export function registerReportIssueCommand(program: Command, setExitCode: (code: number) => void): void {
   program
     .command("report-issue")

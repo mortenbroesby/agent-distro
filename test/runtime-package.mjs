@@ -17,7 +17,12 @@ const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-runtime-")
 const consumer = path.join(workspace, "consumer");
 const target = path.join(workspace, "target with spaces-å");
 
-/** Runs the npm CLI without introducing a platform shell or its quoting rules. */
+/**
+ * Runs npm without introducing a platform shell or its quoting rules.
+ *
+ * @param {string[]} args - npm arguments for the packed-consumer fixture.
+ * @returns {string} Standard output from npm.
+ */
 function runNpm(args) {
   // Node cannot execute npm.cmd directly, and CMD would split the deliberately
   // space-containing fixture path. npm's JavaScript entry point avoids both.

@@ -11,6 +11,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
 
+/**
+ * Runs bootstrap while presenting a synthetic Node version to its version gate.
+ *
+ * @param {string} version - Node version to expose to the imported bootstrap module.
+ * @returns {ReturnType<typeof execa>} A non-throwing child-process result promise.
+ */
 const bootstrapAsNode = (version) =>
   execa(
     process.execPath,

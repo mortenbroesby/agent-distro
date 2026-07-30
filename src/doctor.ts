@@ -12,6 +12,9 @@ import { version } from "./package.js";
  *
  * @returns A CLI exit code; malformed ownership metadata is deliberately
  * reported separately from ordinary user edits.
+ * @param target - Existing repository directory to inspect.
+ * @remarks Every manifest path is revalidated before a hash is read. This
+ * makes verification safe even when a manifest has been edited by hand.
  */
 export function verify(target: string) {
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory())
@@ -47,7 +50,13 @@ export function verify(target: string) {
   }
 }
 
-/** Reports an unmanaged directory without treating normal absence as damage. */
+/**
+ * Reports global runtime state and optionally verifies a managed repository.
+ *
+ * @param target - Directory to inspect, normally the current working directory.
+ * @returns `0` for an unmanaged directory or a healthy install; otherwise the
+ * verification failure code. Normal absence is information, not damage.
+ */
 export function doctor(target: string) {
   const home = process.env.AGENT_DISTRO_HOME
     ? path.resolve(process.env.AGENT_DISTRO_HOME)
@@ -73,6 +82,10 @@ export function doctor(target: string) {
  *
  * This command intentionally avoids throwing for malformed ownership metadata
  * so it remains usable when normal verification cannot explain a failure.
+ *
+ * @param target - Directory whose state should be represented without paths.
+ * @returns Always `0` after writing exactly one JSON line to stdout.
+ * @remarks The snapshot omits absolute paths and never mutates target state.
  */
 export function diagnostics(target: string) {
   // Diagnostics are intentionally read-only and resilient: this is the escape

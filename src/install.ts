@@ -124,6 +124,9 @@ export function readManagedSelection(target: string): ManagedSelection | undefin
  *
  * Arrays intentionally are not records: replacing or concatenating arrays is
  * policy-sensitive, so they may only agree exactly under the current rule.
+ *
+ * @param value - Value being tested.
+ * @returns Whether `value` is a non-array object record.
  */
 function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -131,6 +134,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * Recursively merges two JSON values without mutating either input.
+ *
+ * @param left - Earlier provider value.
+ * @param right - Later provider value.
  *
  * @returns The shared value, a new merged object, or `undefined` when two
  * providers make incompatible declarations at the same key.
@@ -156,6 +162,9 @@ type Contribution = CatalogAsset & { content: Buffer };
  *
  * Catalogs and manifests always use `/`; all local filesystem maps use the
  * native separator. Centralising this boundary prevents Windows map-key drift.
+ *
+ * @param relative - Portable catalog or manifest path.
+ * @returns Native-separator path suitable for local map keys.
  */
 function nativePath(relative: string) {
   return relative.split("/").join(path.sep);
@@ -163,6 +172,9 @@ function nativePath(relative: string) {
 
 /**
  * Converts a local filesystem map key back into its portable manifest form.
+ *
+ * @param relative - Native-separator local map key.
+ * @returns Portable slash-separated path for a manifest.
  */
 function manifestPath(relative: string) {
   return relative.split(path.sep).join("/");
@@ -170,6 +182,9 @@ function manifestPath(relative: string) {
 
 /**
  * Computes the ownership hash recorded in the manifest for a managed file.
+ *
+ * @param content - Final managed file bytes.
+ * @returns SHA-256 digest used for later drift detection.
  */
 function contentHash(content: Buffer) {
   return crypto.createHash("sha256").update(content).digest("hex");
@@ -177,6 +192,9 @@ function contentHash(content: Buffer) {
 
 /**
  * Groups providers by their final managed target while preserving catalog order.
+ *
+ * @param providers - Catalog providers or enriched contributions.
+ * @returns Providers indexed by their portable target path.
  */
 function providersByTarget<T extends CatalogAsset>(providers: T[]) {
   return providers.reduce((groups, provider) => {
@@ -188,6 +206,10 @@ function providersByTarget<T extends CatalogAsset>(providers: T[]) {
 /**
  * Removes content from provider details before they cross an interactive or
  * programmatic conflict boundary.
+ *
+ * @param target - Shared managed target requiring a choice.
+ * @param providers - Providers contributing to that target.
+ * @returns Content-free conflict metadata safe for display.
  */
 function describeConflict(target: string, providers: CatalogAsset[]): ProviderConflict {
   return {
@@ -202,6 +224,9 @@ function describeConflict(target: string, providers: CatalogAsset[]): ProviderCo
  * Source path validation is repeated here at the filesystem boundary even
  * though catalog loading validates it, because package contents are untrusted
  * at runtime after installation.
+ *
+ * @param entry - Validated catalog provider to read from the package.
+ * @returns Provider enriched with its packaged bytes.
  */
 function readContribution(entry: CatalogAsset): Contribution {
   return { ...entry, content: fs.readFileSync(path.join(assets, ...manifestParts(entry.path))) };
@@ -209,6 +234,8 @@ function readContribution(entry: CatalogAsset): Contribution {
 
 /**
  * Merges a group of JSON contributions into one UTF-8 JSON file.
+ *
+ * @param providers - JSON providers targeting the same managed file.
  *
  * @returns A serialised JSON buffer, or `undefined` when parsing fails or any
  * nested value disagrees. The caller then requires a provider choice.
@@ -248,6 +275,10 @@ export function providerConflicts(entries: CatalogAsset[]): ProviderConflict[] {
  * compatible JSON objects merge; `force` intentionally selects the final
  * catalog provider only after the caller explicitly opts into replacement.
  *
+ * @param entries - Selected catalog providers.
+ * @param choices - Explicit provider source path by target.
+ * @param force - Whether the final provider may replace an unresolved conflict.
+ * @returns Final content indexed by portable target path.
  * @throws {Error} When an unmergeable target has no valid choice and force is
  * absent, before any target state is mutated.
  */
@@ -288,6 +319,9 @@ function resolveContributions(entries: CatalogAsset[], choices: Record<string, s
  *
  * The record intentionally contains managed relative paths only, making it
  * safe to inspect or commit without disclosing a user's machine-specific root.
+ *
+ * @param files - Portable managed paths displaced by this transaction.
+ * @returns Markdown inventory for the archive directory.
  */
 function archiveRecord(files: string[]) {
   return `# Agent Distro archive\n\nArchived ${new Date().toISOString()} during an install or update.\n\n${files
@@ -300,6 +334,9 @@ function archiveRecord(files: string[]) {
  *
  * Keeping it below `.agent-distro/` makes an interrupted operation recoverable
  * on another terminal without relying on process memory or global state.
+ *
+ * @param destination - Canonical target repository directory.
+ * @returns Absolute path to the target's recovery journal.
  */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
@@ -435,11 +472,9 @@ export function install(
   ).concat("\n");
   contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
 
-  // Phase 3: validate every output and archive path before staging. The
-  // installer never follows a symlinked ancestor, even for a valid manifest
-  // path, because the ancestor could redirect a write outside this repository.
   // Never traverse a symlinked ancestor: even a valid relative path could then
-  // write outside the explicitly chosen target.
+  // write outside the explicitly chosen target. Validate every output and
+  // archive path before staging so later phases cannot escape this repository.
   const unsafe = managedFiles.filter((relative) => hasSymlinkAncestor(destination, relative));
   if (unsafe.length)
     return fail("AGENT_DISTRO_E_DESTINATION_UNSAFE", `Refusing symlinked managed paths: ${unsafe.join(", ")}`);

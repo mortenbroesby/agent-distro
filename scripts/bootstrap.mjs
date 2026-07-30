@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// Creates a managed checkout, then installs the same packed global CLI users receive.
+/**
+ * Creates a managed checkout, packages it, and installs the same global CLI
+ * that a consumer receives from npm. Keeping this path package-based proves
+ * the published boundary instead of running TypeScript directly from a clone.
+ */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -23,20 +27,41 @@ let home = process.env.AGENT_DISTRO_HOME
   : path.join(os.homedir(), ".agent-distro");
 let doctorTarget;
 
+/** Prints the supported bootstrap invocation without mutating local state. */
 function usage() {
   console.error("Usage: bin/agent-distro bootstrap [--home <directory>] [--doctor [target]]");
 }
 
+/**
+ * Runs a child process with the sanitized bootstrap environment.
+ *
+ * @param {string} command - Executable path or command name.
+ * @param {string[]} commandArgs - Arguments passed without shell interpolation.
+ * @param {import("node:child_process").SpawnSyncOptions} [options] - Process options such as `cwd`.
+ * @returns {import("node:child_process").SpawnSyncReturns<Buffer>} The completed process result.
+ */
 function run(command, commandArgs, options = {}) {
   const result = spawnSync(command, commandArgs, { env: environment, stdio: "inherit", ...options });
   if (result.error) console.error(result.error.message);
   return result;
 }
 
+/**
+ * Runs npm without depending on a Windows command shim.
+ *
+ * @param {string[]} commandArgs - npm arguments.
+ * @param {import("node:child_process").SpawnSyncOptions} [options] - Process options such as `cwd`.
+ * @returns {import("node:child_process").SpawnSyncReturns<Buffer>} The completed npm process result.
+ */
 function runNpm(commandArgs, options = {}) {
   return run(npmCli ? process.execPath : "npm", npmCli ? [npmCli, ...commandArgs] : commandArgs, options);
 }
 
+/**
+ * Parses the intentionally small bootstrap argument surface.
+ *
+ * @returns {boolean} Whether the arguments are valid and the module state was updated.
+ */
 function parseArgs() {
   const values = args[0] === "bootstrap" ? args.slice(1) : args;
   for (let index = 0; index < values.length; index += 1) {
@@ -52,6 +77,12 @@ function parseArgs() {
   return true;
 }
 
+/**
+ * Resolves or creates the managed checkout below the configured Agent Distro home.
+ *
+ * @returns {string} Absolute path to the usable managed checkout.
+ * @throws {Error} When an existing managed path is not a directory or cloning fails.
+ */
 function managedRoot() {
   const destination = path.join(home, "repo");
   if (fs.existsSync(destination)) {
@@ -64,6 +95,11 @@ function managedRoot() {
   return destination;
 }
 
+/**
+ * Builds, packs, globally installs, and smoke-runs Agent Distro.
+ *
+ * @returns {number} A process exit code; failures are reported at their user-facing boundary.
+ */
 function main() {
   if (!parseArgs()) return 1;
   if (!((major === 22 && minor >= 18) || (major >= 24 && major < 27 && (major > 24 || minor >= 11)))) {
@@ -86,6 +122,8 @@ function main() {
     // Do not replace an active checkout's dependencies: a running test or
     // editor can hold native build tooling open on Windows. A fresh checkout
     // still receives its locked dependencies before packaging.
+    // Install only when the checkout lacks its build tool; an existing managed
+    // checkout keeps its dependency tree intact for active local development.
     if (!fs.existsSync(buildTool) && runNpm(["ci"], { cwd: root }).status !== 0) return 1;
     const packed = runNpm(["pack", "--json", "--silent", "--pack-destination", temporary], {
       cwd: root,
@@ -111,6 +149,8 @@ function main() {
       console.error("npm pack returned an invalid archive path.");
       return 1;
     }
+    // Install the exact archive just built, avoiding a registry lookup or an
+    // accidental dependency lifecycle script during bootstrap.
     if (runNpm(["install", "--global", "--force", "--ignore-scripts", archive]).status !== 0) return 1;
 
     const globalRoot = runNpm(["root", "--global"], {

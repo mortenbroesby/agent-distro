@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const skillsRoot = path.join(root, ".agents", "skills");
 
-/** Returns the sorted skill IDs that have a repository-local workflow file. */
+/**
+ * Returns sorted skill IDs that have a repository-local workflow file.
+ *
+ * @returns {string[]} Skill directory names that contain `SKILL.md`.
+ */
 function localSkillNames() {
   return fs
     .readdirSync(skillsRoot, { withFileTypes: true })
@@ -17,7 +21,13 @@ function localSkillNames() {
     .sort();
 }
 
-/** Extracts the code-formatted skill IDs from a documented table or bullet list. */
+/**
+ * Extracts code-formatted skill IDs from a documented table or bullet list.
+ *
+ * @param {string} text - Documentation content to inspect.
+ * @param {RegExp} expression - Global expression whose first group is a skill ID.
+ * @returns {string[]} Sorted documented skill IDs.
+ */
 function documentedSkillNames(text, expression) {
   return [...text.matchAll(expression)].map((match) => match[1]).sort();
 }

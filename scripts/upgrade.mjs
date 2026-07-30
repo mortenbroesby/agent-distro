@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// Updates the managed checkout, then lets bootstrap repack and reinstall it.
+/**
+ * Updates the managed checkout, then delegates packaging and global install to
+ * bootstrap. `upgrade` changes Agent Distro itself; `install` updates assets in
+ * a user-selected repository.
+ */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -29,6 +33,8 @@ else if (args.length !== 0) {
         : spawnSync("git", ["-C", root, "merge", "--ff-only", "FETCH_HEAD"], { stdio: "inherit" });
     if (!merge || merge.error || merge.status !== 0) process.exitCode = 1;
     else {
+      // Reuse bootstrap so upgrade and first-time setup share the exact packed
+      // artifact, global-install, and smoke-check behavior.
       const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
       const result = spawnSync(process.execPath, [bootstrap, "--home", home], { stdio: "inherit" });
       if (result.error || result.status !== 0) process.exitCode = 1;

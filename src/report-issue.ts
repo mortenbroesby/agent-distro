@@ -8,6 +8,9 @@ const issueUrl = "https://github.com/mortenbroesby/agent-distro/issues/new";
  *
  * Every caller-provided value is sanitized so users retain final control over
  * the report and do not accidentally publish credentials or local paths.
+ *
+ * @param input - Failure context collected locally from the command boundary.
+ * @returns A GitHub URL only; it does not send data or start a browser.
  */
 export function createIssueUrl({
   message,
@@ -33,6 +36,7 @@ export function createIssueUrl({
 /**
  * Validates explicit consent and prints the locally generated issue URL.
  *
+ * @param input - Explicit user consent and sanitized-report context.
  * @returns A CLI exit code; no network request or browser launch occurs.
  */
 export function reportIssue({
