@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import envPaths from "env-paths";
 import { fileURLToPath } from "node:url";
 
 const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,9 +23,12 @@ const [major] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
+const legacyHome = path.join(os.homedir(), ".agent-distro");
 let home = process.env.AGENT_DISTRO_HOME
   ? path.resolve(process.env.AGENT_DISTRO_HOME)
-  : path.join(os.homedir(), ".agent-distro");
+  : fs.existsSync(path.join(legacyHome, "repo"))
+    ? legacyHome
+    : envPaths("agent-distro", { suffix: "" }).data;
 let doctorTarget;
 
 /** Prints the supported bootstrap invocation without mutating local state. */

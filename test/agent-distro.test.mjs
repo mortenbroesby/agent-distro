@@ -118,9 +118,10 @@ describe("agent-distro install", () => {
   it("groups verification and diagnostics under doctor", () => {
     const destination = target();
     run(destination);
-    expect(command("doctor", destination)).toMatch(/Global CLI:.*\nVerified/);
+    expect(command("doctor", destination)).toMatch(/Global CLI:.*\nTools:.*\nVerified/);
     expect(JSON.parse(command("doctor", "--diagnostics", destination))).toMatchObject({
       target: { exists: true, directory: true },
+      tools: { git: expect.any(Boolean), gh: expect.any(Boolean), copilot: expect.any(Boolean) },
     });
     expect(JSON.parse(command("doctor", "--json", destination))).toMatchObject({
       global: { managedCheckout: expect.any(Boolean) },

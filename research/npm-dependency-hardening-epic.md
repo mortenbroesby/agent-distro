@@ -38,10 +38,10 @@ if npm becomes an approved artifact-distribution channel.
 
 ## Story 2 — Prevent concurrent mutation
 
-- [ ] Add a focused `proper-lockfile` spike for exact target and managed-global
-  state paths.
-- [ ] Use bounded acquisition and `finally`-based release; stale-lock recovery
-  must be explicit and visible to the user.
+- [x] Add `proper-lockfile` for exact target-installation paths.
+- [x] Use bounded acquisition and `finally`-based release; contention reports
+  an actionable error without mutating managed files.
+- [ ] Lock the managed global checkout during bootstrap and upgrade.
 - [ ] Prove competing installs, update versus install, interruption, and lock
   cleanup on macOS and Windows.
 - [ ] Do not introduce a process-wide/global lock or lock individual files.

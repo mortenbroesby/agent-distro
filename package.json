@@ -28,9 +28,16 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "commander": "^14.0.3"
+    "commander": "^14.0.3",
+    "env-paths": "4.0.0",
+    "proper-lockfile": "4.1.2",
+    "semver": "7.8.5",
+    "which": "7.0.0"
   },
   "devDependencies": {
+    "@types/proper-lockfile": "4.1.4",
+    "@types/semver": "7.7.1",
+    "@types/which": "3.0.4",
     "execa": "^9.6.1",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",

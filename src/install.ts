@@ -2,9 +2,12 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { lockSync } from "proper-lockfile";
+import { valid } from "semver";
 import { assetChoices, catalog, profileChoices, selectedCatalogEntries, type CatalogAsset } from "./catalog.js";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
+import { version } from "./package.js";
 
 /** The installer owns only these intentionally bare Copilot-compatible assets. */
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
@@ -53,6 +56,7 @@ export type ManagedSelection = { stacks: string[]; profiles: string[]; assets: s
 
 type ManagedManifest = {
   version: 1 | 2;
+  agentDistroVersion?: string;
   files: string[];
   hashes?: Record<string, string>;
   selection?: ManagedSelection;
@@ -72,6 +76,11 @@ function readManagedManifest(target: string): ManagedManifest | undefined {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   if (manifest.tool !== "agent-distro" || ![1, 2].includes(manifest.version) || !Array.isArray(manifest.files))
     throw new Error("invalid manifest");
+  if (
+    manifest.agentDistroVersion !== undefined &&
+    (typeof manifest.agentDistroVersion !== "string" || !valid(manifest.agentDistroVersion))
+  )
+    throw new Error("invalid manifest");
   const files = manifest.files.map((file: unknown) => manifestParts(file).join("/"));
   const hashes =
     manifest.hashes && typeof manifest.hashes === "object"
@@ -90,7 +99,7 @@ function readManagedManifest(target: string): ManagedManifest | undefined {
       )
     )
       throw new Error("invalid manifest");
-    return { version: 2, files, hashes, selection };
+    return { version: 2, agentDistroVersion: manifest.agentDistroVersion, files, hashes, selection };
   }
   return { version: 1, files, hashes };
 }
@@ -408,7 +417,7 @@ export function recover(target: string) {
  * first visible target mutation. A later filesystem failure rolls back every
  * rename recorded by the durable journal.
  */
-export function install(
+function installUnlocked(
   target: string,
   {
     force = false,
@@ -460,6 +469,7 @@ export function install(
     {
       tool: "agent-distro",
       version: 2,
+      agentDistroVersion: version,
       catalogVersion: catalog.version,
       selection,
       files: sourceFiles.map(manifestPath),
@@ -613,4 +623,48 @@ export function install(
   }
   onStep?.("Finalized installation.");
   return 0;
+}
+
+/**
+ * Runs one installation while holding an advisory lock for its exact target.
+ *
+ * The initial selection is resolved before a new directory is created, so an
+ * invalid request remains side-effect free. The lock is removed in `finally`
+ * regardless of transaction success or failure.
+ *
+ * @param target - Existing or new directory that receives managed assets.
+ * @param options - Explicit selection and replacement policy for this run.
+ * @returns `0` on success (including dry-run/no-op) or `1` after a safe error.
+ */
+export function install(target: string, options: InstallOptions = {}) {
+  if (options.dryRun) return installUnlocked(target, options);
+  try {
+    resolveContributions(
+      selectedCatalogEntries(options.selected ?? [], options.profiles ?? []),
+      options.providerChoices ?? {},
+      options.force ?? false,
+    );
+  } catch (error) {
+    return fail("AGENT_DISTRO_E_CONFLICT", error instanceof Error ? error.message : String(error));
+  }
+  if (fs.existsSync(target) && !fs.statSync(target).isDirectory())
+    return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
+  const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
+  if (!fs.existsSync(destination)) fs.mkdirSync(destination, { recursive: true });
+  let release: () => void;
+  try {
+    release = lockSync(destination, {
+      realpath: false,
+      stale: 30_000,
+      update: 10_000,
+      retries: { retries: 3, factor: 1.5, minTimeout: 100, maxTimeout: 500 },
+    });
+  } catch {
+    return fail("AGENT_DISTRO_E_LOCKED", "target installation is locked");
+  }
+  try {
+    return installUnlocked(destination, options);
+  } finally {
+    release();
+  }
 }

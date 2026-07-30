@@ -2,8 +2,9 @@
 
 ## Status
 
-Implemented for the Node 22+ baseline and dependency-admission policy. npm
-artifact distribution is explicitly out of scope, so every npm-package resolver
+Implemented for the Node 22+ baseline, dependency-admission policy, and the
+first focused cross-platform state-hardening increment. npm artifact
+distribution is explicitly out of scope, so every npm-package resolver
 candidate remains deferred.
 
 ## Decision
@@ -50,9 +51,8 @@ vulnerabilities: 0 critical, high, moderate, low, and informational findings.
 | `oxfmt` | `0.61.0`, dev-only formatter | 35.9M monthly downloads; current release is `0.61.0` (2026-07-27) | Keep, but monitor as a pre-1.0 native-binding tool. |
 | `oxlint` | `1.76.0`, dev-only linter | 49.7M monthly downloads; current release is `1.76.0` (2026-07-27) | Keep. It is stable-major and already current. |
 
-The locked graph contains 8 production, 203 development, and 111 optional
-dependencies (210 total). Direct packages have registry URLs and integrity
-hashes. None of the seven direct packages declares an install script. Oxfmt and
+The committed lockfile pins every registry tarball with integrity metadata.
+None of the direct runtime packages declares an install script. Oxfmt and
 Oxlint deliberately resolve platform-specific optional native bindings; the
 existing macOS and Windows CI lanes are the correct protection for that boundary.
 
@@ -85,14 +85,14 @@ it or its companion resolver packages until that product decision changes.
 | `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Defer. No npm package specs are accepted. |
 | `npm-registry-fetch` | Mainstream npm registry client | Defer. No registry feature exists. |
 | `@npmcli/arborist` | 5.8M weekly downloads; 599 KB published unpacked; npm-maintained | Defer. No local/Git artifact-package workflow exists. |
-| `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
+| `semver` | 3.396B monthly downloads; Node >=10 | Adopted. Validates the package version and each newly written manifest records that SemVer value. |
 
 ## Cross-platform operations and state candidates
 
 | Candidate | Current evidence | Decision |
 | --- | --- | --- |
-| `proper-lockfile` | 79.2M monthly downloads; small lock/retry dependency graph | Approved for a focused concurrency spike. Lock the exact target installation and managed global state, release in `finally`, use a bounded wait, and prove competing processes cannot interleave. Do not introduce a global lock. |
-| `env-paths` | 347.9M monthly downloads; Node >=20 | Defer. It is the preferred choice if a new cache/config/log location is introduced, but it must not silently migrate the deliberate `~/.agent-distro/repo` managed-checkout contract. |
+| `proper-lockfile` | 79.2M monthly downloads; small lock/retry dependency graph | Adopted for the exact target installation. It has bounded retries and releases in `finally`; locking the managed global checkout remains a separate follow-up. |
+| `env-paths` | 347.9M monthly downloads; Node >=20 | Adopted for new managed-checkout locations. `AGENT_DISTRO_HOME` remains authoritative and an existing `~/.agent-distro/repo` checkout remains in place. |
 | `fast-glob` | 596.2M monthly downloads | Defer. Artifact manifests should be authoritative. Add only when the manifest deliberately supports glob patterns or discovery across multiple roots. |
 | `write-file-atomic` | 387.2M monthly downloads; current v8 matches the new Node runtime contract | Do not add now. The installer already stages every visible replacement and journals multi-file rollback; a single-file helper would not replace that transaction. Reconsider only after a demonstrated journal-write corruption case. |
 | `tempy`, `cpy`, `rimraf` | `fs.mkdtemp`, `fs.cp`, and `fs.rm` cover the current use | Do not add. |
@@ -105,7 +105,7 @@ it or its companion resolver packages until that product decision changes.
 | `ink` / `@inkjs/ui` | Ink has 18.6M monthly downloads and requires Node >=22 | Do not add. A persistent full-screen application is outside the installation-wizard scope; Node compatibility is no longer the deciding concern. |
 | `oclif` | 1.4M monthly downloads | Do not add. Commander and the npm global package meet the current command and update needs; evaluate only for a deliberate standalone-binary/plugin-platform migration. |
 | `execa` | Already present as a dev-only test dependency | Keep runtime bootstrap on Node child-process APIs. Add a small process helper backed by Execa only when several production integrations need cancellation, timeouts, and structured errors; do not add a wrapper for the current few calls. |
-| `which` | 1.303B monthly downloads; newest v7 matches the new Node runtime contract | Defer until `doctor` actually probes Git, GitHub CLI, or Copilot CLI. Use the current major and test Windows PATH behavior. |
+| `which` | 1.303B monthly downloads; newest v7 matches the new Node runtime contract | Adopted by `doctor` to report Git, GitHub CLI, and Copilot CLI discovery with Windows-safe PATH handling. |
 | `open` | 486.7M monthly downloads; Node >=20 | Defer. The current report command prints a reviewable URL; adopt only for an explicit, consented `--open` action and validate the destination before opening it. |
 
 ## Supply-chain hardening gap
