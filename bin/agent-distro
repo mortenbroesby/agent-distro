@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+// Source-checkout entrypoint: bootstrap works before dependencies or dist exist.
+if (process.argv[2] === "bootstrap") await import("../scripts/bootstrap.mjs");
+else await import("./agent-distro.mjs");

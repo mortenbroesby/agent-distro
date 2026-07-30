@@ -28,13 +28,15 @@ const bootstrapAsNode = (version) =>
 test("bootstraps the packed global binary without installing assets", async ({ repository }) => {
   const prefix = repository.plain("global prefix");
   const target = repository.plain("bootstrap cwd");
+  const home = repository.plain("managed home");
   const bootstrapped = await execa(process.execPath, [bootstrap], {
     cwd: target,
-    env: { ...process.env, NPM_CONFIG_PREFIX: prefix },
+    env: { ...process.env, AGENT_DISTRO_HOME: home, NPM_CONFIG_PREFIX: prefix },
   });
   const executable = path.join(prefix, process.platform === "win32" ? "agent-distro.cmd" : "bin/agent-distro");
   expect(bootstrapped.stdout).toContain("Usage: agent-distro");
   expect(fs.readdirSync(target)).toEqual([]);
+  expect(fs.existsSync(path.join(home, "repo", ".git"))).toBe(true);
   expect(fs.existsSync(executable)).toBe(true);
   expect((await execa(executable, ["--version"])).stdout).toBe("0.0.0");
 
@@ -43,7 +45,7 @@ test("bootstraps the packed global binary without installing assets", async ({ r
   const manifest = fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"));
   const diagnosed = await execa(process.execPath, [bootstrap, "--doctor", doctorTarget], {
     cwd: target,
-    env: { ...process.env, NPM_CONFIG_PREFIX: prefix },
+    env: { ...process.env, AGENT_DISTRO_HOME: home, NPM_CONFIG_PREFIX: prefix },
   });
   expect(diagnosed.stdout).toContain("Verified 1 assets");
   expect(fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"))).toEqual(manifest);
