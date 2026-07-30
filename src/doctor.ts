@@ -20,7 +20,7 @@ export function verify(target: string) {
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro", "manifest.json"), "utf8"));
     if (
       manifest.tool !== "agent-distro" ||
-      manifest.version !== 1 ||
+      ![1, 2].includes(manifest.version) ||
       typeof manifest.catalogVersion !== "string" ||
       !Array.isArray(manifest.files)
     )
@@ -71,7 +71,7 @@ export function diagnostics(target: string) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
           snapshot.manifest.valid =
             manifest.tool === "agent-distro" &&
-            manifest.version === 1 &&
+            [1, 2].includes(manifest.version) &&
             typeof manifest.catalogVersion === "string" &&
             Array.isArray(manifest.files);
           snapshot.manifest.assetCount = Array.isArray(manifest.files) ? manifest.files.length : 0;

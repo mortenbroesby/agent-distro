@@ -31,6 +31,33 @@ export type InstallOptions = {
   onStep?: InstallProgress;
 };
 
+export type ManagedSelection = { stacks: string[]; profiles: string[]; assets: string[] };
+
+/** Reads current or legacy ownership metadata without trusting its paths. */
+export function readManagedSelection(target: string): ManagedSelection | undefined {
+  const manifestPath = path.join(target, ".agent-distro", "manifest.json");
+  if (!fs.existsSync(manifestPath)) return undefined;
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  if (manifest.tool !== "agent-distro" || ![1, 2].includes(manifest.version) || !Array.isArray(manifest.files))
+    throw new Error("invalid manifest");
+  const assets = manifest.files.map((file: unknown) => manifestParts(file).join("/"));
+  if (manifest.version === 2) {
+    const selection = manifest.selection;
+    if (
+      !selection ||
+      ![selection.stacks, selection.profiles, selection.assets].every(
+        (values) => Array.isArray(values) && values.every((value) => typeof value === "string"),
+      )
+    )
+      throw new Error("invalid manifest");
+    return selection;
+  }
+  const stacks = [
+    ...new Set(assets.map((file) => catalog.assets.find((asset) => asset.path === file)?.stack).filter(Boolean)),
+  ];
+  return { stacks, profiles: [], assets };
+}
+
 /** Stores transaction state under the target so recovery never needs global state. */
 function recoveryPath(destination: string) {
   return path.join(destination, ".agent-distro", recoveryFile);
@@ -101,12 +128,22 @@ export function install(
   if (fs.existsSync(recoveryPath(destination)))
     return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
   const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
+  const selection = {
+    stacks: [
+      ...new Set(
+        sourceFiles.map((file) => catalog.assets.find((asset) => asset.path === file.split(path.sep).join("/"))?.stack),
+      ),
+    ],
+    profiles: [...new Set(profiles)],
+    assets: [...new Set(selected)],
+  };
   const outputFiles = [...sourceFiles, ".agent-distro/manifest.json"];
   const manifest = JSON.stringify(
     {
       tool: "agent-distro",
-      version: 1,
+      version: 2,
       catalogVersion: catalog.version,
+      selection,
       files: sourceFiles.map((relative) => relative.split(path.sep).join("/")),
       hashes: Object.fromEntries(
         sourceFiles.map((relative) => [

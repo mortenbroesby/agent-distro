@@ -235,6 +235,7 @@ describe("agent-distro install", () => {
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
     expect(manifest).toMatchObject({ catalogVersion: expect.stringMatching(/^sha256-/) });
+    expect(manifest).toMatchObject({ version: 2, selection: { stacks: ["common"], profiles: ["debugging"] } });
     expect(manifest.files).toEqual([
       ".mcp.json",
       ".github/agents/debugging.agent.md",
