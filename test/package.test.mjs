@@ -50,6 +50,7 @@ test("bootstraps the packed global binary without installing assets", async ({ r
   expect(diagnosed.stdout).toContain("Verified 1 assets");
   expect(fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"))).toEqual(manifest);
   expect(fs.readdirSync(target)).toEqual([]);
+  await execa(executable, ["upgrade"], { env: { ...process.env, AGENT_DISTRO_HOME: home, NPM_CONFIG_PREFIX: prefix } });
 }, 60_000);
 
 test("cleans its temporary package after a failed global install", async ({ repository }) => {
