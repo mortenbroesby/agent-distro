@@ -15,7 +15,7 @@
     "assets:generate": "node scripts/generate-catalog.mjs",
     "assets:check": "node scripts/generate-catalog.mjs --check",
     "agents:check": "node scripts/check-agent-surface.mjs",
-    "build": "npm run assets:generate && tsdown src/agent-distro.ts --format esm --target node20.12 --out-dir dist --copy assets",
+    "build": "npm run assets:generate && tsdown src/agent-distro.ts --format esm --target node22 --out-dir dist --copy assets",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
@@ -38,6 +38,6 @@
     "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=20.12.0 <27"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0 <27"
   }
 }

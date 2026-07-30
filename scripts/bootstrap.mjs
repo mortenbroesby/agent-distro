@@ -18,7 +18,7 @@ const npmCli =
     ? (process.env.npm_execpath ??
       path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"))
     : undefined;
-const [major, minor] = process.versions.node.split(".").map(Number);
+const [major, minor, patch] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
@@ -102,9 +102,15 @@ function managedRoot() {
  */
 function main() {
   if (!parseArgs()) return 1;
-  if (!((major === 22 && minor >= 18) || (major >= 24 && major < 27 && (major > 24 || minor >= 11)))) {
+  if (
+    !(
+      (major === 22 && (minor > 22 || (minor === 22 && patch >= 2))) ||
+      (major === 24 && (minor > 15 || (minor === 15 && patch >= 0))) ||
+      (major >= 26 && major < 27)
+    )
+  ) {
     console.error(
-      "Building Agent Distro from this checkout requires Node ^22.18.0 or >=24.11.0 <27 (tsdown build requirement). The packed CLI supports Node >=20.12.0 <27.",
+      "Agent Distro requires Node ^22.22.2 || ^24.15.0 || >=26.0.0 <27. Upgrade Node before bootstrapping.",
     );
     return 1;
   }
