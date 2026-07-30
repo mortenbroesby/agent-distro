@@ -135,3 +135,11 @@ reports the repository's `.asdlc/` state.
 of one doctor report. The report must make it clear when the current directory
 is not an ASDLC-managed repository, but that condition still exits
 successfully.
+
+## 15. Programmatic doctor
+
+**Decision:** `asdlc doctor --json` emits a stable, path-safe machine-readable
+report alongside the normal human-readable doctor output.
+
+**Implication:** The JSON contract is read-only and safe for scripts and CI;
+it must not expose repository contents, secrets, or absolute paths.
