@@ -15,10 +15,6 @@ request, committed lockfile, and completed macOS/Windows verification for that
 PR head. A dependency replacement requires a demonstrated production gap and
 must remove more risk or code than it introduces.
 
-First artifact-source milestone: [PR #43](https://github.com/mortenbroesby/agent-distro/pull/43),
-exact head `e8ebd3020492b330dfeadff95f1c59e0489cb645`, passed macOS,
-Windows, and every supported packed-runtime lane.
-
 ## Story 0 — Raise the runtime floor
 
 - [x] Change the package, bootstrap, and contributor runtime contract to Node
@@ -34,31 +30,12 @@ Acceptance: Agent Distro has one tested Node 22+ baseline, and its declared
 range admits the latest maintained npm resolver tooling without accepting an
 unsupported early Node release.
 
-## Story 1 — Resolve external artifact packages safely
+## Decision — npm artifact distribution
 
-- [x] Define the artifact package contract: `package.json`,
-  `agent-distro.manifest.json`, and type-specific content roots.
-- [x] Complete Story 0 before adding current `pacote`.
-- [x] Add one internal npm-backed artifact-source module for resolution,
-  manifest inspection, and extraction; do not expose a public abstraction until
-  a second source exists.
-- [x] Extract into a controlled temporary directory, never `node_modules`, and
-  reject package lifecycle scripts and executable behavior.
-- [x] Prove registry package, tag, and tarball handling; assert integrity
-  metadata, content-root containment, and no-script behavior on macOS and
-  Windows.
-- [x] Reject Git and local-directory specs before Pacote is called. Revisit them
-  only through a focused `@npmcli/arborist` security and cost spike.
-- [x] Defer direct `npm-package-arg`, `npm-registry-fetch`, and `semver` unless
-  their separate triggers in the spike are met.
-- [ ] Add cancellation and target compatibility only when the installation engine
-  accepts an external artifact for a selected renderer; no current caller can
-  exercise either contract safely.
-
-Acceptance: artifact packages are inspectable inert content containers with no
-implicit execution or package-manager mutation, with packed cross-platform
-proof on every supported Node lane. Renderer-specific compatibility and
-cancellation remain deliberately deferred until their product triggers exist.
+Agent Distro does not distribute artifacts through npm packages. Therefore
+`pacote`, `npm-package-arg`, `npm-registry-fetch`, `@npmcli/arborist`, and the
+associated resolver are intentionally out of scope. Reopen this decision only
+if npm becomes an approved artifact-distribution channel.
 
 ## Story 2 — Prevent concurrent mutation
 

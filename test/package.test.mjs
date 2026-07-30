@@ -76,7 +76,7 @@ test("bootstraps the packed global binary without installing assets", async ({ r
   expect(fs.readFileSync(path.join(doctorTarget, ".agent-distro", "manifest.json"))).toEqual(manifest);
   expect(fs.readdirSync(target)).toEqual([]);
   await execa(executable, ["upgrade"], { env: { ...process.env, AGENT_DISTRO_HOME: home, NPM_CONFIG_PREFIX: prefix } });
-}, 180_000);
+}, 60_000);
 
 test("cleans its temporary package after a failed global install", async ({ repository }) => {
   const temporary = repository.plain("bootstrap temp");
@@ -94,7 +94,7 @@ test("cleans its temporary package after a failed global install", async ({ repo
   });
   expect(result.exitCode).toBe(1);
   expect(fs.readdirSync(temporary).filter((name) => name.startsWith("agent-distro-bootstrap-"))).toEqual([]);
-}, 180_000);
+}, 60_000);
 
 test("declares and builds for the lowest supported Node runtime", () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
@@ -139,11 +139,6 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   );
   const execute = (args, options) => execa(npm, ["exec", "--prefix", consumer, "--", "agent-distro", ...args], options);
   expect((await execute(["--version"])).stdout).toBe("0.0.0");
-  const library = await import(
-    pathToFileURL(path.join(consumer, "node_modules", "agent-distro", "dist", "agent-distro.mjs")).href
-  );
-  expect(typeof library.extractArtifact).toBe("function");
-
   // Spaces and Unicode make launcher and path handling failures visible on both
   // supported platforms without relying on a synthetic filesystem.
   const plain = repository.plain("target with spaces-å");
@@ -206,4 +201,4 @@ test("installs the packed npm binary into real repository shapes", async ({ repo
   expect(body).toContain("[redacted]");
   expect(body).toContain("[local-path]");
   expect(fs.readdirSync(reportDirectory)).toEqual(beforeReport);
-}, 180_000);
+}, 60_000);

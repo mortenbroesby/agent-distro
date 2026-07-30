@@ -2,9 +2,9 @@
 
 ## Status
 
-Implemented for the first artifact-source milestone on PR #43. The package,
-lockfile, Node baseline, and resolver changed only for that approved scope;
-every other candidate remains deferred until its documented trigger is met.
+Implemented for the Node 22+ baseline and dependency-admission policy. npm
+artifact distribution is explicitly out of scope, so every npm-package resolver
+candidate remains deferred.
 
 ## Decision
 
@@ -12,11 +12,9 @@ Keep the present dependency choices. They are mainstream, actively maintained,
 and narrowly used. Do not add a library merely to replace Node APIs or the
 installer's deliberately explicit transaction and path-safety logic.
 
-The first approved scope trigger is external artifact packages: a user selects
-an npm-style package specification and Agent Distro resolves it as content,
-outside `node_modules`. That feature warrants a dedicated package-resolution
-dependency spike. Concurrent installation is a separate safety trigger for a
-lockfile spike.
+External artifact packages are not an approved distribution channel. Do not add
+an npm-package resolver merely to preserve a hypothetical future option.
+Concurrent installation is a separate safety trigger for a lockfile spike.
 
 Agent Distro's runtime contract is Node
 `^22.22.2 || ^24.15.0 || >=26.0.0 <27`. This intentionally drops Node 20 and
@@ -47,16 +45,15 @@ vulnerabilities: 0 critical, high, moderate, low, and informational findings.
 | --- | --- | --- | --- |
 | `@clack/prompts` | `1.7.0`, runtime TUI adapter in `src/interactive-install.ts` | 67.0M monthly downloads; current stable release is `1.7.0` (2026-07-03) | Keep. It is the purpose-built terminal UX dependency and has no alpha version in the resolved graph. |
 | `commander` | `14.0.3`, runtime command parser in `src/cli.ts` and command registrars | 1.849B monthly downloads; latest is `15.0.0` (2026-05-29) | Keep; do not replace. Create a focused major-upgrade spike because the current range intentionally excludes 15. |
-| `pacote` | `22.0.0`, runtime artifact resolver in `src/artifact-source.ts` | 13.9M weekly / 54.2M monthly downloads; 80 KB published unpacked size; npm-maintained | Adopted for registry/tag/tarball artifacts only. It adds 93 locked packages; lifecycle scripts are disabled and artifact packages declaring lifecycle hooks are rejected. |
 | `execa` | `9.6.1`, dev-only test fixture process runner | 590.6M monthly downloads; latest is `10.0.0` (2026-07-17) | Keep; do not move runtime scripts to it. Consider a focused test-only major-upgrade spike. |
 | `tsdown` | `0.22.14`, dev-only ESM package build | 12.8M monthly downloads; `0.22.14` is the current stable release, while `0.23.0-beta.1` is a separate prerelease | Keep at the locked stable line. It is pre-1.0, so review minor upgrades as potentially breaking and require packed Windows/macOS proof. |
 | `vitest` | `4.1.10`, dev-only test runner | 334.2M monthly downloads; `4.1.10` is current stable, with a separate 5.0 beta line | Keep. No update or replacement is justified now. |
 | `oxfmt` | `0.61.0`, dev-only formatter | 35.9M monthly downloads; current release is `0.61.0` (2026-07-27) | Keep, but monitor as a pre-1.0 native-binding tool. |
 | `oxlint` | `1.76.0`, dev-only linter | 49.7M monthly downloads; current release is `1.76.0` (2026-07-27) | Keep. It is stable-major and already current. |
 
-The locked graph contains 101 production, 200 development, and 113 optional
-dependencies (302 total). Direct packages have registry URLs and integrity
-hashes. None of the eight direct packages declares an install lifecycle script. Oxfmt and
+The locked graph contains 8 production, 203 development, and 111 optional
+dependencies (210 total). Direct packages have registry URLs and integrity
+hashes. None of the seven direct packages declares an install script. Oxfmt and
 Oxlint deliberately resolve platform-specific optional native bindings; the
 existing macOS and Windows CI lanes are the correct protection for that boundary.
 
@@ -75,52 +72,20 @@ existing macOS and Windows CI lanes are the correct protection for that boundary
 
 ## Artifact-package distribution decision
 
-### `pacote`: approved only for the artifact-package milestone
+### npm artifact resolvers: rejected for the current product
 
-`pacote` is npm's package downloader and exposes the operations this product
-needs: manifest inspection and extraction of npm registry, tag, and tarball
-specifications. Its current adoption is strong (54.2M monthly downloads), and
-it is a better foundation than reproducing npm's package-spec, registry, cache,
-and integrity behavior.
-
-The resolver accepts an explicitly supplied registry for package and tag
-resolution. Its in-process test registry proves metadata resolution, tag
-selection, tarball extraction, and the SHA-512 integrity value returned to the
-caller without relying on a public registry during tests.
-
-Current `pacote@22` requires Node `^22.22.2 || ^24.15.0 || >=26`, matching the
-new runtime contract. Do not soften this contract to generic “Node 22+”: early
-22 releases still cannot run the current package. Pacote brings a substantial
-npm-internal dependency graph, including
-`npm-package-arg`, `npm-registry-fetch`, cache, tar, integrity, Git, and script
-helpers. The spike must prove that resolving and extracting an artifact never
-runs package lifecycle scripts or arbitrary package executables. The initial
-implementation passes `ignoreScripts: true`, rejects packages that declare a
-lifecycle script, and validates every extracted manifest path before a renderer
-can read it.
-
-Pacote's directory and Git fetchers need an `Arborist` constructor to build a
-tarball. Defer those source forms instead of adding that additional npm-internal
-tree now: reject them before Pacote is called, with an actionable message. A
-future dedicated spike may add `@npmcli/arborist` only after a cross-platform
-proof demonstrates its script-disabled behavior and its transitive cost is
-worth the local/Git authoring workflow.
-
-Keep the npm-specific implementation in one `artifact-source` module. Its
-single `extractArtifact` operation is exported for programmatic consumers; do
-not introduce a source interface or second resolver until another source
-genuinely exists.
-The installation engine continues to own the Agent Distro manifest, allowed
-artifact types, target rendering, preview, approval, conflict policy,
-ownership, rollback, and governance.
+`pacote` would be a strong technical choice for npm-distributed artifacts, but
+Agent Distro does not use npm as an artifact-distribution channel. Do not add
+it or its companion resolver packages until that product decision changes.
 
 ### Related distribution candidates
 
 | Candidate | Current evidence | Decision |
 | --- | --- | --- |
-| `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Do not add directly in the first pacote milestone: pacote already owns it. Add only if UI must classify a spec before a resolver call. |
-| `npm-registry-fetch` | Already transitive through current pacote | Defer. Use pacote unless a concrete authenticated registry/search feature needs lower-level control. |
-| `@npmcli/arborist` | 5.8M weekly downloads; 599 KB published unpacked size; npm-maintained | Defer. It is mainstream enough, but the first resolver has no current local/Git authoring requirement. Add only through a dedicated local/Git-source security spike. |
+| `pacote` | 13.9M weekly downloads; 80 KB published unpacked; npm-maintained | Defer. Npm is not an Agent Distro artifact channel. |
+| `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Defer. No npm package specs are accepted. |
+| `npm-registry-fetch` | Mainstream npm registry client | Defer. No registry feature exists. |
+| `@npmcli/arborist` | 5.8M weekly downloads; 599 KB published unpacked; npm-maintained | Defer. No local/Git artifact-package workflow exists. |
 | `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
 
 ## Cross-platform operations and state candidates
@@ -203,7 +168,6 @@ implementation. A smaller library without a current use case is still rejected.
 - [npm audit documentation](https://docs.npmjs.com/cli/v8/commands/npm-audit/)
 - [npm lockfile documentation](https://docs.npmjs.com/cli/v6/configuring-npm/package-lock-json/?v=true)
 - [npm install and lockfile behavior](https://docs.npmjs.com/cli/install/)
-- [pacote API](https://www.npmjs.com/package/pacote?activeTab=readme)
 - [tsdown documentation](https://tsdown.dev/guide/)
 - [Oxc project documentation](https://oxc.rs/)
 - Registry download endpoints, queried 2026-07-30: `https://api.npmjs.org/downloads/point/last-week/<package>` and `https://api.npmjs.org/downloads/point/last-month/<package>`
