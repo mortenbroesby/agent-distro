@@ -234,7 +234,7 @@ Run: git add .oxfmtrc.json .oxlintrc.json && git commit -m "chore: ignore pinned
 ### Task 6: Final verification and delivery
 
 **Files:**
-- Modify: docs/superpowers/plans/2026-07-29-cli-and-bootstrap-refactor.md
+- Modify: research/cli-and-bootstrap-refactor-plan.md
 
 **Interfaces:**
 - Consumes: all preceding task contracts.

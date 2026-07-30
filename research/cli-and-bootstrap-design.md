@@ -12,8 +12,8 @@ portable Node script, and receives a globally available `agent-distro` command.
 The bootstrap must install the packed artifact that users will actually run; it
 must not silently install assets into another repository.
 
-No npm publication, shell-specific scripts, `npm link`, new dependencies, or
-legacy ASTLC/ESTLC naming are introduced.
+No npm publication, shell-specific scripts, `npm link`, or new dependencies
+are introduced.
 
 ## Public commands
 
