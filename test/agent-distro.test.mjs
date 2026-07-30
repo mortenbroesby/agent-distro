@@ -51,7 +51,7 @@ describe("agent-distro install", () => {
     const commands = command("--help")
       .split("\n")
       .flatMap((line) => line.match(/^  ([a-z-]+)(?:\s|$)/)?.[1] ?? []);
-    expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "help"]);
+    expect(commands).toEqual(["doctor", "recover", "report-issue", "profiles", "install", "update", "help"]);
   });
 
   it("rejects an incomplete bootstrap doctor option", () => {
@@ -243,6 +243,13 @@ describe("agent-distro install", () => {
       ".github/prompts/debugging.prompt.md",
     ]);
     expect(failed("install", destination, "--profile", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
+  });
+
+  it("updates an existing selection and rejects an unmanaged target", () => {
+    const destination = target();
+    command("install", destination, "--profile", "debugging");
+    expect(command("update", destination, "--profile", "debugging")).toContain("Synced 0 changed assets");
+    expect(failed("update", target(), "--profile", "debugging")).toContain("run install first");
   });
 
   it("does not overwrite a changed target without --force", () => {
