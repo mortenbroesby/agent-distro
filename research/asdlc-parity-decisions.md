@@ -133,4 +133,5 @@ reports the repository's `.asdlc/` state.
 
 **Implication:** Global and target diagnostics are equal first-class sections
 of one doctor report. The report must make it clear when the current directory
-is not an ASDLC-managed repository.
+is not an ASDLC-managed repository, but that condition still exits
+successfully.
