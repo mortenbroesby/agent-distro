@@ -90,6 +90,17 @@ cross-stack assets uses an explicit Common stack.
 **Implication:** Common is not installed implicitly. Its profiles and assets
 follow the same explicit selection model as technology-specific stacks.
 
+## 7a. Initial catalog scope
+
+**Decision:** The initial catalog has one explicitly selectable **Common**
+stack. All existing cross-runtime workflow assets belong to it; technology
+stacks are added only with assets that genuinely require them.
+
+**Implication:** `assets/profiles.json` is the authored source: it declares
+top-level stacks and assigns every profile to one stack. The generated catalog
+records stack ownership for every profile and asset, so new stacks do not
+require a selection-model redesign.
+
 ## 8. Shared target paths
 
 **Decision:** Merge compatible contributions from selected stacks that target
@@ -185,22 +196,18 @@ it must not expose repository contents, secrets, or absolute paths.
 
 1. What exit status should doctor use when global or target checks find actual
    damage, as distinct from an unmanaged current directory?
-2. Which concrete profiles exist for Common and each technology stack, and
-   which Agent Distro assets should ship in the initial catalog?
-3. What source-folder and catalog metadata layout best expresses stack,
-   profile, category, target path, and merge behavior without duplication?
-4. Which target-path formats are mergeable, and what is each format's explicit
+2. Which target-path formats are mergeable, and what is each format's explicit
    merge rule?
-5. How long are `.agent-distro/.archive/` entries retained, and what restoration
+3. How long are `.agent-distro/.archive/` entries retained, and what restoration
    command or workflow—if any—is required?
-6. Which legacy `.agent-distro` manifests and managed-file records must migrate, and
+4. Which legacy `.agent-distro` manifests and managed-file records must migrate, and
    what happens when their source selection cannot be reconstructed?
-7. Which final commands are retained beyond `bootstrap`, `install`, `update`,
+5. Which final commands are retained beyond `bootstrap`, `install`, `update`,
    `upgrade`, and `doctor`—especially recovery, profile listing, validation,
    and issue reporting?
-8. Should shell PATH integration remain part of bootstrap, or should the
+6. Should shell PATH integration remain part of bootstrap, or should the
    package manager's global bin location be the only supported launcher path?
-9. Which Agent Distro branch and PR sequence should carry the completed
+7. Which Agent Distro branch and PR sequence should carry the completed
    foundation?
 
 ## Delivery boundary

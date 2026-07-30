@@ -18,7 +18,7 @@ missing decision.
 - [x] Identify the Agent Distro remote and base branch for the implementation stack.
 - [x] Create an isolated Git worktree from that base; preserve the ASDLC reference snapshot unchanged.
 - [x] Record the exact current command, asset, manifest, and test baseline.
-- [ ] Decide the remaining design questions required by Stories 2–3.
+- [ ] Decide the remaining design questions required by Story 3.
 
 Acceptance: a clean, Git-backed Agent Distro worktree exists with a verified baseline
 and an approved first implementation slice.
@@ -63,16 +63,26 @@ are cross-platform, and no legacy runtime remains on the normal command path.
 
 ## Story 2 — Stack-first catalog and selection
 
-- [ ] Design the source layout and generated catalog metadata for Common and
+- [x] Design the source layout and generated catalog metadata for Common and
   technology stacks.
-- [ ] Move or curate assets into their declared stack ownership without duplicates.
-- [ ] Implement stack selection, then per-stack profile selection, then
+- [x] Move or curate assets into their declared stack ownership without duplicates.
+- [x] Implement stack selection, then per-stack profile selection, then
   per-stack asset/category customization.
-- [ ] Start new installations with no selected assets.
-- [ ] Add characterization and generated-catalog checks.
+- [x] Start new installations with no selected assets.
+- [x] Add characterization and generated-catalog checks.
 
 Acceptance: every offered asset has one declared stack owner, selection is
 explicit, and the catalog generation/checks are deterministic.
+
+### Story 2 evidence — 2026-07-30
+
+- The authored profile source declares an explicit Common stack and assigns
+  every current profile to it; generated catalog schema version 2 records
+  stack ownership for all assets and profiles.
+- The Clack flow selects stacks before it shows stack-eligible profiles and
+  individual assets. An empty selection is still a no-op.
+- Catalog generation validates ownership and `assets:check` rejects stale
+  output. Local `npm test` and `npm run test:proof` pass on Node 22.23.1.
 
 ## Story 3 — Target state and safe mutation
 
