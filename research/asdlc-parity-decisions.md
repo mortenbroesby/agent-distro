@@ -124,3 +124,13 @@ that checkout; it does not independently discover or download a source.
 managed runtime: package it, install the global CLI, and prove it. The
 managed-copy model remains the default; shell integration is a separate
 implementation choice.
+
+## 14. Doctor scope
+
+**Decision:** `asdlc doctor` always reports global CLI and managed-runtime
+state. When run inside, or explicitly pointed at, a repository, it separately
+reports the repository's `.asdlc/` state.
+
+**Implication:** Global and target diagnostics are equal first-class sections
+of one doctor report. The report must make it clear when the current directory
+is not an ASDLC-managed repository.
