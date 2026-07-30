@@ -67,9 +67,14 @@ describe("agent-distro install", () => {
     expect(JSON.parse(command("doctor", "--diagnostics", destination))).toMatchObject({
       target: { exists: true, directory: true },
     });
+    expect(JSON.parse(command("doctor", "--json", destination))).toMatchObject({ manifest: { valid: true } });
     expect(commandFrom(destination, "doctor")).toContain("Verified");
     expect(failed("verify", destination)).toContain("unknown command 'verify'");
     expect(failed("diagnostics", destination)).toContain("unknown command 'diagnostics'");
+  });
+
+  it("treats an unmanaged directory as an informational doctor result", () => {
+    expect(command("doctor", target())).toContain("No Agent Distro installation found");
   });
 
   it("rejects options that do not belong to a command", () => {

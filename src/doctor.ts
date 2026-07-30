@@ -46,6 +46,20 @@ export function verify(target: string) {
   }
 }
 
+/** Reports an unmanaged directory without treating normal absence as damage. */
+export function doctor(target: string) {
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+    console.log("No Agent Distro installation found for this target.");
+    return 0;
+  }
+  const manifestPath = path.join(fs.realpathSync(target), ".agent-distro", "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    console.log("No Agent Distro installation found for this target.");
+    return 0;
+  }
+  return verify(target);
+}
+
 /**
  * Prints a sanitized, read-only environment and manifest snapshot.
  *
