@@ -107,17 +107,20 @@ location and any Git/update failure visible to the user.
 
 ## 12. Managed checkout location
 
-**Decision:** Retain `asdlc bootstrap`. It presents `~/.asdlc` as the default
-managed local checkout and lets the user opt into choosing another location.
+**Decision:** Retain `asdlc bootstrap`. It creates the managed runtime copy at
+`~/.asdlc/repo` by default and lets the user opt into choosing another
+location.
 
 **Implication:** The existing bootstrap implementation will be replaced by the
 new Node-based flow. `asdlc upgrade` uses the selected checkout location.
 
 ## 13. First installation
 
-**Decision:** First-time users clone ASDLC, enter that checkout, and run
-`bin/asdlc bootstrap`. Bootstrap does not clone ASDLC automatically.
+**Decision:** First-time users clone ASDLC, enter that source checkout, and
+run `bin/asdlc bootstrap`. Bootstrap creates the managed runtime copy from
+that checkout; it does not independently discover or download a source.
 
-**Implication:** Reuse the Node packed-artifact bootstrap pattern: package the
-current checkout, install the global CLI, and prove it. Do not retain the
-second runtime clone or shell-profile mutation from the legacy bootstrap.
+**Implication:** Reuse the Node packed-artifact bootstrap pattern for the
+managed runtime: package it, install the global CLI, and prove it. The
+managed-copy model remains the default; shell integration is a separate
+implementation choice.
