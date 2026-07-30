@@ -6,7 +6,13 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createIssueUrl, formatFailure, install, runInteractiveInstall } from "../dist/agent-distro.mjs";
+import {
+  createIssueUrl,
+  formatFailure,
+  install,
+  providerConflicts,
+  runInteractiveInstall,
+} from "../dist/agent-distro.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = path.join(root, "bin", "agent-distro.mjs");
@@ -259,6 +265,31 @@ describe("agent-distro install", () => {
     expect(failed("install", destination, "--profile", "unknown")).toContain("AGENT_DISTRO_E_USAGE");
   });
 
+  it("merges compatible JavaScript and .NET MCP contributions", () => {
+    const destination = target();
+    command("install", destination, "--profile", "javascript", "dotnet");
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({
+      mcpServers: { javascript: {}, dotnet: {} },
+    });
+  });
+
+  it("identifies an unmergeable shared target before the TUI writes", () => {
+    expect(
+      providerConflicts([
+        { path: ".mcp.json", target: ".mcp.json", merge: "replace", label: "Common", stack: "common" },
+        { path: ".mcp.json", target: ".mcp.json", merge: "replace", label: "Override", stack: "javascript" },
+      ]),
+    ).toEqual([
+      {
+        target: ".mcp.json",
+        providers: [
+          { path: ".mcp.json", label: "Common", stack: "common" },
+          { path: ".mcp.json", label: "Override", stack: "javascript" },
+        ],
+      },
+    ]);
+  });
+
   it("updates an existing selection and rejects an unmanaged target", () => {
     const destination = target();
     command("install", destination, "--profile", "debugging");
@@ -296,7 +327,9 @@ describe("agent-distro install", () => {
     fs.writeFileSync(path.join(destination, ".mcp.json"), "changed\n");
     expect(() => run(destination)).toThrow();
     run(destination, "--force");
-    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({ mcpServers: {} });
+    expect(JSON.parse(fs.readFileSync(path.join(destination, ".mcp.json"), "utf8"))).toEqual({
+      mcpServers: { javascript: {}, dotnet: {} },
+    });
     const archive = path.join(
       destination,
       ".agent-distro",

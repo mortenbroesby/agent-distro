@@ -1,8 +1,8 @@
 // Interactive prompt orchestration stays separate from the filesystem installer.
-import { catalog, profileChoices, selectedCatalogAssets, stackChoices } from "./catalog.js";
+import { catalog, profileChoices, selectedCatalogAssets, selectedCatalogEntries, stackChoices } from "./catalog.js";
 import type { ManagedSelection } from "./install.js";
 import { fail } from "./errors.js";
-import { install } from "./install.js";
+import { install, providerConflicts } from "./install.js";
 
 /**
  * Runs the prompt flow through an injected Clack-compatible adapter.
@@ -62,6 +62,22 @@ export async function runInteractiveInstall(target: string | undefined, p: any, 
     p.outro("No assets selected; nothing changed.");
     return 0;
   }
+  const providerChoices: Record<string, string> = {};
+  for (const conflict of providerConflicts(selectedCatalogEntries(selected, profiles))) {
+    const choice = await p.select({
+      message: `Choose the provider for ${conflict.target}`,
+      options: conflict.providers.map((provider) => ({
+        value: provider.path,
+        label: provider.label,
+        hint: `${provider.stack} stack`,
+      })),
+    });
+    if (p.isCancel(choice)) {
+      p.cancel("Installation cancelled; nothing changed.");
+      return 0;
+    }
+    providerChoices[conflict.target] = choice;
+  }
   const count = selectedCatalogAssets(selected, profiles).length;
   const confirmed = await p.confirm({
     message: `Install ${count} selected asset${count === 1 ? "" : "s"} into ${destination}?`,
@@ -72,7 +88,13 @@ export async function runInteractiveInstall(target: string | undefined, p: any, 
     return 0;
   }
   const log = p.taskLog({ title: "Installing selected assets", limit: 8, retainLog: true });
-  const code = install(destination, { quiet: true, selected, profiles, onStep: (message) => log.message(message) });
+  const code = install(destination, {
+    quiet: true,
+    selected,
+    profiles,
+    providerChoices,
+    onStep: (message) => log.message(message),
+  });
   if (code === 0) log.success("Assets synchronized.");
   else log.error("Installation failed.");
   if (code === 0) p.outro("Installation complete.");

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 2,
-  "version": "sha256-ef742b6e77b69958",
+  "schemaVersion": 3,
+  "version": "sha256-4e548c826edf7235",
   "stacks": [
     {
       "id": "common",
@@ -21,91 +21,141 @@
   "assets": [
     {
       "path": ".github/instructions/javascript.instructions.md",
+      "target": ".github/instructions/javascript.instructions.md",
+      "merge": "replace",
       "label": "JavaScript instructions",
       "stack": "javascript"
     },
     {
+      "path": "providers/javascript.mcp.json",
+      "target": ".mcp.json",
+      "merge": "json",
+      "label": "JavaScript MCP contribution",
+      "stack": "javascript"
+    },
+    {
       "path": ".github/instructions/dotnet.instructions.md",
+      "target": ".github/instructions/dotnet.instructions.md",
+      "merge": "replace",
       "label": ".NET instructions",
       "stack": "dotnet"
     },
     {
+      "path": "providers/dotnet.mcp.json",
+      "target": ".mcp.json",
+      "merge": "json",
+      "label": ".NET MCP contribution",
+      "stack": "dotnet"
+    },
+    {
       "path": ".github/instructions/agent-distro.instructions.md",
+      "target": ".github/instructions/agent-distro.instructions.md",
+      "merge": "replace",
       "label": "Foundation instructions",
       "stack": "common"
     },
     {
       "path": ".mcp.json",
+      "target": ".mcp.json",
+      "merge": "json",
       "label": "MCP configuration",
       "stack": "common"
     },
     {
       "path": ".github/instructions/safe-changes.instructions.md",
+      "target": ".github/instructions/safe-changes.instructions.md",
+      "merge": "replace",
       "label": "Safe-change instructions",
       "stack": "common"
     },
     {
       "path": ".github/instructions/verification.instructions.md",
+      "target": ".github/instructions/verification.instructions.md",
+      "merge": "replace",
       "label": "Verification instructions",
       "stack": "common"
     },
     {
       "path": ".github/agents/pull-request-review.agent.md",
+      "target": ".github/agents/pull-request-review.agent.md",
+      "merge": "replace",
       "label": "Pull-request review agent",
       "stack": "common"
     },
     {
       "path": ".github/skills/pull-request-review/SKILL.md",
+      "target": ".github/skills/pull-request-review/SKILL.md",
+      "merge": "replace",
       "label": "Pull-request review skill",
       "stack": "common"
     },
     {
       "path": ".github/prompts/pull-request-review.prompt.md",
+      "target": ".github/prompts/pull-request-review.prompt.md",
+      "merge": "replace",
       "label": "Pull-request review prompt",
       "stack": "common"
     },
     {
       "path": ".github/agents/debugging.agent.md",
+      "target": ".github/agents/debugging.agent.md",
+      "merge": "replace",
       "label": "Debugging agent",
       "stack": "common"
     },
     {
       "path": ".github/skills/debugging/SKILL.md",
+      "target": ".github/skills/debugging/SKILL.md",
+      "merge": "replace",
       "label": "Debugging skill",
       "stack": "common"
     },
     {
       "path": ".github/prompts/debugging.prompt.md",
+      "target": ".github/prompts/debugging.prompt.md",
+      "merge": "replace",
       "label": "Debugging prompt",
       "stack": "common"
     },
     {
       "path": ".github/agents/handoff.agent.md",
+      "target": ".github/agents/handoff.agent.md",
+      "merge": "replace",
       "label": "Handoff agent",
       "stack": "common"
     },
     {
       "path": ".github/skills/handoff/SKILL.md",
+      "target": ".github/skills/handoff/SKILL.md",
+      "merge": "replace",
       "label": "Handoff skill",
       "stack": "common"
     },
     {
       "path": ".github/prompts/grill-me.prompt.md",
+      "target": ".github/prompts/grill-me.prompt.md",
+      "merge": "replace",
       "label": "Grill-me prompt",
       "stack": "common"
     },
     {
       "path": ".github/hooks/agent-distro.json",
+      "target": ".github/hooks/agent-distro.json",
+      "merge": "replace",
       "label": "Hook template",
       "stack": "common"
     },
     {
       "path": ".github/hooks/session-context.json",
+      "target": ".github/hooks/session-context.json",
+      "merge": "replace",
       "label": "Session-context hook",
       "stack": "common"
     },
     {
       "path": ".github/hooks/verification-reminder.json",
+      "target": ".github/hooks/verification-reminder.json",
+      "merge": "replace",
       "label": "Verification-reminder hook",
       "stack": "common"
     }
@@ -117,7 +167,8 @@
       "label": "JavaScript development",
       "description": "Node.js, package-manager, and TypeScript change guidance.",
       "assets": [
-        ".github/instructions/javascript.instructions.md"
+        ".github/instructions/javascript.instructions.md",
+        "providers/javascript.mcp.json"
       ]
     },
     {
@@ -126,7 +177,8 @@
       "label": ".NET development",
       "description": "C#, SDK, project, and test guidance.",
       "assets": [
-        ".github/instructions/dotnet.instructions.md"
+        ".github/instructions/dotnet.instructions.md",
+        "providers/dotnet.mcp.json"
       ]
     },
     {

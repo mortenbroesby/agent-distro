@@ -124,9 +124,9 @@ tested, and every archived asset is visible to the user.
 
 ## Story 4 — Shared paths and conflicts
 
-- [ ] Define explicit compatible-merge rules for every shared target-path type.
-- [ ] Merge compatible contributions from selected stacks.
-- [ ] Offer an interactive provider choice for unmergeable conflicts before
+- [x] Define explicit compatible-merge rules for every shared target-path type.
+- [x] Merge compatible contributions from selected stacks.
+- [x] Offer an interactive provider choice for unmergeable conflicts before
   writing.
 - [x] In scripts, fail conflicts without `--force`; with force, archive the
   displaced content before replacement.
@@ -136,14 +136,17 @@ tested, and every archived asset is visible to the user.
 Acceptance: merge, choice, force, archive, and non-interactive failure paths
 all have focused tests and no path silently chooses a conflicting provider.
 
-### Story 4 current safe boundary
+### Story 4 evidence — 2026-07-30
 
-The current catalog rejects duplicate target paths, so it has no shared-path
-providers to merge or choose between. This is a **deferred** catalog capability:
-the safe behavior is an explicit conflict before any write; it reopens when a
-second stack introduces a same-path asset together with a declared merge rule.
-Non-interactive conflicts already fail unless `--force`; force archives the
-displaced source asset, and the error text includes the opt-in issue-report path.
+- Catalog schema version 3 records every provider's unique source path, target
+  path, and `replace` or recursive `json` merge rule. JavaScript and .NET
+  profiles contribute distinct JSON MCP server declarations to `.mcp.json`.
+- The installer resolves all providers before staging. Compatible JSON objects
+  merge deterministically; incompatible JSON and every multi-provider
+  replacement target require an explicit interactive choice. Scripts fail
+  unless `--force`, which remains explicit and archives displaced target files.
+- Focused coverage proves the JavaScript/.NET composition plus the existing
+  force, archive, rollback, recovery, and no-overwrite safety paths.
 
 ## Story 5 — Doctor and diagnostics
 

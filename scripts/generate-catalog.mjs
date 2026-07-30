@@ -20,6 +20,7 @@ for (const stack of source.stacks) {
   stacks.add(stack.id);
 }
 const files = new Map();
+const contributions = [];
 for (const profile of source.profiles) {
   if (
     typeof profile?.id !== "string" ||
@@ -31,17 +32,25 @@ for (const profile of source.profiles) {
     !Array.isArray(profile?.assets)
   )
     throw new Error("invalid profile");
-  for (const asset of profile.assets) {
-    if (typeof asset !== "string" || !Object.hasOwn(source.labels, asset) || files.has(asset))
+  for (const rawAsset of profile.assets) {
+    const asset = typeof rawAsset === "string" ? { path: rawAsset, target: rawAsset, merge: "replace" } : rawAsset;
+    if (
+      typeof asset?.path !== "string" ||
+      typeof asset.target !== "string" ||
+      !["replace", "json"].includes(asset.merge) ||
+      !Object.hasOwn(source.labels, asset.path) ||
+      files.has(asset.path)
+    )
       throw new Error("invalid profile asset");
-    if (asset.endsWith(".agent.md"))
+    contributions.push({ ...asset, stack: profile.stack, profile: profile.id });
+    if (asset.path.endsWith(".agent.md"))
       files.set(
-        asset,
+        asset.path,
         "---\nname: " + profile.label + "\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n",
       );
-    else if (asset.endsWith("/SKILL.md"))
+    else if (asset.path.endsWith("/SKILL.md"))
       files.set(
-        asset,
+        asset.path,
         "---\nname: agent-distro-" +
           profile.id +
           "\ndescription: " +
@@ -50,19 +59,20 @@ for (const profile of source.profiles) {
           profile.guidance +
           "\n",
       );
-    else if (asset.endsWith(".prompt.md"))
-      files.set(asset, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
-    else if (asset.endsWith(".instructions.md"))
-      files.set(asset, "# " + profile.label + "\n\n" + profile.guidance + "\n");
-    else if (asset === ".mcp.json") files.set(asset, JSON.stringify({ mcpServers: {} }, null, 2) + "\n");
-    else if (asset.includes("/hooks/") && asset.endsWith(".json"))
+    else if (asset.path.endsWith(".prompt.md"))
+      files.set(asset.path, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
+    else if (asset.path.endsWith(".instructions.md"))
+      files.set(asset.path, "# " + profile.label + "\n\n" + profile.guidance + "\n");
+    else if (asset.path.endsWith(".mcp.json"))
+      files.set(asset.path, JSON.stringify(asset.value ?? { mcpServers: {} }, null, 2) + "\n");
+    else if (asset.path.includes("/hooks/") && asset.path.endsWith(".json"))
       files.set(
-        asset,
+        asset.path,
         JSON.stringify(
           {
             version: 1,
             hooks:
-              asset === ".github/hooks/agent-distro.json"
+              asset.path === ".github/hooks/agent-distro.json"
                 ? {}
                 : { sessionStart: [{ type: "prompt", prompt: profile.guidance }] },
           },
@@ -70,7 +80,7 @@ for (const profile of source.profiles) {
           2,
         ) + "\n",
       );
-    else throw new Error("unsupported generated asset: " + asset);
+    else throw new Error("unsupported generated asset: " + asset.path);
   }
 }
 
@@ -84,19 +94,22 @@ const version =
 const catalog =
   JSON.stringify(
     {
-      schemaVersion: 2,
+      schemaVersion: 3,
       version,
       stacks: source.stacks,
-      assets: [...files.keys()].map((asset) => {
-        const profile = source.profiles.find((entry) => entry.assets.includes(asset));
-        return { path: asset, label: source.labels[asset], stack: profile.stack };
-      }),
+      assets: contributions.map(({ path: asset, target, merge, stack }) => ({
+        path: asset,
+        target,
+        merge,
+        label: source.labels[asset],
+        stack,
+      })),
       profiles: source.profiles.map(({ id, stack, label, description, assets: profileAssets }) => ({
         id,
         stack,
         label,
         description,
-        assets: profileAssets,
+        assets: profileAssets.map((asset) => (typeof asset === "string" ? asset : asset.path)),
       })),
     },
     null,
@@ -135,7 +148,8 @@ const pluginLinks = new Map([
   [".mcp.json", path.join(assets, ".mcp.json")],
 ]);
 for (const profile of source.profiles) {
-  for (const asset of profile.assets) {
+  for (const rawAsset of profile.assets) {
+    const asset = typeof rawAsset === "string" ? rawAsset : rawAsset.path;
     if (asset.endsWith(".agent.md"))
       pluginLinks.set("agents/agent-distro-" + profile.id + ".agent.md", path.join(assets, asset));
     if (asset.endsWith("/SKILL.md"))

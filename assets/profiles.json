@@ -23,6 +23,8 @@
     ".github/instructions/verification.instructions.md": "Verification instructions",
     ".github/instructions/javascript.instructions.md": "JavaScript instructions",
     ".github/instructions/dotnet.instructions.md": ".NET instructions",
+    "providers/javascript.mcp.json": "JavaScript MCP contribution",
+    "providers/dotnet.mcp.json": ".NET MCP contribution",
     ".mcp.json": "MCP configuration",
     ".github/agents/pull-request-review.agent.md": "Pull-request review agent",
     ".github/skills/pull-request-review/SKILL.md": "Pull-request review skill",
@@ -44,7 +46,15 @@
       "label": "JavaScript development",
       "description": "Node.js, package-manager, and TypeScript change guidance.",
       "guidance": "Use the repository's declared package manager and Node version. Inspect package scripts before changing dependencies, preserve lockfile consistency, and run the narrowest relevant typecheck, lint, and test commands.",
-      "assets": [".github/instructions/javascript.instructions.md"]
+      "assets": [
+        ".github/instructions/javascript.instructions.md",
+        {
+          "path": "providers/javascript.mcp.json",
+          "target": ".mcp.json",
+          "merge": "json",
+          "value": { "mcpServers": { "javascript": {} } }
+        }
+      ]
     },
     {
       "id": "dotnet",
@@ -52,7 +62,15 @@
       "label": ".NET development",
       "description": "C#, SDK, project, and test guidance.",
       "guidance": "Use the repository's pinned .NET SDK and inspect solution and project files before changing dependencies. Keep package references consistent, run dotnet build and the smallest relevant dotnet test command, and report target-framework impact.",
-      "assets": [".github/instructions/dotnet.instructions.md"]
+      "assets": [
+        ".github/instructions/dotnet.instructions.md",
+        {
+          "path": "providers/dotnet.mcp.json",
+          "target": ".mcp.json",
+          "merge": "json",
+          "value": { "mcpServers": { "dotnet": {} } }
+        }
+      ]
     },
     {
       "id": "foundation",
@@ -60,7 +78,10 @@
       "label": "Foundation",
       "description": "Repository context and MCP configuration.",
       "guidance": "Follow repository conventions.",
-      "assets": [".github/instructions/agent-distro.instructions.md", ".mcp.json"]
+      "assets": [
+        ".github/instructions/agent-distro.instructions.md",
+        { "path": ".mcp.json", "target": ".mcp.json", "merge": "json", "value": { "mcpServers": {} } }
+      ]
     },
     {
       "id": "safe-changes",

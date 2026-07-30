@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { assetChoices, catalog, profileChoices, selectedCatalogAssets } from "./catalog.js";
+import { assetChoices, catalog, profileChoices, selectedCatalogEntries, type CatalogAsset } from "./catalog.js";
 import { fail } from "./errors.js";
 import { hasSymlinkAncestor, manifestParts } from "./managed-path.js";
 
@@ -28,12 +28,20 @@ export type InstallOptions = {
   quiet?: boolean;
   selected?: string[];
   profiles?: string[];
+  providerChoices?: Record<string, string>;
   onStep?: InstallProgress;
 };
 
+export type ProviderConflict = { target: string; providers: Pick<CatalogAsset, "path" | "label" | "stack">[] };
+
 export type ManagedSelection = { stacks: string[]; profiles: string[]; assets: string[] };
 
-type ManagedManifest = { version: 1 | 2; files: string[]; selection?: ManagedSelection };
+type ManagedManifest = {
+  version: 1 | 2;
+  files: string[];
+  hashes?: Record<string, string>;
+  selection?: ManagedSelection;
+};
 
 /** Parses only the manifest fields needed to retain managed content safely. */
 function readManagedManifest(target: string): ManagedManifest | undefined {
@@ -43,6 +51,14 @@ function readManagedManifest(target: string): ManagedManifest | undefined {
   if (manifest.tool !== "agent-distro" || ![1, 2].includes(manifest.version) || !Array.isArray(manifest.files))
     throw new Error("invalid manifest");
   const files = manifest.files.map((file: unknown) => manifestParts(file).join("/"));
+  const hashes =
+    manifest.hashes && typeof manifest.hashes === "object"
+      ? Object.fromEntries(
+          Object.entries(manifest.hashes).filter(
+            ([file, hash]) => typeof hash === "string" && files.includes(manifestParts(file).join("/")),
+          ),
+        )
+      : undefined;
   if (manifest.version === 2) {
     const selection = manifest.selection;
     if (
@@ -52,9 +68,9 @@ function readManagedManifest(target: string): ManagedManifest | undefined {
       )
     )
       throw new Error("invalid manifest");
-    return { version: 2, files, selection };
+    return { version: 2, files, hashes, selection };
   }
-  return { version: 1, files };
+  return { version: 1, files, hashes };
 }
 
 /** Reads current or legacy ownership metadata without trusting its paths. */
@@ -73,6 +89,91 @@ export function readManagedSelection(target: string): ManagedSelection | undefin
     ...new Set(selected.map((file) => catalog.assets.find((asset) => asset.path === file)?.stack).filter(Boolean)),
   ];
   return { stacks, profiles: [], assets: selected };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergeJson(left: unknown, right: unknown): unknown | undefined {
+  if (!isObject(left) || !isObject(right)) return JSON.stringify(left) === JSON.stringify(right) ? left : undefined;
+  const merged: Record<string, unknown> = { ...left };
+  for (const [key, value] of Object.entries(right)) {
+    if (!(key in merged)) merged[key] = value;
+    else {
+      const next = mergeJson(merged[key], value);
+      if (next === undefined) return undefined;
+      merged[key] = next;
+    }
+  }
+  return merged;
+}
+
+type Contribution = CatalogAsset & { content: Buffer };
+
+/** Finds declared providers that cannot safely compose without a user choice. */
+export function providerConflicts(entries: CatalogAsset[]): ProviderConflict[] {
+  const groups = new Map<string, CatalogAsset[]>();
+  for (const entry of entries) groups.set(entry.target, [...(groups.get(entry.target) ?? []), entry]);
+  return [...groups]
+    .filter(([, providers]) => {
+      if (providers.length < 2 || providers.some((provider) => provider.merge !== "json")) return providers.length > 1;
+      try {
+        return (
+          providers
+            .map((provider) => JSON.parse(fs.readFileSync(path.join(assets, ...manifestParts(provider.path)), "utf8")))
+            .reduce((result, value) => (result === undefined ? undefined : mergeJson(result, value))) === undefined
+        );
+      } catch {
+        return true;
+      }
+    })
+    .map(([target, providers]) => ({
+      target,
+      providers: providers.map(({ path, label, stack }) => ({ path, label, stack })),
+    }));
+}
+
+function resolveContributions(entries: CatalogAsset[], choices: Record<string, string>, force: boolean) {
+  const groups = new Map<string, Contribution[]>();
+  for (const entry of entries) {
+    const contribution = { ...entry, content: fs.readFileSync(path.join(assets, ...manifestParts(entry.path))) };
+    groups.set(entry.target, [...(groups.get(entry.target) ?? []), contribution]);
+  }
+  const contents = new Map<string, Buffer>();
+  const conflicts: ProviderConflict[] = [];
+  for (const [target, providers] of groups) {
+    if (providers.length === 1) contents.set(target, providers[0].content);
+    else if (providers.every((provider) => provider.merge === "json")) {
+      try {
+        const merged = providers
+          .map((provider) => JSON.parse(provider.content.toString("utf8")))
+          .reduce((result, value) => (result === undefined ? undefined : mergeJson(result, value)));
+        if (merged === undefined) throw new Error("incompatible JSON values");
+        contents.set(target, Buffer.from(JSON.stringify(merged, null, 2) + "\n"));
+      } catch {
+        conflicts.push({ target, providers: providers.map(({ path, label, stack }) => ({ path, label, stack })) });
+      }
+    } else conflicts.push({ target, providers: providers.map(({ path, label, stack }) => ({ path, label, stack })) });
+    const chosen = choices[target];
+    if (chosen) {
+      const provider = providers.find(({ path }) => path === chosen);
+      if (!provider) throw new Error(`invalid provider choice for ${target}`);
+      contents.set(target, provider.content);
+      const index = conflicts.findIndex((conflict) => conflict.target === target);
+      if (index >= 0) conflicts.splice(index, 1);
+    }
+  }
+  if (conflicts.length && force) {
+    for (const conflict of conflicts) {
+      const provider = groups.get(conflict.target)?.at(-1);
+      if (provider) contents.set(conflict.target, provider.content);
+    }
+    return contents;
+  }
+  if (conflicts.length)
+    throw new Error(`provider choice required: ${conflicts.map(({ target }) => target).join(", ")}`);
+  return contents;
 }
 
 function archiveRecord(files: string[]) {
@@ -143,14 +244,29 @@ export function recover(target: string) {
  */
 export function install(
   target: string,
-  { force = false, dryRun = false, quiet = false, selected = [], profiles = [], onStep }: InstallOptions,
+  {
+    force = false,
+    dryRun = false,
+    quiet = false,
+    selected = [],
+    profiles = [],
+    providerChoices = {},
+    onStep,
+  }: InstallOptions,
 ) {
   if (fs.existsSync(target) && !fs.statSync(target).isDirectory())
     return fail("AGENT_DISTRO_E_TARGET_INVALID", "Target is not a directory.");
   const destination = fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
   if (fs.existsSync(recoveryPath(destination)))
     return fail("AGENT_DISTRO_E_RECOVERY_REQUIRED", "An incomplete Agent Distro transaction needs recovery.");
-  const sourceFiles = selectedCatalogAssets(selected, profiles).map((asset) => asset.split("/").join(path.sep));
+  const selectedEntries = selectedCatalogEntries(selected, profiles);
+  let contents: Map<string, Buffer>;
+  try {
+    contents = resolveContributions(selectedEntries, providerChoices, force);
+  } catch (error) {
+    return fail("AGENT_DISTRO_E_CONFLICT", error instanceof Error ? error.message : String(error));
+  }
+  const sourceFiles = [...contents.keys()].map((asset) => asset.split("/").join(path.sep));
   let previous: ManagedManifest | undefined;
   try {
     previous = readManagedManifest(destination);
@@ -160,11 +276,7 @@ export function install(
   const previousFiles = (previous?.files ?? []).map((file) => file.split("/").join(path.sep));
   const removed = previousFiles.filter((file) => !sourceFiles.includes(file));
   const selection = {
-    stacks: [
-      ...new Set(
-        sourceFiles.map((file) => catalog.assets.find((asset) => asset.path === file.split(path.sep).join("/"))?.stack),
-      ),
-    ],
+    stacks: [...new Set(selectedEntries.map((asset) => asset.stack))],
     profiles: [...new Set(profiles)],
     assets: [...new Set(selected)],
   };
@@ -181,17 +293,13 @@ export function install(
       hashes: Object.fromEntries(
         sourceFiles.map((relative) => [
           relative.split(path.sep).join("/"),
-          crypto
-            .createHash("sha256")
-            .update(fs.readFileSync(path.join(assets, relative)))
-            .digest("hex"),
+          crypto.createHash("sha256").update(contents.get(relative)!).digest("hex"),
         ]),
       ),
     },
     null,
     2,
   ).concat("\n");
-  const contents = new Map(sourceFiles.map((relative) => [relative, fs.readFileSync(path.join(assets, relative))]));
   contents.set(".agent-distro/manifest.json", Buffer.from(manifest));
   // Never traverse a symlinked ancestor: even a valid relative path could then
   // write outside the explicitly chosen target.
@@ -208,10 +316,12 @@ export function install(
   // partially updated target. --force is the explicit opt-in to replacement.
   const conflicts = outputFiles.filter((relative) => {
     const output = path.join(destination, relative);
+    const previousHash = previous?.hashes?.[relative.split(path.sep).join("/")];
     return (
       fs.existsSync(output) &&
       !contents.get(relative).equals(fs.readFileSync(output)) &&
-      !(relative === ".agent-distro/manifest.json" && previous)
+      !(relative === ".agent-distro/manifest.json" && previous) &&
+      (!previousHash || crypto.createHash("sha256").update(fs.readFileSync(output)).digest("hex") !== previousHash)
     );
   });
   if (conflicts.length && !force)

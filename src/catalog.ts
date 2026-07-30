@@ -6,11 +6,12 @@ import { manifestParts } from "./managed-path.js";
 /** Versioned content definitions shared by the installer, TUI, and plugin generator. */
 export type Stack = { id: string; label: string; description: string };
 export type Profile = { id: string; stack: string; label: string; description: string; assets: string[] };
+export type CatalogAsset = { path: string; target: string; merge: "replace" | "json"; label: string; stack: string };
 type Catalog = {
   schemaVersion: number;
   version: string;
   stacks: Stack[];
-  assets: { path: string; label: string; stack: string }[];
+  assets: CatalogAsset[];
   profiles: Profile[];
 };
 
@@ -20,7 +21,7 @@ const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets")
 function loadCatalog(): Catalog {
   const catalog = JSON.parse(fs.readFileSync(path.join(assets, "catalog.json"), "utf8"));
   if (
-    catalog.schemaVersion !== 2 ||
+    catalog.schemaVersion !== 3 ||
     typeof catalog.version !== "string" ||
     !Array.isArray(catalog.stacks) ||
     !Array.isArray(catalog.assets) ||
@@ -38,6 +39,8 @@ function loadCatalog(): Catalog {
   for (const asset of catalog.assets) {
     if (
       typeof asset?.path !== "string" ||
+      typeof asset?.target !== "string" ||
+      !["replace", "json"].includes(asset?.merge) ||
       typeof asset?.label !== "string" ||
       typeof asset?.stack !== "string" ||
       !stacks.has(asset.stack) ||
@@ -45,6 +48,7 @@ function loadCatalog(): Catalog {
     )
       throw new Error("invalid asset catalog");
     manifestParts(asset.path);
+    manifestParts(asset.target);
     paths.add(asset.path);
   }
   for (const profile of catalog.profiles) {
@@ -78,6 +82,11 @@ export const profileChoices = catalog.profiles.map(({ id, stack, label, descript
 
 /** Merges selected profiles and individual assets while preserving catalog order. */
 export function selectedCatalogAssets(selected: string[], profiles: string[] = []) {
+  return selectedCatalogEntries(selected, profiles).map((asset) => asset.path);
+}
+
+/** Resolves selected providers while retaining their target and merge declarations. */
+export function selectedCatalogEntries(selected: string[], profiles: string[] = []) {
   const requested = new Set(selected);
   const profilesById = new Map(catalog.profiles.map((profile) => [profile.id, profile]));
   for (const profile of profiles) {
@@ -88,5 +97,5 @@ export function selectedCatalogAssets(selected: string[], profiles: string[] = [
   const available = new Set(catalog.assets.map((asset) => asset.path));
   const unknown = [...requested].filter((asset) => !available.has(asset));
   if (unknown.length) throw new Error(`unknown asset: ${unknown.join(", ")}`);
-  return catalog.assets.filter((asset) => requested.has(asset.path)).map((asset) => asset.path);
+  return catalog.assets.filter((asset) => requested.has(asset.path));
 }
