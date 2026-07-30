@@ -1,4 +1,10 @@
-// Interactive prompt orchestration stays separate from the filesystem installer.
+/**
+ * Interactive prompt orchestration stays separate from the filesystem installer.
+ *
+ * This module owns only user choices and progress presentation. The installer
+ * remains the single authority for path validation, conflict safety, archives,
+ * and transactional writes.
+ */
 import { catalog, profileChoices, selectedCatalogAssets, selectedCatalogEntries, stackChoices } from "./catalog.js";
 import type { ManagedSelection } from "./install.js";
 import { fail } from "./errors.js";
@@ -9,6 +15,13 @@ import { install, providerConflicts } from "./install.js";
  *
  * Injection keeps the UX testable without emulating a terminal while the real
  * wrapper below imports the production prompt library only for TTY use.
+ *
+ * @param target - Optional preselected repository directory.
+ * @param p - Clack-compatible prompt adapter used for every interaction.
+ * @param initial - Previously persisted selection used to prefill an update.
+ * @returns `0` for completed or cancelled interaction, otherwise installer code.
+ * @remarks Provider choice occurs before confirmation and before creating the
+ * task log, guaranteeing a cancellation leaves the target untouched.
  */
 export async function runInteractiveInstall(target: string | undefined, p: any, initial?: ManagedSelection) {
   p.intro("Agent Distro install");
@@ -62,6 +75,8 @@ export async function runInteractiveInstall(target: string | undefined, p: any, 
     p.outro("No assets selected; nothing changed.");
     return 0;
   }
+  // Resolve all unmergeable targets before confirmation. The installer receives
+  // explicit choices rather than deriving an implicit provider priority.
   const providerChoices: Record<string, string> = {};
   for (const conflict of providerConflicts(selectedCatalogEntries(selected, profiles))) {
     const choice = await p.select({
@@ -101,7 +116,15 @@ export async function runInteractiveInstall(target: string | undefined, p: any, 
   return code;
 }
 
-/** Opens the real interactive UI only when both standard streams are terminals. */
+/**
+ * Opens the production Clack UI only when both standard streams are terminals.
+ *
+ * @param target - Optional preselected repository directory.
+ * @param initial - Previously persisted selection used to prefill an update.
+ * @returns The result code from {@link runInteractiveInstall}.
+ * @remarks Non-interactive callers must provide explicit CLI selections; this
+ * prevents a CI or script invocation from waiting forever for terminal input.
+ */
 export async function interactiveInstall(target?: string, initial?: ManagedSelection) {
   if (!process.stdin.isTTY || !process.stdout.isTTY)
     return fail("AGENT_DISTRO_E_USAGE", "Interactive install requires a terminal; use --asset <path...> or --all.");

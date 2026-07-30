@@ -3,10 +3,69 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+/**
+ * Generates the installer catalog, curated assets, and Copilot plugin from the
+ * single authored profile source. Generated files are intentionally written in
+ * one place so package, CLI, and plugin content cannot diverge.
+ */
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const assets = path.join(root, "assets");
 const plugin = path.join(root, "plugins", "agent-distro");
 const source = JSON.parse(fs.readFileSync(path.join(assets, "profiles.json"), "utf8"));
+
+/**
+ * Normalizes a profile's short asset form into the complete provider contract.
+ *
+ * Source profiles use a string when source and target paths are identical and
+ * replacement is intentional. Object entries make a shared target and merge
+ * policy explicit before the generated catalog reaches the installer.
+ */
+function normalizeAsset(rawAsset) {
+  return typeof rawAsset === "string" ? { path: rawAsset, target: rawAsset, merge: "replace" } : rawAsset;
+}
+
+/**
+ * Renders exactly one generated asset from a validated profile provider.
+ *
+ * This function is deliberately pure: the caller owns the output map, while
+ * this renderer makes format-specific content and unsupported file types
+ * obvious in one exhaustive decision.
+ */
+function renderAsset(asset, profile) {
+  if (asset.path.endsWith(".agent.md"))
+    return (
+      "---\nname: " + profile.label + "\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n"
+    );
+  if (asset.path.endsWith("/SKILL.md"))
+    return (
+      "---\nname: agent-distro-" +
+      profile.id +
+      "\ndescription: " +
+      profile.description +
+      "\n---\n\n" +
+      profile.guidance +
+      "\n"
+    );
+  if (asset.path.endsWith(".prompt.md"))
+    return "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n";
+  if (asset.path.endsWith(".instructions.md")) return "# " + profile.label + "\n\n" + profile.guidance + "\n";
+  if (asset.path.endsWith(".mcp.json")) return JSON.stringify(asset.value ?? { mcpServers: {} }, null, 2) + "\n";
+  if (asset.path.includes("/hooks/") && asset.path.endsWith(".json"))
+    return (
+      JSON.stringify(
+        {
+          version: 1,
+          hooks:
+            asset.path === ".github/hooks/agent-distro.json"
+              ? {}
+              : { sessionStart: [{ type: "prompt", prompt: profile.guidance }] },
+        },
+        null,
+        2,
+      ) + "\n"
+    );
+  throw new Error("unsupported generated asset: " + asset.path);
+}
 
 // Profiles are the single authored source. This generator emits both the
 // installer catalog and the Copilot plugin so their curated content cannot drift.
@@ -33,7 +92,7 @@ for (const profile of source.profiles) {
   )
     throw new Error("invalid profile");
   for (const rawAsset of profile.assets) {
-    const asset = typeof rawAsset === "string" ? { path: rawAsset, target: rawAsset, merge: "replace" } : rawAsset;
+    const asset = normalizeAsset(rawAsset);
     if (
       typeof asset?.path !== "string" ||
       typeof asset.target !== "string" ||
@@ -43,44 +102,7 @@ for (const profile of source.profiles) {
     )
       throw new Error("invalid profile asset");
     contributions.push({ ...asset, stack: profile.stack, profile: profile.id });
-    if (asset.path.endsWith(".agent.md"))
-      files.set(
-        asset.path,
-        "---\nname: " + profile.label + "\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n",
-      );
-    else if (asset.path.endsWith("/SKILL.md"))
-      files.set(
-        asset.path,
-        "---\nname: agent-distro-" +
-          profile.id +
-          "\ndescription: " +
-          profile.description +
-          "\n---\n\n" +
-          profile.guidance +
-          "\n",
-      );
-    else if (asset.path.endsWith(".prompt.md"))
-      files.set(asset.path, "---\ndescription: " + profile.description + "\n---\n\n" + profile.guidance + "\n");
-    else if (asset.path.endsWith(".instructions.md"))
-      files.set(asset.path, "# " + profile.label + "\n\n" + profile.guidance + "\n");
-    else if (asset.path.endsWith(".mcp.json"))
-      files.set(asset.path, JSON.stringify(asset.value ?? { mcpServers: {} }, null, 2) + "\n");
-    else if (asset.path.includes("/hooks/") && asset.path.endsWith(".json"))
-      files.set(
-        asset.path,
-        JSON.stringify(
-          {
-            version: 1,
-            hooks:
-              asset.path === ".github/hooks/agent-distro.json"
-                ? {}
-                : { sessionStart: [{ type: "prompt", prompt: profile.guidance }] },
-          },
-          null,
-          2,
-        ) + "\n",
-      );
-    else throw new Error("unsupported generated asset: " + asset.path);
+    files.set(asset.path, renderAsset(asset, profile));
   }
 }
 
@@ -149,7 +171,7 @@ const pluginLinks = new Map([
 ]);
 for (const profile of source.profiles) {
   for (const rawAsset of profile.assets) {
-    const asset = typeof rawAsset === "string" ? rawAsset : rawAsset.path;
+    const asset = normalizeAsset(rawAsset).path;
     if (asset.endsWith(".agent.md"))
       pluginLinks.set("agents/agent-distro-" + profile.id + ".agent.md", path.join(assets, asset));
     if (asset.endsWith("/SKILL.md"))

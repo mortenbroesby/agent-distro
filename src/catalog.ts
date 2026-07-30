@@ -3,9 +3,29 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { manifestParts } from "./managed-path.js";
 
-/** Versioned content definitions shared by the installer, TUI, and plugin generator. */
+/**
+ * A selectable technology stack.
+ *
+ * Stack metadata is presentation-only, but its stable `id` scopes profiles and
+ * assets during interactive installation. It must therefore remain safe to
+ * persist in a target manifest.
+ */
 export type Stack = { id: string; label: string; description: string };
+/**
+ * A named collection of assets belonging to exactly one stack.
+ *
+ * Profiles are convenience selections, not an ownership mechanism: every
+ * listed asset still declares its own stack in the generated catalog.
+ */
 export type Profile = { id: string; stack: string; label: string; description: string; assets: string[] };
+/**
+ * A generated provider that contributes content to a managed target path.
+ *
+ * `path` locates the packaged source, while `target` is the repository path
+ * that receives it. Keeping those identities distinct allows several stacks
+ * to safely contribute to one target. `merge` is deliberately closed so an
+ * unrecognised rule can never silently alter a user's repository.
+ */
 export type CatalogAsset = { path: string; target: string; merge: "replace" | "json"; label: string; stack: string };
 type Catalog = {
   schemaVersion: number;
@@ -17,7 +37,14 @@ type Catalog = {
 
 const assets = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets");
 
-/** Parses and validates generated catalog data before it can select filesystem paths. */
+/**
+ * Loads and validates the generated catalog bundled beside the compiled CLI.
+ *
+ * @returns A catalog whose paths, stack references, and profile references are
+ * validated before they can influence filesystem operations.
+ * @throws {Error} When generated data is stale, malformed, or unsafe. Failing
+ * eagerly turns a packaging defect into a safe startup failure.
+ */
 function loadCatalog(): Catalog {
   const catalog = JSON.parse(fs.readFileSync(path.join(assets, "catalog.json"), "utf8"));
   if (
@@ -80,12 +107,30 @@ export const profileChoices = catalog.profiles.map(({ id, stack, label, descript
   description,
 }));
 
-/** Merges selected profiles and individual assets while preserving catalog order. */
+/**
+ * Resolves selected providers to their source paths in stable catalog order.
+ *
+ * @param selected - Individually selected provider source paths.
+ * @param profiles - Profile identifiers whose providers are added to `selected`.
+ * @returns Source paths suitable for command-line reporting and manifest input.
+ * @throws {Error} When a profile or asset is absent from the validated catalog.
+ */
 export function selectedCatalogAssets(selected: string[], profiles: string[] = []) {
   return selectedCatalogEntries(selected, profiles).map((asset) => asset.path);
 }
 
-/** Resolves selected providers while retaining their target and merge declarations. */
+/**
+ * Resolves selected providers without discarding their target or merge rule.
+ *
+ * This is the installer-facing counterpart to {@link selectedCatalogAssets}.
+ * It is intentionally pure: profile expansion and unknown-selection rejection
+ * happen before any source file is read or target state is inspected.
+ *
+ * @param selected - Individually selected provider source paths.
+ * @param profiles - Profile identifiers whose providers are added to `selected`.
+ * @returns Catalog entries in deterministic catalog order.
+ * @throws {Error} When a requested profile or provider is unknown.
+ */
 export function selectedCatalogEntries(selected: string[], profiles: string[] = []) {
   const requested = new Set(selected);
   const profilesById = new Map(catalog.profiles.map((profile) => [profile.id, profile]));
