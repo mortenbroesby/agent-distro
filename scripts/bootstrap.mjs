@@ -18,6 +18,7 @@ const [major, minor] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
+const buildTool = path.join(root, "node_modules", ".bin", process.platform === "win32" ? "tsdown.cmd" : "tsdown");
 
 function usage() {
   console.error("Usage: node scripts/bootstrap.mjs [--doctor <target>]");
@@ -47,7 +48,10 @@ function main() {
 
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "agent-distro-bootstrap-"));
   try {
-    if (runNpm(["ci"]).status !== 0) return 1;
+    // Do not replace an active checkout's dependencies: a running test or
+    // editor can hold native build tooling open on Windows. A fresh checkout
+    // still receives its locked dependencies before packaging.
+    if (!fs.existsSync(buildTool) && runNpm(["ci"]).status !== 0) return 1;
     const packed = runNpm(["pack", "--json", "--silent", "--pack-destination", temporary], {
       encoding: "utf8",
       stdio: ["inherit", "pipe", "inherit"],
