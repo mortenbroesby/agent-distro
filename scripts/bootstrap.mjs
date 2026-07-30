@@ -14,7 +14,7 @@ const npmCli =
     ? (process.env.npm_execpath ??
       path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"))
     : undefined;
-const [major, minor, patch] = process.versions.node.split(".").map(Number);
+const [major, minor] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
@@ -38,8 +38,10 @@ function main() {
     usage();
     return 1;
   }
-  if (major !== 22 || minor < 23 || (minor === 23 && patch < 1)) {
-    console.error("Agent Distro requires Node 22.23.1 or newer within Node 22.");
+  if (!((major === 22 && minor >= 18) || (major >= 24 && major < 27 && (major > 24 || minor >= 11)))) {
+    console.error(
+      "Building Agent Distro from this checkout requires Node ^22.18.0 or >=24.11.0 <27 (tsdown build requirement). The packed CLI supports Node >=20.12.0 <27.",
+    );
     return 1;
   }
 
@@ -69,7 +71,7 @@ function main() {
       console.error("npm pack returned an invalid archive path.");
       return 1;
     }
-    if (runNpm(["install", "--global", "--force", archive]).status !== 0) return 1;
+    if (runNpm(["install", "--global", "--force", "--ignore-scripts", archive]).status !== 0) return 1;
 
     const globalRoot = runNpm(["root", "--global"], {
       encoding: "utf8",

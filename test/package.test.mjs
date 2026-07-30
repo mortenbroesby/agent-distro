@@ -2,7 +2,7 @@
 // consumer, and runs its public binary against real filesystem repository shapes.
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { execa } from "execa";
 import { expect } from "vitest";
 import { test } from "./support/repository-fixture.mjs";
@@ -10,6 +10,20 @@ import { test } from "./support/repository-fixture.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const bootstrap = path.join(root, "scripts", "bootstrap.mjs");
+
+const bootstrapAsNode = (version) =>
+  execa(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `Object.defineProperty(process.versions, "node", { value: ${JSON.stringify(version)} }); process.argv = [process.execPath, ${JSON.stringify(bootstrap)}]; await import(${JSON.stringify(pathToFileURL(bootstrap).href)});`,
+    ],
+    {
+      env: { ...process.env, PATH: "", npm_execpath: path.join(root, "missing-npm-cli.js") },
+      reject: false,
+    },
+  );
 
 test("bootstraps the packed global binary without installing assets", async ({ repository }) => {
   const prefix = repository.plain("global prefix");
@@ -58,6 +72,18 @@ test("declares and builds for the lowest supported Node runtime", () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   expect(packageJson.engines.node).toBe(">=20.12.0 <27");
   expect(packageJson.scripts.build).toContain("--target node20.12");
+  expect(fs.existsSync(path.join(root, "README.md"))).toBe(false);
+});
+
+test("distinguishes checkout build Nodes from packed runtime support", async () => {
+  const buildError =
+    "Building Agent Distro from this checkout requires Node ^22.18.0 or >=24.11.0 <27 (tsdown build requirement). The packed CLI supports Node >=20.12.0 <27.";
+  for (const version of ["20.12.0", "22.17.9", "23.11.0", "24.10.9", "27.0.0"]) {
+    expect((await bootstrapAsNode(version)).stderr).toContain(buildError);
+  }
+  for (const version of ["22.18.0", "24.11.0", "26.0.0"]) {
+    expect((await bootstrapAsNode(version)).stderr).not.toContain(buildError);
+  }
 });
 
 test("installs the packed npm binary into real repository shapes", async ({ repository }) => {
