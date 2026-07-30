@@ -16,6 +16,11 @@ finishing a branch when your agent supports project-local skill discovery:
 - `verification-before-completion` before commits, PRs, or success claims.
 - `code-review-and-quality` before merging a change.
 - `documentation-and-adrs` for durable technical decisions.
+- `ci-cd-and-automation` when changing automated quality gates.
+- `observability-and-instrumentation` when a shipped behavior needs diagnostics.
+- `security-and-hardening` at input, filesystem, credential, or dependency boundaries.
+- `code-simplification` after a change adds avoidable complexity.
+- `source-driven-development` when a framework or tool's current documentation matters.
 
 Direct user instructions and this agreement take priority if copied upstream
 guidance conflicts. The copies are intentionally minimal snapshots: update a
