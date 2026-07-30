@@ -18,7 +18,7 @@ const npmCli =
     ? (process.env.npm_execpath ??
       path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"))
     : undefined;
-const [major, minor, patch] = process.versions.node.split(".").map(Number);
+const [major] = process.versions.node.split(".").map(Number);
 const args = process.argv.slice(2);
 const environment = { ...process.env };
 if (environment.NPM_CONFIG_PREFIX) delete environment.npm_config_prefix;
@@ -102,16 +102,8 @@ function managedRoot() {
  */
 function main() {
   if (!parseArgs()) return 1;
-  if (
-    !(
-      (major === 22 && (minor > 22 || (minor === 22 && patch >= 2))) ||
-      (major === 24 && (minor > 15 || (minor === 15 && patch >= 0))) ||
-      (major >= 26 && major < 27)
-    )
-  ) {
-    console.error(
-      "Agent Distro requires Node ^22.22.2 || ^24.15.0 || >=26.0.0 <27. Upgrade Node before bootstrapping.",
-    );
+  if (!(major === 22 || major === 24 || major === 26)) {
+    console.error("Agent Distro requires Node 22, 24, or 26. Upgrade Node before bootstrapping.");
     return 1;
   }
 

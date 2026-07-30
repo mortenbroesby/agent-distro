@@ -16,10 +16,9 @@ External artifact packages are not an approved distribution channel. Do not add
 an npm-package resolver merely to preserve a hypothetical future option.
 Concurrent installation is a separate safety trigger for a lockfile spike.
 
-Agent Distro's runtime contract is Node
-`^22.22.2 || ^24.15.0 || >=26.0.0 <27`. This intentionally drops Node 20 and
-aligns the package with current npm-maintained resolution tooling. Package,
-bootstrap, launcher, CI, and packed-runtime proof use that same range.
+Agent Distro supports Node 22, 24, and 26. This intentionally drops Node 20
+while accepting early Node 22 releases. Package, bootstrap, launcher, CI, and
+packed-runtime proof use that same range.
 
 Open small, independently verified upgrade spikes for `commander` and
 test-only `execa`. Keep `tsdown`, `oxfmt`, and `oxlint` on a monitored update
@@ -136,7 +135,7 @@ Add a dependency only when all apply:
 - A concrete production requirement or defect cannot be met safely with Node,
   an existing dependency, or the existing small local helper.
 - The candidate has a stable non-prerelease release, clear ownership and license,
-  meaningful adoption, and support for Node `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
+  meaningful adoption, and support for Node 22, 24, and 26.
 - Its lockfile and lifecycle-script impact are reviewed before execution.
 - A packed macOS and Windows proof demonstrates the added behavior.
 - The proposal identifies the code removed or risk reduced; convenience alone is

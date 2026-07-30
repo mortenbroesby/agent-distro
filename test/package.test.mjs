@@ -98,28 +98,27 @@ test("cleans its temporary package after a failed global install", async ({ repo
 
 test("declares and builds for the lowest supported Node runtime", () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-  expect(packageJson.engines.node).toBe("^22.22.2 || ^24.15.0 || >=26.0.0 <27");
+  expect(packageJson.engines.node).toBe("^22.0.0 || ^24.0.0 || ^26.0.0");
   expect(packageJson.scripts.build).toContain("--target node22");
   expect(fs.existsSync(path.join(root, "README.md"))).toBe(false);
 });
 
 test("distinguishes checkout build Nodes from packed runtime support", async () => {
-  const buildError =
-    "Agent Distro requires Node ^22.22.2 || ^24.15.0 || >=26.0.0 <27. Upgrade Node before bootstrapping.";
-  for (const version of ["20.12.0", "22.22.1", "23.11.0", "24.14.9", "25.0.0", "27.0.0"]) {
+  const buildError = "Agent Distro requires Node 22, 24, or 26. Upgrade Node before bootstrapping.";
+  for (const version of ["20.12.0", "23.11.0", "25.0.0", "27.0.0"]) {
     expect((await bootstrapAsNode(version)).stderr).toContain(buildError);
   }
-  for (const version of ["22.22.2", "24.15.0", "26.0.0"]) {
+  for (const version of ["22.0.0", "24.0.0", "26.0.0"]) {
     expect((await bootstrapAsNode(version)).stderr).not.toContain(buildError);
   }
 });
 
 test("rejects an unsupported packed runtime before command execution", async ({ repository }) => {
   const target = repository.plain("unsupported Node target");
-  const rejected = await binaryAsNode("22.22.1", ["install", target, "--asset", ".mcp.json"]);
+  const rejected = await binaryAsNode("20.12.0", ["install", target, "--asset", ".mcp.json"]);
   expect(rejected.exitCode).toBe(1);
   expect(rejected.stderr).toContain(
-    "Agent Distro requires Node ^22.22.2 || ^24.15.0 || >=26.0.0 <27. Upgrade Node before running Agent Distro.",
+    "Agent Distro requires Node 22, 24, or 26. Upgrade Node before running Agent Distro.",
   );
   expect(fs.existsSync(path.join(target, ".agent-distro"))).toBe(false);
   expect(fs.existsSync(path.join(target, ".mcp.json"))).toBe(false);

@@ -18,17 +18,16 @@ must remove more risk or code than it introduces.
 ## Story 0 — Raise the runtime floor
 
 - [x] Change the package, bootstrap, and contributor runtime contract to Node
-  `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
+  22, 24, or 26.
 - [x] Align version files, CI, packaging checks, and user-facing compatibility
   errors with that single range.
-- [x] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.22.2,
-  24.15, and 26 packaged-runtime proof on macOS and Windows.
+- [x] Replace the Node 20.12, 22.18, and 24.11 matrix lanes with Node 22.0,
+  24, and 26 packaged-runtime proof on macOS and Windows.
 - [x] Give unsupported Node installations an actionable error before any
   filesystem mutation.
 
-Acceptance: Agent Distro has one tested Node 22+ baseline, and its declared
-range admits the latest maintained npm resolver tooling without accepting an
-unsupported early Node release.
+Acceptance: Agent Distro has a tested Node 22+ baseline across supported even
+Node majors and accepts early Node 22 releases without supporting Node 20.
 
 ## Decision — npm artifact distribution
 
@@ -85,7 +84,7 @@ evidence; rejected upgrades are documented with a review date.
   release notes, lockfile change, install scripts, and optional native bindings.
 - [ ] Keep `tsdown` on non-prerelease releases only unless an approved defect
   requires a beta and the beta is explicitly pinned.
-- [ ] Verify each accepted tool update through Node 22.22.2, 24.15, and 26
+- [ ] Verify each accepted tool update through Node 22.0, 24, and 26
   packaged-runtime lanes on macOS and Windows.
 - [ ] Do not replace tsdown/Oxc tooling unless the evidence shows a concrete
   support, security, or cross-platform failure.
