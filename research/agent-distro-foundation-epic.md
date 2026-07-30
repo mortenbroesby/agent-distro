@@ -88,9 +88,9 @@ explicit, and the catalog generation/checks are deterministic.
 
 ### Story 2 evidence — 2026-07-30
 
-- The authored profile source declares an explicit Common stack and assigns
-  every current profile to it; generated catalog schema version 2 records
-  stack ownership for all assets and profiles.
+- The authored profile source declares Common, JavaScript, and .NET stacks;
+  generated catalog schema version 2 records stack ownership for all assets
+  and profiles.
 - The Clack flow selects stacks before it shows stack-eligible profiles and
   individual assets. An empty selection is still a no-op.
 - Catalog generation validates ownership and `assets:check` rejects stale

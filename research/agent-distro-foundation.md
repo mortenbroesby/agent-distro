@@ -93,9 +93,9 @@ follow the same explicit selection model as technology-specific stacks.
 
 ## 7a. Initial catalog scope
 
-**Decision:** The initial catalog has one explicitly selectable **Common**
-stack. All existing cross-runtime workflow assets belong to it; technology
-stacks are added only with assets that genuinely require them.
+**Decision:** The initial catalog has explicitly selectable **Common**,
+**JavaScript**, and **.NET** stacks. Common owns cross-runtime workflow assets;
+technology stacks own only technology-specific guidance.
 
 **Implication:** `assets/profiles.json` is the authored source: it declares
 top-level stacks and assigns every profile to one stack. The generated catalog
