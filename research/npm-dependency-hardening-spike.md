@@ -11,6 +11,18 @@ Keep the present dependency choices. They are mainstream, actively maintained,
 and narrowly used. Do not add a library merely to replace Node APIs or the
 installer's deliberately explicit transaction and path-safety logic.
 
+The first approved scope trigger is external artifact packages: a user selects
+an npm-style package specification and Agent Distro resolves it as content,
+outside `node_modules`. That feature warrants a dedicated package-resolution
+dependency spike. Concurrent installation is a separate safety trigger for a
+lockfile spike.
+
+Agent Distro's next runtime contract is Node
+`^22.22.2 || ^24.15.0 || >=26.0.0 <27`. This intentionally drops Node 20 and
+aligns the package with current npm-maintained resolution tooling. It must be
+implemented as its own package/CI compatibility change before an artifact
+resolver is added; this spike changes documentation only.
+
 Open small, independently verified upgrade spikes for `commander` and
 test-only `execa`. Keep `tsdown`, `oxfmt`, and `oxlint` on a monitored update
 cadence because their releases move quickly; that is not a reason to replace
@@ -54,10 +66,65 @@ existing macOS and Windows CI lanes are the correct protection for that boundary
 | Command parsing | Commander | `yargs`, `cac`, `clipanion` | No change. Commander is already highly adopted and maps directly to the current command-registration structure. |
 | Interactive TUI | Clack task log and prompts | `inquirer`, `prompts`, `enquirer` | No change. Clack already supplies the requested TUI primitives without custom rendering infrastructure. |
 | Runtime process execution | Node `spawnSync` / `execFileSync` | `execa` | No runtime change. Bootstrap deliberately invokes npm's JavaScript entrypoint on Windows to preserve paths with spaces and Unicode; wrapping it would not remove that platform rule. |
-| Filesystem transactions | Node `fs`, explicit journal, path validation | `fs-extra`, `write-file-atomic`, `proper-lockfile` | No change. These do not model Agent Distro's multi-file archive, rollback, recovery, and symlink safety contract. Replacing it would add a dependency without removing the important policy code. |
+| Filesystem transactions | Node `fs`, explicit journal, path validation | `fs-extra`, `write-file-atomic` | No change. These do not model Agent Distro's multi-file archive, rollback, recovery, and symlink safety contract. Replacing them would add a dependency without removing the important policy code. |
+| Concurrent mutation | No interprocess coordination | `proper-lockfile` | Focused spike approved. It complements rather than replaces the transaction model; lock only the exact target and managed-global state. |
 | Catalog and manifest validation | Small local validation functions | `zod`, `valibot` | Defer. A schema library becomes worthwhile only if one schema must serve CLI input, persisted state migrations, generated catalog validation, and a public programmatic API. The current focused validators are smaller and safer to audit. |
 | JSON provider merge | Small pure recursive merge | `deepmerge`, `lodash.merge` | No change. The merge semantics are intentionally closed and conflict-aware; generic merge defaults are not a safety upgrade. |
 | Formatting and linting | Oxfmt / Oxlint | Prettier / ESLint | No change. The current tools are mainstream enough, current, and already verified on both supported OS families. |
+
+## Artifact-package distribution decision
+
+### `pacote`: approved only for the artifact-package milestone
+
+`pacote` is npm's package downloader and exposes the operations this product
+needs: manifest inspection and extraction of npm registry, tag, tarball, Git,
+and local specifications. Its current adoption is strong (54.2M monthly
+downloads), and it is a better foundation than reproducing npm's package-spec,
+registry, cache, and integrity behavior.
+
+Current `pacote@22` requires Node `^22.22.2 || ^24.15.0 || >=26`, matching the
+new runtime contract. Do not soften this contract to generic “Node 22+”: early
+22 releases still cannot run the current package. Pacote brings a substantial
+npm-internal dependency graph, including
+`npm-package-arg`, `npm-registry-fetch`, cache, tar, integrity, Git, and script
+helpers. The spike must prove that resolving and extracting an artifact never
+runs package lifecycle scripts or arbitrary package executables.
+
+Keep the npm-specific implementation behind one internal `artifact-source`
+module with `resolve`, `manifest`, and `extract` operations. Do not introduce a
+public interface or a second resolver until another source genuinely exists.
+The installation engine continues to own the Agent Distro manifest, allowed
+artifact types, target rendering, preview, approval, conflict policy,
+ownership, rollback, and governance.
+
+### Related distribution candidates
+
+| Candidate | Current evidence | Decision |
+| --- | --- | --- |
+| `npm-package-arg` | 121.4M monthly downloads; latest 14 matches the new Node runtime contract | Do not add directly in the first pacote milestone: pacote already owns it. Add only if UI must classify a spec before a resolver call. |
+| `npm-registry-fetch` | Already transitive through current pacote | Defer. Use pacote unless a concrete authenticated registry/search feature needs lower-level control. |
+| `semver` | 3.396B monthly downloads; Node >=10 | Defer until manifests express compatibility ranges, minimum Agent Distro versions, or update policy. Package tags and exact metadata do not need a direct semver dependency. |
+
+## Cross-platform operations and state candidates
+
+| Candidate | Current evidence | Decision |
+| --- | --- | --- |
+| `proper-lockfile` | 79.2M monthly downloads; small lock/retry dependency graph | Approved for a focused concurrency spike. Lock the exact target installation and managed global state, release in `finally`, use a bounded wait, and prove competing processes cannot interleave. Do not introduce a global lock. |
+| `env-paths` | 347.9M monthly downloads; Node >=20 | Defer. It is the preferred choice if a new cache/config/log location is introduced, but it must not silently migrate the deliberate `~/.agent-distro/repo` managed-checkout contract. |
+| `fast-glob` | 596.2M monthly downloads | Defer. Artifact manifests should be authoritative. Add only when the manifest deliberately supports glob patterns or discovery across multiple roots. |
+| `write-file-atomic` | 387.2M monthly downloads; current v8 matches the new Node runtime contract | Do not add now. The installer already stages every visible replacement and journals multi-file rollback; a single-file helper would not replace that transaction. Reconsider only after a demonstrated journal-write corruption case. |
+| `tempy`, `cpy`, `rimraf` | `fs.mkdtemp`, `fs.cp`, and `fs.rm` cover the current use | Do not add. |
+
+## CLI and interaction candidates
+
+| Candidate | Current evidence | Decision |
+| --- | --- | --- |
+| `@inquirer/prompts` | 136.9M monthly downloads; Node >=20.17 / 22.13 / 23.5 | Do not add alongside Clack. Revisit only if Clack lacks a required interaction that cannot be composed. |
+| `ink` / `@inkjs/ui` | Ink has 18.6M monthly downloads and requires Node >=22 | Do not add. A persistent full-screen application is outside the installation-wizard scope; Node compatibility is no longer the deciding concern. |
+| `oclif` | 1.4M monthly downloads | Do not add. Commander and the npm global package meet the current command and update needs; evaluate only for a deliberate standalone-binary/plugin-platform migration. |
+| `execa` | Already present as a dev-only test dependency | Keep runtime bootstrap on Node child-process APIs. Add a small process helper backed by Execa only when several production integrations need cancellation, timeouts, and structured errors; do not add a wrapper for the current few calls. |
+| `which` | 1.303B monthly downloads; newest v7 matches the new Node runtime contract | Defer until `doctor` actually probes Git, GitHub CLI, or Copilot CLI. Use the current major and test Windows PATH behavior. |
+| `open` | 486.7M monthly downloads; Node >=20 | Defer. The current report command prints a reviewable URL; adopt only for an explicit, consented `--open` action and validate the destination before opening it. |
 
 ## Supply-chain hardening gap
 
@@ -86,7 +153,7 @@ Add a dependency only when all apply:
 - A concrete production requirement or defect cannot be met safely with Node,
   an existing dependency, or the existing small local helper.
 - The candidate has a stable non-prerelease release, clear ownership and license,
-  meaningful adoption, and compatible Node 20.12 through 26 support.
+  meaningful adoption, and support for Node `^22.22.2 || ^24.15.0 || >=26.0.0 <27`.
 - Its lockfile and lifecycle-script impact are reviewed before execution.
 - A packed macOS and Windows proof demonstrates the added behavior.
 - The proposal identifies the code removed or risk reduced; convenience alone is
