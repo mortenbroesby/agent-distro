@@ -18,7 +18,7 @@ missing decision.
 - [x] Identify the Agent Distro remote and base branch for the implementation stack.
 - [x] Create an isolated Git worktree from that base; preserve the ASDLC reference snapshot unchanged.
 - [x] Record the exact current command, asset, manifest, and test baseline.
-- [ ] Decide the remaining migration questions required by Stories 1–3.
+- [ ] Decide the remaining design questions required by Stories 2–3.
 
 Acceptance: a clean, Git-backed Agent Distro worktree exists with a verified baseline
 and an approved first implementation slice.
@@ -116,8 +116,8 @@ absolute paths in JSON, and its exit semantics are documented and tested.
 
 ## Story 6 — Delivery discipline
 
-- [ ] Port the relevant package, catalog, transaction, and cross-platform
-  smoke coverage from Agent Distro.
+- [ ] Maintain package, catalog, transaction, and cross-platform smoke
+  coverage as each foundation story changes them.
 - [ ] Add formatting, linting, editor/runtime configuration, and repository
   instructions appropriate to Agent Distro.
 - [ ] Require macOS and Windows verification for the exact PR head.

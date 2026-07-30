@@ -1,9 +1,9 @@
 # Agent Distro foundation brief
 
-This is the committed record of the parity discussion between Agent Distro and
-the richer ASDLC source snapshot. It defines the complete Agent Distro
-foundation; ASDLC remains a future porting target, not this repository's
-implementation target.
+This is the committed Q&A decision record from the parity discussion between
+Agent Distro and the richer ASDLC source snapshot. It defines the complete
+Agent Distro foundation; ASDLC remains a future porting target, not this
+repository's implementation target.
 
 ## Goal
 
@@ -11,9 +11,9 @@ Make Agent Distro's installer, packaging, TUI, catalog, and safety behavior
 complete and ready for a later port. That port should primarily rename the
 product and replace Agent Distro's asset sets with ASDLC's curated assets.
 
-## Current comparison
+## Target mapping
 
-| Area | Agent Distro foundation | Future ASDLC port |
+| Area | Required Agent Distro foundation | Future ASDLC port |
 | --- | --- | --- |
 | Public command | `agent-distro` | Rename to `asdlc` |
 | Selection | Global profiles and assets | Stack-first profiles and assets |
