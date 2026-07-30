@@ -10,12 +10,21 @@ const source = JSON.parse(fs.readFileSync(path.join(assets, "profiles.json"), "u
 
 // Profiles are the single authored source. This generator emits both the
 // installer catalog and the Copilot plugin so their curated content cannot drift.
-if (source.version !== 1 || !source.labels || !Array.isArray(source.profiles))
+if (source.version !== 1 || !source.labels || !Array.isArray(source.stacks) || !Array.isArray(source.profiles))
   throw new Error("invalid profile source");
+const stacks = new Set();
+for (const stack of source.stacks) {
+  if (typeof stack?.id !== "string" || typeof stack?.label !== "string" || typeof stack?.description !== "string")
+    throw new Error("invalid stack");
+  if (stacks.has(stack.id)) throw new Error("duplicate stack");
+  stacks.add(stack.id);
+}
 const files = new Map();
 for (const profile of source.profiles) {
   if (
     typeof profile?.id !== "string" ||
+    typeof profile?.stack !== "string" ||
+    !stacks.has(profile.stack) ||
     typeof profile?.label !== "string" ||
     typeof profile?.description !== "string" ||
     typeof profile?.guidance !== "string" ||
@@ -75,11 +84,16 @@ const version =
 const catalog =
   JSON.stringify(
     {
-      schemaVersion: 1,
+      schemaVersion: 2,
       version,
-      assets: [...files.keys()].map((asset) => ({ path: asset, label: source.labels[asset] })),
-      profiles: source.profiles.map(({ id, label, description, assets: profileAssets }) => ({
+      stacks: source.stacks,
+      assets: [...files.keys()].map((asset) => {
+        const profile = source.profiles.find((entry) => entry.assets.includes(asset));
+        return { path: asset, label: source.labels[asset], stack: profile.stack };
+      }),
+      profiles: source.profiles.map(({ id, stack, label, description, assets: profileAssets }) => ({
         id,
+        stack,
         label,
         description,
         assets: profileAssets,

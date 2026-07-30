@@ -41,8 +41,8 @@ assert.deepEqual(
 );
 assert.deepEqual(
   packageJson.files,
-  ["bin", "dist"],
-  "The npm package must keep contributor-only .agents content outside its package boundary.",
+  ["bin", "dist", "scripts/upgrade.mjs"],
+  "The npm package must keep contributor-only .agents content outside its package boundary and include its runtime upgrade script.",
 );
 for (const license of ["addy-osmani-MIT.txt", "superpowers-MIT.txt"])
   assert.ok(fs.existsSync(path.join(skillsRoot, "licenses", license)), `Missing skill license: ${license}`);

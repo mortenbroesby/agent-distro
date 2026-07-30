@@ -6,7 +6,9 @@ set -euo pipefail
 
 while IFS= read -r -d '' file; do
   case "$file" in
-    package-lock.json) ;;
+    # Generated assets are intentionally ignored by oxfmt; formatting them
+    # would make a catalog-only commit fail with "no target files".
+    package-lock.json | assets/catalog.json | plugins/agent-distro/*) ;;
     *.cjs | *.js | *.json | *.jsx | *.mjs | *.ts | *.tsx)
       ./node_modules/.bin/oxfmt "$file"
       git add -- "$file"

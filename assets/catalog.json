@@ -1,75 +1,99 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "version": "sha256-adc3ae3176196b2c",
+  "stacks": [
+    {
+      "id": "common",
+      "label": "Common",
+      "description": "Workflow assets that apply to every technology stack."
+    }
+  ],
   "assets": [
     {
       "path": ".github/instructions/agent-distro.instructions.md",
-      "label": "Foundation instructions"
+      "label": "Foundation instructions",
+      "stack": "common"
     },
     {
       "path": ".mcp.json",
-      "label": "MCP configuration"
+      "label": "MCP configuration",
+      "stack": "common"
     },
     {
       "path": ".github/instructions/safe-changes.instructions.md",
-      "label": "Safe-change instructions"
+      "label": "Safe-change instructions",
+      "stack": "common"
     },
     {
       "path": ".github/instructions/verification.instructions.md",
-      "label": "Verification instructions"
+      "label": "Verification instructions",
+      "stack": "common"
     },
     {
       "path": ".github/agents/pull-request-review.agent.md",
-      "label": "Pull-request review agent"
+      "label": "Pull-request review agent",
+      "stack": "common"
     },
     {
       "path": ".github/skills/pull-request-review/SKILL.md",
-      "label": "Pull-request review skill"
+      "label": "Pull-request review skill",
+      "stack": "common"
     },
     {
       "path": ".github/prompts/pull-request-review.prompt.md",
-      "label": "Pull-request review prompt"
+      "label": "Pull-request review prompt",
+      "stack": "common"
     },
     {
       "path": ".github/agents/debugging.agent.md",
-      "label": "Debugging agent"
+      "label": "Debugging agent",
+      "stack": "common"
     },
     {
       "path": ".github/skills/debugging/SKILL.md",
-      "label": "Debugging skill"
+      "label": "Debugging skill",
+      "stack": "common"
     },
     {
       "path": ".github/prompts/debugging.prompt.md",
-      "label": "Debugging prompt"
+      "label": "Debugging prompt",
+      "stack": "common"
     },
     {
       "path": ".github/agents/handoff.agent.md",
-      "label": "Handoff agent"
+      "label": "Handoff agent",
+      "stack": "common"
     },
     {
       "path": ".github/skills/handoff/SKILL.md",
-      "label": "Handoff skill"
+      "label": "Handoff skill",
+      "stack": "common"
     },
     {
       "path": ".github/prompts/grill-me.prompt.md",
-      "label": "Grill-me prompt"
+      "label": "Grill-me prompt",
+      "stack": "common"
     },
     {
       "path": ".github/hooks/agent-distro.json",
-      "label": "Hook template"
+      "label": "Hook template",
+      "stack": "common"
     },
     {
       "path": ".github/hooks/session-context.json",
-      "label": "Session-context hook"
+      "label": "Session-context hook",
+      "stack": "common"
     },
     {
       "path": ".github/hooks/verification-reminder.json",
-      "label": "Verification-reminder hook"
+      "label": "Verification-reminder hook",
+      "stack": "common"
     }
   ],
   "profiles": [
     {
       "id": "foundation",
+      "stack": "common",
       "label": "Foundation",
       "description": "Repository context and MCP configuration.",
       "assets": [
@@ -79,6 +103,7 @@
     },
     {
       "id": "safe-changes",
+      "stack": "common",
       "label": "Safe changes",
       "description": "Guardrails for safe, focused repository changes.",
       "assets": [
@@ -87,6 +112,7 @@
     },
     {
       "id": "verification",
+      "stack": "common",
       "label": "Verification",
       "description": "Evidence-first completion instructions.",
       "assets": [
@@ -95,6 +121,7 @@
     },
     {
       "id": "pull-request-review",
+      "stack": "common",
       "label": "Pull-request review",
       "description": "Review specialist, workflow, and reusable prompt.",
       "assets": [
@@ -105,6 +132,7 @@
     },
     {
       "id": "debugging",
+      "stack": "common",
       "label": "Debugging",
       "description": "Reproduction-first debugging specialist and workflow.",
       "assets": [
@@ -115,6 +143,7 @@
     },
     {
       "id": "handoff",
+      "stack": "common",
       "label": "Handoff and grill me",
       "description": "Evidence-based handoff and adversarial readiness check.",
       "assets": [
@@ -125,6 +154,7 @@
     },
     {
       "id": "hook-template",
+      "stack": "common",
       "label": "Hook template",
       "description": "Optional deterministic hook configuration template.",
       "assets": [
@@ -133,6 +163,7 @@
     },
     {
       "id": "session-context",
+      "stack": "common",
       "label": "Session context hook",
       "description": "Inject repository context at Copilot CLI session start.",
       "assets": [
@@ -141,6 +172,7 @@
     },
     {
       "id": "verification-reminder",
+      "stack": "common",
       "label": "Verification reminder hook",
       "description": "Inject an evidence reminder at Copilot CLI session start.",
       "assets": [

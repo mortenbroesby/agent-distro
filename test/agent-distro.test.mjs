@@ -97,10 +97,11 @@ describe("agent-distro install", () => {
     const prompts = {
       intro: (message) => calls.push(["intro", message]),
       text: async () => destination,
-      multiselect: async () =>
-        calls.filter(([name]) => name === "multiselect").length === 0
-          ? (calls.push(["multiselect", "profiles"]), [])
-          : [".mcp.json"],
+      multiselect: async () => {
+        const count = calls.filter(([name]) => name === "multiselect").length;
+        calls.push(["multiselect", count]);
+        return count === 0 ? ["common"] : count === 1 ? [] : [".mcp.json"];
+      },
       confirm: async () => true,
       isCancel: () => false,
       cancel: (message) => calls.push(["cancel", message]),
@@ -229,7 +230,7 @@ describe("agent-distro install", () => {
   it("installs a profile, composes it with individual assets, and lists the catalog", () => {
     const destination = target();
     expect(JSON.parse(command("profiles"))).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: "debugging" })]),
+      expect.arrayContaining([expect.objectContaining({ id: "debugging", stack: "common" })]),
     );
     command("install", destination, "--profile", "debugging", "--asset", ".mcp.json");
     const manifest = JSON.parse(fs.readFileSync(path.join(destination, ".agent-distro/manifest.json"), "utf8"));
