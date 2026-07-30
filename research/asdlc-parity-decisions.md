@@ -104,3 +104,11 @@ then repacks and reinstalls the global CLI.
 
 **Implication:** Npm publication is deferred. Upgrade must make the checkout
 location and any Git/update failure visible to the user.
+
+## 12. Managed checkout location
+
+**Decision:** Retain `asdlc bootstrap`. It presents `~/.asdlc` as the default
+managed local checkout and lets the user opt into choosing another location.
+
+**Implication:** The existing bootstrap implementation will be replaced by the
+new Node-based flow. `asdlc upgrade` uses the selected checkout location.
